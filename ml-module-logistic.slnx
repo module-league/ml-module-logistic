@@ -3,7 +3,5 @@
     <File Path="nuget.config" />
   </Folder>
   <Project Path="src/LogisticApi/LogisticApi.csproj" />
-  <Project Path="src/LogisticDomain/LogisticDomain.csproj" />
-  <Project Path="src/LogisticInfrastructure/LogisticInfrastructure.csproj" />
   <Project Path="tests/LogisticApi.Tests/LogisticApi.Tests.csproj" />
 </Solution>
