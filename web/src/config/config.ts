@@ -11,6 +11,7 @@ export const moduleConfig: ModuleConfig = {
   theme: {
     primary: "#1d4ed8",
     primarySoft: "#e8eefc",
+    accent: "#9333ea", // second brand colour: bg-brand-accent, bg-brand-accent-10 … 90
     // Backdrop around the main page; image is a file name in public/moduleLayoutBgImg
     background: { color: "#eef1f6", image: "mdBgPic1.jpg" },
   },

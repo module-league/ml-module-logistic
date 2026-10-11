@@ -1,7 +1,3 @@
-/* @import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist"; */
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -46,6 +42,85 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /*
+   * 10–90 colour scales: step N mixes N% of the base colour into the page background,
+   * so 10 is a pale tint and 90 is nearly the full colour (in dark mode they darken instead).
+   * Use like bg-primary-10, text-red-90, border-brand-accent-30.
+   * red, green, gray, purple and pink have no 50 step: Tailwind's own red-50 (its palest shade)
+   * is kept, because existing code relies on it. Tailwind's red-100 … red-950 etc. still work too.
+   */
+  --color-primary-10: color-mix(in oklab, var(--primary) 10%, var(--background));
+  --color-primary-20: color-mix(in oklab, var(--primary) 20%, var(--background));
+  --color-primary-30: color-mix(in oklab, var(--primary) 30%, var(--background));
+  --color-primary-40: color-mix(in oklab, var(--primary) 40%, var(--background));
+  --color-primary-50: color-mix(in oklab, var(--primary) 50%, var(--background));
+  --color-primary-60: color-mix(in oklab, var(--primary) 60%, var(--background));
+  --color-primary-70: color-mix(in oklab, var(--primary) 70%, var(--background));
+  --color-primary-80: color-mix(in oklab, var(--primary) 80%, var(--background));
+  --color-primary-90: color-mix(in oklab, var(--primary) 90%, var(--background));
+
+  /* Second brand colour, set per module with config.theme.accent (shadcn's `accent` is the hover grey) */
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-10: color-mix(in oklab, var(--brand-accent) 10%, var(--background));
+  --color-brand-accent-20: color-mix(in oklab, var(--brand-accent) 20%, var(--background));
+  --color-brand-accent-30: color-mix(in oklab, var(--brand-accent) 30%, var(--background));
+  --color-brand-accent-40: color-mix(in oklab, var(--brand-accent) 40%, var(--background));
+  --color-brand-accent-50: color-mix(in oklab, var(--brand-accent) 50%, var(--background));
+  --color-brand-accent-60: color-mix(in oklab, var(--brand-accent) 60%, var(--background));
+  --color-brand-accent-70: color-mix(in oklab, var(--brand-accent) 70%, var(--background));
+  --color-brand-accent-80: color-mix(in oklab, var(--brand-accent) 80%, var(--background));
+  --color-brand-accent-90: color-mix(in oklab, var(--brand-accent) 90%, var(--background));
+
+  --color-red: var(--red);
+  --color-red-10: color-mix(in oklab, var(--red) 10%, var(--background));
+  --color-red-20: color-mix(in oklab, var(--red) 20%, var(--background));
+  --color-red-30: color-mix(in oklab, var(--red) 30%, var(--background));
+  --color-red-40: color-mix(in oklab, var(--red) 40%, var(--background));
+  --color-red-60: color-mix(in oklab, var(--red) 60%, var(--background));
+  --color-red-70: color-mix(in oklab, var(--red) 70%, var(--background));
+  --color-red-80: color-mix(in oklab, var(--red) 80%, var(--background));
+  --color-red-90: color-mix(in oklab, var(--red) 90%, var(--background));
+
+  --color-green: var(--green);
+  --color-green-10: color-mix(in oklab, var(--green) 10%, var(--background));
+  --color-green-20: color-mix(in oklab, var(--green) 20%, var(--background));
+  --color-green-30: color-mix(in oklab, var(--green) 30%, var(--background));
+  --color-green-40: color-mix(in oklab, var(--green) 40%, var(--background));
+  --color-green-60: color-mix(in oklab, var(--green) 60%, var(--background));
+  --color-green-70: color-mix(in oklab, var(--green) 70%, var(--background));
+  --color-green-80: color-mix(in oklab, var(--green) 80%, var(--background));
+  --color-green-90: color-mix(in oklab, var(--green) 90%, var(--background));
+
+  --color-gray: var(--gray);
+  --color-gray-10: color-mix(in oklab, var(--gray) 10%, var(--background));
+  --color-gray-20: color-mix(in oklab, var(--gray) 20%, var(--background));
+  --color-gray-30: color-mix(in oklab, var(--gray) 30%, var(--background));
+  --color-gray-40: color-mix(in oklab, var(--gray) 40%, var(--background));
+  --color-gray-60: color-mix(in oklab, var(--gray) 60%, var(--background));
+  --color-gray-70: color-mix(in oklab, var(--gray) 70%, var(--background));
+  --color-gray-80: color-mix(in oklab, var(--gray) 80%, var(--background));
+  --color-gray-90: color-mix(in oklab, var(--gray) 90%, var(--background));
+
+  --color-purple: var(--purple);
+  --color-purple-10: color-mix(in oklab, var(--purple) 10%, var(--background));
+  --color-purple-20: color-mix(in oklab, var(--purple) 20%, var(--background));
+  --color-purple-30: color-mix(in oklab, var(--purple) 30%, var(--background));
+  --color-purple-40: color-mix(in oklab, var(--purple) 40%, var(--background));
+  --color-purple-60: color-mix(in oklab, var(--purple) 60%, var(--background));
+  --color-purple-70: color-mix(in oklab, var(--purple) 70%, var(--background));
+  --color-purple-80: color-mix(in oklab, var(--purple) 80%, var(--background));
+  --color-purple-90: color-mix(in oklab, var(--purple) 90%, var(--background));
+
+  --color-pink: var(--pink);
+  --color-pink-10: color-mix(in oklab, var(--pink) 10%, var(--background));
+  --color-pink-20: color-mix(in oklab, var(--pink) 20%, var(--background));
+  --color-pink-30: color-mix(in oklab, var(--pink) 30%, var(--background));
+  --color-pink-40: color-mix(in oklab, var(--pink) 40%, var(--background));
+  --color-pink-60: color-mix(in oklab, var(--pink) 60%, var(--background));
+  --color-pink-70: color-mix(in oklab, var(--pink) 70%, var(--background));
+  --color-pink-80: color-mix(in oklab, var(--pink) 80%, var(--background));
+  --color-pink-90: color-mix(in oklab, var(--pink) 90%, var(--background));
 }
 
 :root {
@@ -81,6 +156,14 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Base colours for the 10–90 scales (--primary and --brand-accent are overridden per module) */
+  --brand-accent: oklch(0.606 0.25 292.717);
+  --red: oklch(0.577 0.245 27.325);
+  --green: oklch(0.627 0.194 149.214);
+  --gray: oklch(0.551 0.027 264.364);
+  --purple: oklch(0.558 0.288 302.321);
+  --pink: oklch(0.592 0.249 0.584);
 }
 
 .dark {

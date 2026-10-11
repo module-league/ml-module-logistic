@@ -32,6 +32,8 @@ export interface ModuleTheme {
   primary: string;
   /** Light tint of the same colour for the active sidebar entry, e.g. "#e8eefc". */
   primarySoft: string;
+  /** Optional second brand colour, e.g. "#9333ea". Used as bg-brand-accent, bg-brand-accent-10 … 90. */
+  accent?: string;
   /** What shows around the main page. Defaults to the sidebar colour. */
   background?: ModuleBackground;
 }

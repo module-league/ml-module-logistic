@@ -1,6 +1,5 @@
 import { Suspense, useState, type CSSProperties } from "react";
 import { Outlet, useLocation } from "react-router";
-import { Bell } from "lucide-react";
 import { Group, Panel, Separator, usePanelRef } from "react-resizable-panels";
 import {
   Breadcrumb,
@@ -8,7 +7,6 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-  Button,
   Separator as Divider,
   SidebarInset,
   SidebarProvider,
@@ -19,6 +17,7 @@ import {
 } from "@moduleleague/ui";
 import { ModuleSidebar } from "./ModuleSidebar";
 import { findActiveNav } from "./nav-util";
+import { TopBarActions } from "./TopBarActions";
 import type { ModuleBackground, ModuleConfig } from "./type";
 import { useModuleTheme } from "./use-module-theme";
 
@@ -46,8 +45,6 @@ export function ModuleLayout({ config }: { config: ModuleConfig }) {
     <SidebarProvider
       open={open}
       onOpenChange={(next) => {
-        // Update right away (the panel's onResize confirms it a moment later), so callers can
-        // act on the opened sidebar immediately, e.g. focus "Search pages"
         setOpen(next);
         if (next) sidebarPanel.current?.expand();
         else sidebarPanel.current?.collapse();
@@ -86,7 +83,7 @@ export function ModuleLayout({ config }: { config: ModuleConfig }) {
             className="transition-none group-data-[side=left]:border-r-0"
           />
         </Panel>
-        <Separator className="z-20 w-1 shadow-sm bg-background hover:bg-sidebar-accent" />
+        <Separator className="z-20 w-1 shadow-sm bg-background bg-sidebar-accent hover:bg-primary" />
         <Panel id="content">
           <ModuleMain config={config} />
         </Panel>
@@ -102,50 +99,53 @@ function ModuleMain({ config }: { config: ModuleConfig }) {
   const { isMobile: showTrigger } = useSidebar();
 
   return (
-    // Space only on the top and left: the page runs flush to the right and bottom edges
-    <div className="flex min-h-full w-full flex-col pt-2 pl-2 md:pt-3 md:pl-3">
-      {/* Glass frame: a second, translucent border (top and left only) that blurs the backdrop behind it */}
-      <div className="flex flex-1 flex-col rounded-tl-2xl border-t border-l border-white/50 bg-white/25 pt-1.5 pl-1.5 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-white/5">
-        <SidebarInset className="flex-1 overflow-hidden rounded-tl-xl border-t border-l shadow-sm">
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
-            {showTrigger && (
-              <>
-                <SidebarTrigger className="-ml-1" />
-                <Divider orientation="vertical" className="mr-2 h-4" />
-              </>
-            )}
+    <>
+      <TopBarActions />
 
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:inline-flex">
-                  {config.title}
-                </BreadcrumbItem>
-                {active && (
-                  <>
-                    <BreadcrumbSeparator className="hidden md:inline-flex" />
-                    <BreadcrumbItem className="hidden md:inline-flex">
-                      {active.groupLabel}
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator className="hidden md:inline-flex" />
-                    <BreadcrumbItem>
-                      <BreadcrumbPage>{active.item.text}</BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </>
-                )}
-              </BreadcrumbList>
-            </Breadcrumb>
-          </header>
+      <div className="flex min-h-full w-full flex-col pt-4 pl-4">
+        {/* Glass frame: a second, translucent border (top and left only) that blurs the backdrop behind it */}
+        <div className="flex flex-1 flex-col rounded-tl-2xl border-t border-l border-white/50 bg-white/25 pt-1.5 pl-1.5 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-white/5">
+          <SidebarInset className="flex-1 overflow-hidden rounded-tl-xl border-t border-l shadow-sm">
+            <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
+              {showTrigger && (
+                <>
+                  <SidebarTrigger className="-ml-1" />
+                  <Divider orientation="vertical" className="mr-2 h-4" />
+                </>
+              )}
 
-          <div className="flex-1 bg-muted/40 p-4 md:p-6">
-            <div className="mx-auto w-full max-w-7xl">
-              <Suspense fallback={<PageLoading />}>
-                <Outlet />
-              </Suspense>
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden md:inline-flex">
+                    {config.title}
+                  </BreadcrumbItem>
+                  {active && (
+                    <>
+                      <BreadcrumbSeparator className="hidden md:inline-flex" />
+                      <BreadcrumbItem className="hidden md:inline-flex">
+                        {active.groupLabel}
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator className="hidden md:inline-flex" />
+                      <BreadcrumbItem>
+                        <BreadcrumbPage>{active.item.text}</BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </>
+                  )}
+                </BreadcrumbList>
+              </Breadcrumb>
+            </header>
+
+            <div className="flex-1 bg-muted/40 p-4 md:p-6">
+              <div className="mx-auto w-full max-w-7xl">
+                <Suspense fallback={<PageLoading />}>
+                  <Outlet />
+                </Suspense>
+              </div>
             </div>
-          </div>
-        </SidebarInset>
+          </SidebarInset>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
