@@ -8,7 +8,12 @@ export const moduleConfig: ModuleConfig = {
   code: "logistic",
   title: "Logistic",
   icon: Truck,
-  theme: { primary: "#1d4ed8", primarySoft: "#e8eefc" },
+  theme: {
+    primary: "#1d4ed8",
+    primarySoft: "#e8eefc",
+    // Backdrop around the main page; image is a file name in public/moduleLayoutBgImg
+    background: { color: "#eef1f6", image: "mdBgPic1.jpg" },
+  },
   homeKey: "logistics", // switch to "dashboard" once that page is built
   groups: [
     // {

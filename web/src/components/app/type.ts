@@ -32,6 +32,19 @@ export interface ModuleTheme {
   primary: string;
   /** Light tint of the same colour for the active sidebar entry, e.g. "#e8eefc". */
   primarySoft: string;
+  /** What shows around the main page. Defaults to the sidebar colour. */
+  background?: ModuleBackground;
+}
+
+/** The backdrop behind the main page. The page itself sits on top as a rounded card. */
+export interface ModuleBackground {
+  /** Any CSS colour, e.g. "#eef1f6". Also shows while the image loads. */
+  color?: string;
+  /**
+   * Image drawn over the colour, covering the area. A file name is looked up in public/moduleLayoutBgImg,
+   * e.g. "mdBgPic1.jpg"; anything with a "/" (a path or full URL) is used as given.
+   */
+  image?: string;
 }
  
 /** Everything one module needs to build its sidebar, routes and look. */
