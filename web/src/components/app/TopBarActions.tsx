@@ -16,7 +16,7 @@ export function TopBarActions() {
   const user = useCurrentUser();
 
   return (
-    <div className="p-1 ml-auto flex items-center gap-1 bg-sidebar justify-end shadow-sm">
+    <div className="bg-transparent p-1 ml-auto flex items-center gap-1 bg-sidebar justify-end">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

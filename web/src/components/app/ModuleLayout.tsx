@@ -93,20 +93,19 @@ export function ModuleLayout({ config }: { config: ModuleConfig }) {
 }
 
 function ModuleMain({ config }: { config: ModuleConfig }) {
-  const { pathname } = useLocation();
-  const active = findActiveNav(config, pathname);
-  // On desktop the toggle lives at the top of the sidebar; phones need this one to open the sheet
-  const { isMobile: showTrigger } = useSidebar();
+  // const { pathname } = useLocation();
+  // const active = findActiveNav(config, pathname);
+  // const { isMobile: showTrigger } = useSidebar();
 
   return (
     <>
       <TopBarActions />
 
-      <div className="flex min-h-full w-full flex-col pt-4 pl-4">
+      <div className="flex min-h-full w-full flex-col pl-4">
         {/* Glass frame: a second, translucent border (top and left only) that blurs the backdrop behind it */}
         <div className="flex flex-1 flex-col rounded-tl-2xl border-t border-l border-white/50 bg-white/25 pt-1.5 pl-1.5 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-white/5">
           <SidebarInset className="flex-1 overflow-hidden rounded-tl-xl border-t border-l shadow-sm">
-            <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
+            {/* <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
               {showTrigger && (
                 <>
                   <SidebarTrigger className="-ml-1" />
@@ -133,10 +132,10 @@ function ModuleMain({ config }: { config: ModuleConfig }) {
                   )}
                 </BreadcrumbList>
               </Breadcrumb>
-            </header>
+            </header> */}
 
             <div className="flex-1 bg-muted/40 p-4 md:p-6">
-              <div className="mx-auto w-full max-w-7xl">
+              <div className="max-w-[calc(100%-2rem)] mx-auto w-full">
                 <Suspense fallback={<PageLoading />}>
                   <Outlet />
                 </Suspense>
