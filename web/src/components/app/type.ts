@@ -3,7 +3,7 @@ import type { ComponentType } from "react";
 type IconComponent = ComponentType<{ className?: string }>;
  
 /** One sidebar entry = one page = one URL. */
-export interface NavItemConfig {
+export interface INavItemConfig {
   /** Unique key. Also the URL path, so use kebab-case: "awaiting-task" → /awaiting-task */
   keyValue: string;
   /** Sidebar label and page title. */
@@ -23,17 +23,11 @@ export interface NavItemConfig {
 /** A titled section of the sidebar, e.g. "Operations". */
 export interface NavGroupConfig {
   label: string;
-  items: NavItemConfig[];
+  items: INavItemConfig[];
 }
  
-/** The module's accent colour. Applied to buttons, the active sidebar entry and focus rings. */
+/** The module's look. Colours (primary etc.) are fixed in src/styles/theme.css. */
 export interface ModuleTheme {
-  /** Strong accent, e.g. "#1d4ed8". Must be readable as white text's background. */
-  primary?: string;
-  /** Light tint of the same colour for the active sidebar entry, e.g. "#e8eefc". */
-  primarySoft?: string;
-  /** Optional second brand colour, e.g. "#9333ea". Used as bg-brand-accent, bg-brand-accent-10 … 90. */
-  accent?: string;
   /** What shows around the main page. Defaults to the sidebar colour. */
   background?: ModuleBackground;
 }
@@ -43,14 +37,14 @@ export interface ModuleBackground {
   /** Any CSS colour, e.g. "#eef1f6". Also shows while the image loads. */
   color?: string;
   /**
-   * Image drawn over the colour, covering the area. A file name is looked up in public/moduleLayoutBgImg,
-   * e.g. "mdBgPic1.jpg"; anything with a "/" (a path or full URL) is used as given.
+   * Image drawn over the colour, covering the area: an image URL, normally an import such as
+   * `import { mdBgPic1 } from "@/assets/moduleLayoutBgImg"`. A full https:// URL works too.
    */
   image?: string;
 }
  
 /** Everything one module needs to build its sidebar, routes and look. */
-export interface ModuleConfig {
+export interface IModuleConfig {
   /** App code, the same as Module:AppCode in the API's appsettings.json. */
   code: string;
   /** Module name in the sidebar header and breadcrumb, e.g. "Logistic". */

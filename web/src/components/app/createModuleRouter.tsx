@@ -3,11 +3,11 @@ import { createBrowserRouter, redirect, type RouteObject } from "react-router";
 import { ModuleLayout } from "./ModuleLayout";
 import { flattenNavItems } from "./nav-util";
 import { openTab, workspaceKey } from "./workspace-store";
-import type { ModuleConfig, NavItemConfig } from "./type";
+import type { IModuleConfig, INavItemConfig } from "./type";
 
 const KEY_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-function validateConfig(items: NavItemConfig[], homeKey: string | undefined) {
+function validateConfig(items: INavItemConfig[], homeKey: string | undefined) {
   if (items?.length === 0)
     throw new Error("src/config/config.ts has no sidebar items.");
   if (homeKey && !items?.some((item) => item?.keyValue === homeKey)) {
@@ -32,7 +32,7 @@ function validateConfig(items: NavItemConfig[], homeKey: string | undefined) {
   }
 }
 
-export function createModuleRouter(config: ModuleConfig) {
+export function createModuleRouter(config: IModuleConfig) {
   const items = flattenNavItems(config);
   validateConfig(items, config?.homeKey);
   const homeKey = config?.homeKey ?? items[0].keyValue;

@@ -21,7 +21,7 @@ import { cn, Skeleton, useIsMobile } from "@moduleleague/ui";
 import { ModuleViewerTab } from "./ModuleViewerTab";
 import { NavItemContext } from "./nav-item-context";
 import { flattenNavItems } from "./nav-util";
-import type { ModuleConfig } from "./type";
+import type { IModuleConfig } from "./type";
 import {
   WorkspaceContext,
   useWorkspaceContext,
@@ -67,7 +67,7 @@ const PREVIEW: Record<DropZone, string> = {
   center: "inset-0",
 };
 
-export function WorkspaceView({ config }: { config: ModuleConfig }) {
+export function WorkspaceView({ config }: { config: IModuleConfig }) {
   const storageKey = workspaceKey(config.code);
   const workspace = useWorkspace(storageKey);
   console.log(workspace);

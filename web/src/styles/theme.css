@@ -46,7 +46,7 @@
   /*
    * 10–90 colour scales: step N mixes N% of the base colour into the page background,
    * so 10 is a pale tint and 90 is nearly the full colour (in dark mode they darken instead).
-   * Use like bg-primary-10, text-red-90, border-brand-accent-30.
+   * Use like bg-primary-10, text-red-90, border-green-30.
    * red, green, gray, purple and pink have no 50 step: Tailwind's own red-50 (its palest shade)
    * is kept, because existing code relies on it. Tailwind's red-100 … red-950 etc. still work too.
    */
@@ -59,18 +59,6 @@
   --color-primary-70: color-mix(in oklab, var(--primary) 70%, var(--background));
   --color-primary-80: color-mix(in oklab, var(--primary) 80%, var(--background));
   --color-primary-90: color-mix(in oklab, var(--primary) 90%, var(--background));
-
-  /* Second brand colour, set per module with config.theme.accent (shadcn's `accent` is the hover grey) */
-  --color-brand-accent: var(--brand-accent);
-  --color-brand-accent-10: color-mix(in oklab, var(--brand-accent) 10%, var(--background));
-  --color-brand-accent-20: color-mix(in oklab, var(--brand-accent) 20%, var(--background));
-  --color-brand-accent-30: color-mix(in oklab, var(--brand-accent) 30%, var(--background));
-  --color-brand-accent-40: color-mix(in oklab, var(--brand-accent) 40%, var(--background));
-  --color-brand-accent-50: color-mix(in oklab, var(--brand-accent) 50%, var(--background));
-  --color-brand-accent-60: color-mix(in oklab, var(--brand-accent) 60%, var(--background));
-  --color-brand-accent-70: color-mix(in oklab, var(--brand-accent) 70%, var(--background));
-  --color-brand-accent-80: color-mix(in oklab, var(--brand-accent) 80%, var(--background));
-  --color-brand-accent-90: color-mix(in oklab, var(--brand-accent) 90%, var(--background));
 
   --color-red: var(--red);
   --color-red-10: color-mix(in oklab, var(--red) 10%, var(--background));
@@ -130,7 +118,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  /* The module's brand colour; buttons, links, focus rings and the active sidebar entry use it */
+  --primary: #1d4ed8;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -141,7 +130,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: var(--primary);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -150,15 +139,15 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
+  /* Active sidebar entry: a light tint of the primary (the same as bg-primary-10) */
+  --sidebar-accent: color-mix(in oklab, var(--primary) 10%, var(--background));
+  --sidebar-accent-foreground: var(--primary);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: var(--primary);
 
-  /* Base colours for the 10–90 scales (--primary and --brand-accent are overridden per module) */
-  --brand-accent: oklch(0.606 0.25 292.717);
+  /* Base colours for the 10–90 scales (primary is --primary above) */
   --red: oklch(0.577 0.245 27.325);
   --green: oklch(0.627 0.194 149.214);
   --gray: oklch(0.551 0.027 264.364);
@@ -173,8 +162,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: #1d4ed8;
+  --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -184,7 +173,7 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: var(--primary);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -192,12 +181,12 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-accent: color-mix(in oklab, var(--primary) 10%, var(--background));
+  --sidebar-accent-foreground: var(--primary);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: var(--primary);
 }
 
 @layer base {

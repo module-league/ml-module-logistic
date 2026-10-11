@@ -1,17 +1,16 @@
 import { lazy } from "react";
 import { ChartColumn, ClipboardClock, LayoutDashboard, MapPin, PackageCheck, Truck } from "lucide-react";
-import type { ModuleConfig } from "@/components/app/type";
+import { mdBgPic1 } from "@/assets/moduleLayoutBgImg";
+import type { IModuleConfig } from "@/components/app/type";
 import { usePendingCount } from "@/services/sample-data";
 
-export const moduleConfig: ModuleConfig = {
+export const moduleConfig: IModuleConfig = {
   code: "logistic",
   title: "Logistic",
   icon: Truck,
+  // Colours (primary etc.) live in src/styles/theme.css; only the backdrop is set per module
   theme: {
-    primary: "#1d4ed8",
-    primarySoft: "#e8eefc",
-    accent: "#9333ea", 
-    background: { color: "#eef1f6", image: "mdBgPic1.jpg" },
+    background: { color: "#eef1f6", image: mdBgPic1 },
   },
   homeKey: "logistics", // switch to "dashboard" once that page is built
   groups: [

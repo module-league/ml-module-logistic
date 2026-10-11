@@ -1,66 +1,205 @@
 import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+
 import { cn } from "@/lib/utils";
-import { Slot } from "radix-ui";
+import { LoadingSpinner } from "./progress";
+import { NavLink, type NavLinkProps } from "react-router-dom";
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  cn(
+    "inline-flex gap-2 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium",
+    "ring-offset-background transition-colors focus-visible:outline-2 outline-primary disabled:pointer-events-none disabled:opacity-50",
+  ),
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
-        outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
-        ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        destructive_ghost: "text-red-600 hover:text-red-700 hover:bg-red-100",
+        destructive_outline:
+          "bg-background text-red-600 border border-red-600 hover:bg-red-100",
+        success: "bg-green-600 text-primary-foreground hover:bg-green-700",
+        success_ghost: "text-green-600 hover:text-green-700 hover:bg-green-100",
+        success_outline:
+          "bg-background text-green-600 border border-green-600 hover:bg-green-100",
+        warning: "bg-orange-600 text-primary-foreground hover:bg-orange-700",
+        warning_ghost:
+          "text-orange-600 hover:text-orange-700 hover:bg-orange-100",
+        warning_outline:
+          "bg-background text-orange-600 border border-orange-600 hover:bg-orange-100",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary: "bg-slate-200 text-secondary-foreground hover:bg-slate-300",
+        ghost: "text-secondary hover:bg-black/10 hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default:
-          "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        icon: "size-8",
-        "icon-xs":
-          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm":
-          "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
-        "icon-lg": "size-9",
+        default: "h-10 px-4 py-2",
+        md: "h-10 px-4 py-2",
+        xs: "h-7 px-2",
+        sm: "h-9 px-3",
+        lg: "h-11 px-8",
+        icon: "h-10 w-10 p-1",
+        "icon-sm": "h-7 w-7 p-0.5",
+      },
+      selected: {
+        true: "bg-slate-200 text-black hover:bg-slate-300",
       },
     },
     defaultVariants: {
       variant: "default",
-      size: "default",
+      size: "md",
     },
   },
 );
 
-function Button({
-  className,
-  variant = "default",
-  size = "default",
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
-  const Comp = asChild ? Slot.Root : "button";
+const spinnerVariants = cva("", {
+  variants: {
+    variant: {
+      default: "text-background",
+      destructive: "text-background",
+      destructive_ghost: "text-red-600",
+      destructive_outline: "text-red-600",
+      success: "text-background",
+      success_ghost: "text-green-600",
+      success_outline: "text-green-600",
+      warning: "text-background",
+      warning_ghost: "text-orange-600",
+      warning_outline: "text-orange-600",
+      outline: "",
+      secondary: "text-background",
+      ghost: "",
+      link: "",
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+});
 
-  return (
-    <Comp
-      data-slot="button"
-      data-variant={variant}
-      data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  );
+export interface ButtonProps
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+  startIcon?: React.ReactNode;
+  isLoading?: boolean;
+  /** @default 14 */
+  loadingIconSize?: number;
 }
 
-export { Button, buttonVariants };
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(props, ref) {
+    const {
+      className,
+      variant,
+      size,
+      asChild = false,
+      startIcon,
+      isLoading,
+      loadingIconSize = 14,
+      children,
+      disabled,
+      type = "button",
+      selected,
+      ...others
+    } = props;
+
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, selected, className }))}
+        ref={ref}
+        type={type}
+        disabled={disabled || isLoading}
+        {...others}
+      >
+        {size === "icon" || size === "icon-sm" ? (
+          isLoading ? (
+            <LoadingSpinner
+              size={loadingIconSize}
+              role="progressbar"
+              className={spinnerVariants({ variant })}
+            />
+          ) : (
+            // backward compaibility... unfortunate
+            <>
+              {startIcon}
+              {children}
+            </>
+          )
+        ) : (
+          <>
+            {isLoading ? (
+              <LoadingSpinner
+                size={loadingIconSize}
+                role="progressbar"
+                className={spinnerVariants({ variant })}
+              />
+            ) : (
+              startIcon
+            )}
+            {children}
+          </>
+        )}
+      </Comp>
+    );
+  },
+);
+
+const LinkButton = React.forwardRef<
+  HTMLAnchorElement,
+  Pick<
+    ButtonProps,
+    | "variant"
+    | "size"
+    | "isLoading"
+    | "selected"
+    | "children"
+    | "startIcon"
+    | "title"
+    | "style"
+  > &
+    NavLinkProps & {
+      /** True to enable built-in style for active links */
+      activeStyle?: boolean;
+    }
+>(function LinkButton(props, ref) {
+  const {
+    to,
+    className,
+    variant = "ghost",
+    size,
+    startIcon,
+    isLoading,
+    selected,
+    children,
+    activeStyle = false,
+    ...others
+  } = props;
+
+  return (
+    <NavLink
+      to={to}
+      className={(props) =>
+        cn(
+          buttonVariants({
+            variant,
+            size,
+            selected: selected || (activeStyle && props.isActive),
+          }),
+          typeof className === "function" ? className?.(props) : className,
+        )
+      }
+      ref={ref}
+      {...others}
+    >
+      {isLoading ? <LoadingSpinner width={14} role="progressbar" /> : startIcon}
+      {children}
+    </NavLink>
+  );
+});
+
+export { Button, buttonVariants, LinkButton };

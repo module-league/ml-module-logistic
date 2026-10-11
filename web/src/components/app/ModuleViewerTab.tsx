@@ -12,7 +12,7 @@ import {
   Spinner,
 } from "@moduleleague/ui";
 import { XIcon } from "@/components/custom/XIcon";
-import type { NavItemConfig } from "./type";
+import type { INavItemConfig } from "./type";
 import { useWorkspaceContext, type DraggedTab } from "./workspace-context";
 import {
   canDrop,
@@ -38,7 +38,7 @@ export function ModuleViewerTab({
     () =>
       pane.tabs
         .map((key) => items.find((item) => item.keyValue === key))
-        .filter((item): item is NavItemConfig => item !== undefined),
+        .filter((item): item is INavItemConfig => item !== undefined),
     [pane.tabs, items],
   );
   const totalTabs = useMemo(
@@ -90,7 +90,7 @@ function WorkspaceViewerTab({
   movable,
 }: {
   pane: PaneNode;
-  item: NavItemConfig;
+  item: INavItemConfig;
   active: boolean;
   focused: boolean;
   closable: boolean;

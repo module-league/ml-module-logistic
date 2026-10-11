@@ -29,7 +29,7 @@ import {
   useSidebar,
 } from "@moduleleague/ui";
 import { useCurrentUser } from "./current-user";
-import type { ModuleConfig, NavItemConfig } from "./type";
+import type { IModuleConfig, INavItemConfig } from "./type";
 import { UserAvatar } from "../custom/UserAvatar";
 
 const IS_MAC =
@@ -41,7 +41,7 @@ export function ModuleSidebar({
   config,
   className,
 }: {
-  config: ModuleConfig;
+  config: IModuleConfig;
   className?: string;
 }) {
   const [query, setQuery] = useState("");
@@ -51,7 +51,7 @@ export function ModuleSidebar({
   const collapsed = state === "collapsed" && !isMobile;
   const toggleLabel = collapsed ? "Expand sidebar" : "Collapse sidebar";
   const user = useCurrentUser();
-  const ModuleIcon = config.icon;
+  const ModuleIcon = config?.icon;
 
   // Ctrl/⌘+K anywhere, or "/" when not typing, jumps to "Search pages".
   // An effect is needed here: it is a window-wide shortcut, and React has no event for that.
@@ -206,7 +206,7 @@ export function ModuleSidebar({
 
 const useNoBadge = () => undefined;
 
-function SidebarNavItem({ item }: { item: NavItemConfig }) {
+function SidebarNavItem({ item }: { item: INavItemConfig }) {
   const path = `/${item.keyValue}`;
   const isActive = useMatch({ path, end: false }) !== null;
   const useBadge = item?.useBadge ?? useNoBadge;

@@ -4,13 +4,11 @@ import { SidebarInset, SidebarProvider, useIsMobile } from "@moduleleague/ui";
 import { ModuleSidebar } from "./ModuleSidebar";
 import { TopBarActions } from "./TopBarActions";
 import { WorkspaceView } from "./WorkspaceView";
-import type { ModuleBackground, ModuleConfig } from "./type";
-import { useModuleTheme } from "./use-module-theme";
+import type { ModuleBackground, IModuleConfig } from "./type";
 
 const BACKDROP_CLASS = "bg-cover bg-fixed bg-center";
 
-export function ModuleLayout({ config }: { config: ModuleConfig }) {
-  useModuleTheme(config.theme);
+export function ModuleLayout({ config }: { config: IModuleConfig }) {
   const isMobile = useIsMobile();
   const sidebarPanel = usePanelRef();
   const [open, setOpen] = useState(true);
@@ -77,7 +75,7 @@ export function ModuleLayout({ config }: { config: ModuleConfig }) {
   );
 }
 
-function ModuleMain({ config }: { config: ModuleConfig }) {
+function ModuleMain({ config }: { config: IModuleConfig }) {
   // const { pathname } = useLocation();
   // const active = findActiveNav(config, pathname);
   // const { isMobile: showTrigger } = useSidebar();
@@ -104,13 +102,7 @@ function backdropStyle(
   return {
     backgroundColor: background?.color ?? "var(--sidebar)",
     backgroundImage: background?.image
-      ? `url("${backgroundImageUrl(background.image)}")`
+      ? `url("${background.image}")`
       : undefined,
   };
-}
-
-function backgroundImageUrl(image: string) {
-  return image.includes("/")
-    ? image
-    : `${import.meta.env.BASE_URL}moduleLayoutBgImg/${image}`;
 }

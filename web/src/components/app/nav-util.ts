@@ -1,12 +1,12 @@
-import type { ModuleConfig, NavItemConfig } from "./type";
+import type { IModuleConfig, INavItemConfig } from "./type";
  
 /** All items of all groups, in sidebar order. */
-export function flattenNavItems(config: ModuleConfig): NavItemConfig[] {
+export function flattenNavItems(config: IModuleConfig): INavItemConfig[] {
   return config?.groups?.flatMap((group) => group?.items);
 }
  
 /** The sidebar entry (and its group) that matches the current URL. */
-export function findActiveNav(config: ModuleConfig, pathname: string) {
+export function findActiveNav(config: IModuleConfig, pathname: string) {
   for (const group of config.groups) {
     for (const item of group.items) {
       const path = `/${item.keyValue}`;
