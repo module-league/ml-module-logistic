@@ -102,10 +102,11 @@ function ModuleMain({ config }: { config: ModuleConfig }) {
   const { isMobile: showTrigger } = useSidebar();
 
   return (
-    <div className="flex min-h-full w-full flex-col p-2 md:p-3">
-      {/* Glass frame: a second, translucent border that blurs the backdrop behind it */}
-      <div className="flex flex-1 flex-col rounded-2xl border border-white/50 bg-white/25 p-1.5 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-white/5">
-        <SidebarInset className="flex-1 overflow-hidden rounded-xl border shadow-sm">
+    // Space only on the top and left: the page runs flush to the right and bottom edges
+    <div className="flex min-h-full w-full flex-col pt-2 pl-2 md:pt-3 md:pl-3">
+      {/* Glass frame: a second, translucent border (top and left only) that blurs the backdrop behind it */}
+      <div className="flex flex-1 flex-col rounded-tl-2xl border-t border-l border-white/50 bg-white/25 pt-1.5 pl-1.5 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-white/5">
+        <SidebarInset className="flex-1 overflow-hidden rounded-tl-xl border-t border-l shadow-sm">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
             {showTrigger && (
               <>

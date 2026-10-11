@@ -30,6 +30,7 @@ import {
 } from "@moduleleague/ui";
 import { useCurrentUser } from "./current-user";
 import type { ModuleConfig, NavItemConfig } from "./type";
+import { UserAvatar } from "../custom/UserAvatar";
 
 const IS_MAC =
   typeof navigator !== "undefined" &&
@@ -114,10 +115,6 @@ export function ModuleSidebar({
                   <span className="grid flex-1 text-left leading-tight">
                     <span className="flex items-center gap-1 text-base font-semibold">
                       <span className="truncate">{config.title}</span>
-                      <ChevronDown className="size-3.5! shrink-0" />
-                    </span>
-                    <span className="truncate text-sm text-muted-foreground">
-                      Module League
                     </span>
                   </span>
                 </SidebarMenuButton>
@@ -181,7 +178,7 @@ export function ModuleSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu>
+        <SidebarMenu className="space-y-2">
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Settings">
               <Settings2 />
@@ -189,16 +186,14 @@ export function ModuleSidebar({
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" tooltip={user.name}>
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                {user.initials}
-              </span>
+            <SidebarMenuButton size="lg" tooltip={user.displayName}>
+              <UserAvatar userInfo={user} className="size-7" />
               <span className="grid flex-1 text-left leading-tight">
-                <span className="truncate text-sm font-medium">
-                  {user.name}
+                <span className="truncate text-xs font-medium">
+                  {user.displayName}
                 </span>
                 <span className="truncate text-xs text-muted-foreground">
-                  {user.role}
+                  {user.userRole}
                 </span>
               </span>
             </SidebarMenuButton>
