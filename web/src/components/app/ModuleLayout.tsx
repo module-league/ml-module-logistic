@@ -1,22 +1,14 @@
 import { Suspense, useState, type CSSProperties } from "react";
-import { Outlet, useLocation } from "react-router";
+import { Outlet } from "react-router";
 import { Group, Panel, Separator, usePanelRef } from "react-resizable-panels";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-  Separator as Divider,
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
   Skeleton,
   useIsMobile,
-  useSidebar,
 } from "@moduleleague/ui";
 import { ModuleSidebar } from "./ModuleSidebar";
-import { findActiveNav } from "./nav-util";
+import { ModuleTopActivity } from "./ModuleViewerTab";
 import { TopBarActions } from "./TopBarActions";
 import type { ModuleBackground, ModuleConfig } from "./type";
 import { useModuleTheme } from "./use-module-theme";
@@ -105,34 +97,7 @@ function ModuleMain({ config }: { config: ModuleConfig }) {
         {/* Glass frame: a second, translucent border (top and left only) that blurs the backdrop behind it */}
         <div className="flex flex-1 flex-col rounded-tl-2xl border-t border-l border-white/50 bg-white/25 pt-1.5 pl-1.5 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-white/5">
           <SidebarInset className="flex-1 overflow-hidden rounded-tl-xl border-t border-l shadow-sm">
-            {/* <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
-              {showTrigger && (
-                <>
-                  <SidebarTrigger className="-ml-1" />
-                  <Divider orientation="vertical" className="mr-2 h-4" />
-                </>
-              )}
-
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:inline-flex">
-                    {config.title}
-                  </BreadcrumbItem>
-                  {active && (
-                    <>
-                      <BreadcrumbSeparator className="hidden md:inline-flex" />
-                      <BreadcrumbItem className="hidden md:inline-flex">
-                        {active.groupLabel}
-                      </BreadcrumbItem>
-                      <BreadcrumbSeparator className="hidden md:inline-flex" />
-                      <BreadcrumbItem>
-                        <BreadcrumbPage>{active.item.text}</BreadcrumbPage>
-                      </BreadcrumbItem>
-                    </>
-                  )}
-                </BreadcrumbList>
-              </Breadcrumb>
-            </header> */}
+            <ModuleTopActivity config={config} />
 
             <div className="flex-1 bg-muted/40 p-4 md:p-6">
               <div className="max-w-[calc(100%-2rem)] mx-auto w-full">
