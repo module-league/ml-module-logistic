@@ -1,57 +1,49 @@
-import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
+import { createBrowserRouter, redirect, type RouteObject } from "react-router";
 // import NotFound from "@/pages/NotFound";
 import { ModuleLayout } from "./ModuleLayout";
-import { NavItemContext } from "./nav-item-context";
 import { flattenNavItems } from "./nav-util";
-import { openRecentTab, recentTabsKey } from "./recent-tabs";
+import { openTab, workspaceKey } from "./workspace-store";
 import type { ModuleConfig, NavItemConfig } from "./type";
 
 const KEY_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-/** Catches config mistakes at startup instead of as broken links later. */
 function validateConfig(items: NavItemConfig[], homeKey: string | undefined) {
-  if (items.length === 0)
+  if (items?.length === 0)
     throw new Error("src/config/config.ts has no sidebar items.");
-  if (homeKey && !items.some((item) => item.keyValue === homeKey)) {
+  if (homeKey && !items?.some((item) => item?.keyValue === homeKey)) {
     throw new Error(
       `homeKey "${homeKey}" does not match any keyValue in src/config/config.ts.`,
     );
   }
 
-  const seen = new Set<string>();
+  const visited = new Set<string>();
   for (const item of items) {
     if (!KEY_PATTERN.test(item.keyValue)) {
       throw new Error(
         `keyValue "${item.keyValue}" must be kebab-case, e.g. "awaiting-task".`,
       );
     }
-    if (seen.has(item.keyValue)) {
+    if (visited.has(item.keyValue)) {
       throw new Error(
         `keyValue "${item.keyValue}" is used twice in src/config/config.ts.`,
       );
     }
-    seen.add(item.keyValue);
+    visited.add(item.keyValue);
   }
 }
 
-/** One route per sidebar item, all inside the module layout. */
 export function createModuleRouter(config: ModuleConfig) {
   const items = flattenNavItems(config);
-  validateConfig(items, config.homeKey);
-  const homeKey = config.homeKey ?? items[0].keyValue;
-  const tabsKey = recentTabsKey(config.code);
+  validateConfig(items, config?.homeKey);
+  const homeKey = config?.homeKey ?? items[0].keyValue;
+  const storageKey = workspaceKey(config?.code);
 
-  const pageRoutes: RouteObject[] = items.map((item) => ({
-    path: item.keyValue,
+  const pageRoutes: RouteObject[] = items?.map((item) => ({
+    path: item?.keyValue,
     loader: () => {
-      openRecentTab(tabsKey, item.keyValue);
+      openTab(storageKey, item?.keyValue);
       return null;
     },
-    element: (
-      <NavItemContext.Provider value={item}>
-        <item.page />
-      </NavItemContext.Provider>
-    ),
   }));
 
   return createBrowserRouter([
@@ -59,10 +51,10 @@ export function createModuleRouter(config: ModuleConfig) {
       path: "/",
       element: <ModuleLayout config={config} />,
       children: [
-        // "/" opens the home page (homeKey, or the first sidebar item)
-        { index: true, element: <Navigate to={`/${homeKey}`} replace /> },
+        // "/" and unknown URLs open the home page (homeKey, or the first sidebar item)
+        { index: true, loader: () => redirect(`/${homeKey}`) },
         ...pageRoutes,
-        { path: "*", element: <div /> },
+        { path: "*", loader: () => redirect(`/${homeKey}`) },
       ],
     },
   ]);

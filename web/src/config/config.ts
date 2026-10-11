@@ -2,7 +2,6 @@ import { lazy } from "react";
 import { ChartColumn, ClipboardClock, LayoutDashboard, MapPin, PackageCheck, Truck } from "lucide-react";
 import type { ModuleConfig } from "@/components/app/type";
 import { usePendingCount } from "@/services/sample-data";
- 
 
 export const moduleConfig: ModuleConfig = {
   code: "logistic",
@@ -11,8 +10,7 @@ export const moduleConfig: ModuleConfig = {
   theme: {
     primary: "#1d4ed8",
     primarySoft: "#e8eefc",
-    accent: "#9333ea", // second brand colour: bg-brand-accent, bg-brand-accent-10 … 90
-    // Backdrop around the main page; image is a file name in public/moduleLayoutBgImg
+    accent: "#9333ea", 
     background: { color: "#eef1f6", image: "mdBgPic1.jpg" },
   },
   homeKey: "logistics", // switch to "dashboard" once that page is built

@@ -2,7 +2,7 @@ import type { ModuleConfig, NavItemConfig } from "./type";
  
 /** All items of all groups, in sidebar order. */
 export function flattenNavItems(config: ModuleConfig): NavItemConfig[] {
-  return config.groups.flatMap((group) => group.items);
+  return config?.groups?.flatMap((group) => group?.items);
 }
  
 /** The sidebar entry (and its group) that matches the current URL. */

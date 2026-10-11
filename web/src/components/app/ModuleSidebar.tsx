@@ -209,7 +209,7 @@ const useNoBadge = () => undefined;
 function SidebarNavItem({ item }: { item: NavItemConfig }) {
   const path = `/${item.keyValue}`;
   const isActive = useMatch({ path, end: false }) !== null;
-  const useBadge = item.useBadge ?? useNoBadge;
+  const useBadge = item?.useBadge ?? useNoBadge;
   const badge = useBadge();
   const Icon = item.icon;
 

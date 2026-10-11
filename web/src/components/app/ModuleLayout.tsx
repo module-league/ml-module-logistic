@@ -1,20 +1,14 @@
-import { Suspense, useState, type CSSProperties } from "react";
-import { Outlet } from "react-router";
+import { useState, type CSSProperties } from "react";
 import { Group, Panel, Separator, usePanelRef } from "react-resizable-panels";
-import {
-  SidebarInset,
-  SidebarProvider,
-  Skeleton,
-  useIsMobile,
-} from "@moduleleague/ui";
+import { SidebarInset, SidebarProvider, useIsMobile } from "@moduleleague/ui";
 import { ModuleSidebar } from "./ModuleSidebar";
-import { ModuleTopActivity } from "./ModuleViewerTab";
 import { TopBarActions } from "./TopBarActions";
+import { WorkspaceView } from "./WorkspaceView";
 import type { ModuleBackground, ModuleConfig } from "./type";
 import { useModuleTheme } from "./use-module-theme";
 
 const BACKDROP_CLASS = "bg-cover bg-fixed bg-center";
-/** Sidebar on the left; header and the current page on the right. */
+
 export function ModuleLayout({ config }: { config: ModuleConfig }) {
   useModuleTheme(config.theme);
   const isMobile = useIsMobile();
@@ -49,7 +43,6 @@ export function ModuleLayout({ config }: { config: ModuleConfig }) {
         } as CSSProperties
       }
     >
-      {/* Grab zone of at least 16px (28px on touch) centred on the separator */}
       <Group
         orientation="horizontal"
         style={{ height: "100svh" }}
@@ -90,26 +83,18 @@ function ModuleMain({ config }: { config: ModuleConfig }) {
   // const { isMobile: showTrigger } = useSidebar();
 
   return (
-    <>
+    <div className="flex h-svh w-full flex-col">
       <TopBarActions />
 
-      <div className="flex min-h-full w-full flex-col pl-4">
+      <div className="flex min-h-0 w-full flex-1 flex-col pl-4">
         {/* Glass frame: a second, translucent border (top and left only) that blurs the backdrop behind it */}
-        <div className="flex flex-1 flex-col rounded-tl-2xl border-t border-l border-white/50 bg-white/25 pt-1.5 pl-1.5 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-white/5">
-          <SidebarInset className="flex-1 overflow-hidden rounded-tl-xl border-t border-l shadow-sm">
-            <ModuleTopActivity config={config} />
-
-            <div className="flex-1 bg-muted/40 p-4 md:p-6">
-              <div className="max-w-[calc(100%-2rem)] mx-auto w-full">
-                <Suspense fallback={<PageLoading />}>
-                  <Outlet />
-                </Suspense>
-              </div>
-            </div>
+        <div className="flex min-h-0 flex-1 flex-col rounded-tl-2xl border-t border-l border-white/50 bg-white/25 pt-1.5 pl-1.5 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-white/5">
+          <SidebarInset className="min-h-0 flex-1 overflow-hidden rounded-tl-xl border-t border-l shadow-sm">
+            <WorkspaceView config={config} />
           </SidebarInset>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -128,14 +113,4 @@ function backgroundImageUrl(image: string) {
   return image.includes("/")
     ? image
     : `${import.meta.env.BASE_URL}moduleLayoutBgImg/${image}`;
-}
-
-function PageLoading() {
-  return (
-    <div className="grid gap-4">
-      <Skeleton className="h-8 w-64" />
-      <Skeleton className="h-4 w-96 max-w-full" />
-      <Skeleton className="h-64 w-full" />
-    </div>
-  );
 }
