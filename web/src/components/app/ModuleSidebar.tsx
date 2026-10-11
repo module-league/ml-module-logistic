@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import { NavLink, useMatch } from "react-router";
 import {
   ChevronDown,
+  CircleQuestionMark,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
@@ -98,7 +99,7 @@ export function ModuleSidebar({
           )}
         >
           <SidebarMenu className="min-w-0 flex-1">
-            {!collapsed && (
+            {/* {!collapsed && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   size="lg"
@@ -119,7 +120,7 @@ export function ModuleSidebar({
                   </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            )}
+            )} */}
           </SidebarMenu>
           <Button
             variant="ghost"
@@ -128,9 +129,14 @@ export function ModuleSidebar({
             aria-label={toggleLabel}
             title={toggleLabel}
             className="shrink-0 text-muted-foreground"
-          >
-            {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
-          </Button>
+            startIcon={
+              collapsed ? (
+                <PanelLeftOpen size={13} />
+              ) : (
+                <PanelLeftClose size={13} />
+              )
+            }
+          ></Button>
         </div>
 
         {!collapsed && (
@@ -178,24 +184,19 @@ export function ModuleSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu className="space-y-2">
+        <SidebarMenu>
+          <SidebarGroupLabel>System</SidebarGroupLabel>
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Settings">
               <Settings2 />
               <span>Settings</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" tooltip={user.displayName}>
-              <UserAvatar userInfo={user} className="size-7" />
-              <span className="grid flex-1 text-left leading-tight">
-                <span className="truncate text-xs font-medium">
-                  {user.displayName}
-                </span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {user.userRole}
-                </span>
-              </span>
+            <SidebarMenuButton tooltip="Settings">
+              <CircleQuestionMark />
+              <span>Help Center</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -219,9 +220,12 @@ function SidebarNavItem({ item }: { item: INavItemConfig }) {
         asChild
         isActive={isActive}
         tooltip={item.text}
-        className={item.className}
+        className={cn("relative", item?.className)}
       >
         <NavLink to={path} title={item.description}>
+          {isActive && (
+            <span className="absolute top-1/2 left-0 h-4 -translate-y-1/2 border-l-2 border-primary" />
+          )}
           {Icon && <Icon />}
           <span>{item.text}</span>
         </NavLink>
