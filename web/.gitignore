@@ -32,3 +32,13 @@ dist-ssr
 # local scripts
 /scripts
 
+# Claude Code project instructions, local overrides and personal preferences
+CLAUDE.md
+CLAUDE.local.md
+
+# Claude Code internal states, local settings, and tasks
+.claude/settings.local.json
+.claude/sessions/
+.claude/todos/
+.claude/worktrees/
+.claude/scheduled_tasks.*
