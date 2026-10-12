@@ -45,13 +45,13 @@ export const moduleConfig: IModuleConfig = {
           useBadge: usePendingCount,
           page: lazy(() => import("@/components/pages/AwaitingTask")),
         },
-        // {
-        //   keyValue: "delivered",
-        //   text: "Delivered",
-        //   description: "Shipments that reached their destination.",
-        //   icon: PackageCheck,
-        //   page: ComingSoon,
-        // },
+        {
+          keyValue: "record-test",
+          text: "Record",
+          description: "Shipments that reached their destination.",
+          icon: PackageCheck,
+          page: lazy(() => import("@/components/pages/RecordTest")),
+        },
         // {
         //   keyValue: "routes",
         //   text: "Routes",
