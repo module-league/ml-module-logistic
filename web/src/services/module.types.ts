@@ -18,6 +18,7 @@ export interface INavItemConfig {
   className?: string;
   /** Optional hook returning a count for the pill on the right, e.g. items waiting. */
   useBadge?: () => number | undefined;
+  hidePageSeparator? :boolean;
 }
  
 /** A titled section of the sidebar, e.g. "Operations". */

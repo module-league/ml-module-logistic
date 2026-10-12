@@ -47,9 +47,10 @@ export const moduleConfig: IModuleConfig = {
         },
         {
           keyValue: "record-test",
-          text: "Record",
-          description: "Shipments that reached their destination.",
+          text: "Record Test",
+          description: "",
           icon: PackageCheck,
+          hidePageSeparator: false,
           page: lazy(() => import("@/components/pages/RecordTest")),
         },
         // {

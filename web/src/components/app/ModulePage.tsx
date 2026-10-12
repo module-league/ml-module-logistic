@@ -13,11 +13,16 @@ export function ModulePage({ actions, children }: ModulePageProps) {
 
   return (
     <div className="flex flex-col">
-      <PageHeader
-        title={item.text}
-        description={item.description}
-        actions={actions}
-      />
+      {item?.text?.length || item?.description?.length ? (
+        <PageHeader
+          title={item?.text}
+          description={item?.description}
+          hidePageSeparator={item?.hidePageSeparator}
+          actions={actions}
+        />
+      ) : (
+        <></>
+      )}
       {children}
     </div>
   );
