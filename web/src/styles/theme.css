@@ -218,6 +218,7 @@
     from {
       clip-path: inset(100% 0 0 0);
     }
+
     to {
       clip-path: inset(0);
     }
@@ -228,17 +229,20 @@
       opacity: 0;
     }
   }
+
   @keyframes dialog-overlay-out {
     to {
       opacity: 0;
     }
   }
+
   @keyframes dialog-in {
     from {
       opacity: 0;
       transform: translateY(8px) scale(0.96);
     }
   }
+
   @keyframes dialog-out {
     to {
       opacity: 0;

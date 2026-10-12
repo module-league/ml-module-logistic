@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from "react";
-import { Group, Panel, Separator, usePanelRef } from "react-resizable-panels";
+import { Group, Panel, usePanelRef } from "react-resizable-panels";
 import { SidebarInset, SidebarProvider, useIsMobile } from "@moduleleague/ui";
+import { ResizeSeparator } from "../custom/ResizeSeparator";
 import { ModuleSidebar } from "./ModuleSidebar";
 import { TopBarActions } from "./TopBarActions";
 import { WorkspaceView } from "./WorkspaceView";
@@ -43,6 +44,7 @@ export function ModuleLayout({ config }: { config: IModuleConfig }) {
         orientation="horizontal"
         style={{ height: "100svh" }}
         resizeTargetMinimumSize={{ fine: 16, coarse: 28 }}
+        disableCursor
       >
         <Panel
           id="sidebar"
@@ -64,7 +66,10 @@ export function ModuleLayout({ config }: { config: IModuleConfig }) {
             className="transition-none group-data-[side=left]:border-r-0"
           />
         </Panel>
-        <Separator className="z-20 w-1 shadow-sm bg-background bg-sidebar-accent hover:bg-primary" />
+        <ResizeSeparator
+          orientation="horizontal"
+          className="z-20 shadow-sm bg-background bg-sidebar-accent data-[separator=active]:bg-primary data-[separator=hover]:bg-primary"
+        />
         <Panel id="content">
           <ModuleMain config={config} />
         </Panel>

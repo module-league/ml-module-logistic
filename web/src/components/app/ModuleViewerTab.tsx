@@ -213,6 +213,17 @@ function WorkspaceViewerTab({
           >
             <XIcon className="size-3.5" />
           </button>
+
+          {active && (
+            <span
+              className={cn(
+                "pointer-events-none absolute inset-x-2 bottom-0 h-0.5 rounded-full",
+                focused
+                  ? "bg-primary shadow-[0_2px_6px_color-mix(in_oklab,var(--primary)_70%,transparent)]"
+                  : "bg-foreground/25 shadow-[0_2px_4px_rgb(0_0_0/0.15)]",
+              )}
+            />
+          )}
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>

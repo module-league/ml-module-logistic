@@ -12,13 +12,9 @@ import {
   type CollisionDetection,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import {
-  Group,
-  Panel,
-  Separator,
-  useDefaultLayout,
-} from "react-resizable-panels";
+import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
 import { cn, Skeleton, useIsMobile } from "@moduleleague/ui";
+import { ResizeSeparator } from "../custom/ResizeSeparator";
 import { ModuleViewerTab } from "./ModuleViewerTab";
 import { SNAP_PANEL_ID, SnapLayoutDrawer } from "./SnapLayoutDrawer";
 import { NavItemContext } from "../../context/navItem.context";
@@ -182,7 +178,6 @@ function SplitView({ node }: { node: SplitNode }) {
     id: `${storageKey}:${node.id}`,
     panelIds: node.children.map((child) => child.id),
   });
-  const horizontal = node.orientation === "horizontal";
 
   return (
     <Group
@@ -190,15 +185,14 @@ function SplitView({ node }: { node: SplitNode }) {
       defaultLayout={defaultLayout}
       onLayoutChanged={onLayoutChanged}
       resizeTargetMinimumSize={{ fine: 12, coarse: 24 }}
+      disableCursor
     >
       {node.children.map((child, index) => (
         <Fragment key={child.id}>
           {index > 0 && (
-            <Separator
-              className={cn(
-                "shadow-sm bg-background bg-sidebar-accent hover:bg-primary",
-                horizontal ? "w-1" : "h-1",
-              )}
+            <ResizeSeparator
+              orientation={node.orientation}
+              className="shadow-sm bg-background bg-sidebar-accent data-[separator=active]:bg-primary data-[separator=hover]:bg-primary"
             />
           )}
           <Panel id={child.id} minSize={MIN_PANE_SIZE}>
