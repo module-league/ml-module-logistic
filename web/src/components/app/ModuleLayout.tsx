@@ -4,24 +4,20 @@ import { SidebarInset, SidebarProvider, useIsMobile } from "@moduleleague/ui";
 import { ModuleSidebar } from "./ModuleSidebar";
 import { TopBarActions } from "./TopBarActions";
 import { WorkspaceView } from "./WorkspaceView";
-import type {
-  ModuleBackground,
-  IModuleConfig,
-} from "../../services/module.types";
+import type { IModuleConfig } from "../../services/module.types";
 
-const BACKDROP_CLASS = "bg-cover bg-fixed bg-center";
+const BACKDROP_CLASS = "bg-sidebar bg-(image:--module-backdrop) bg-fixed";
 
 export function ModuleLayout({ config }: { config: IModuleConfig }) {
   const isMobile = useIsMobile();
   const sidebarPanel = usePanelRef();
   const [open, setOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState<number>();
-  const backdrop = backdropStyle(config.theme.background);
 
   // Phones get the sidebar as a slide-over sheet, so there is nothing to resize
   if (isMobile) {
     return (
-      <SidebarProvider className={BACKDROP_CLASS} style={backdrop}>
+      <SidebarProvider className={BACKDROP_CLASS}>
         <ModuleSidebar config={config} />
         <ModuleMain config={config} />
       </SidebarProvider>
@@ -38,10 +34,9 @@ export function ModuleLayout({ config }: { config: IModuleConfig }) {
       }}
       className={BACKDROP_CLASS}
       style={
-        {
-          ...backdrop,
-          ...(sidebarWidth && { "--sidebar-width": `${sidebarWidth}px` }),
-        } as CSSProperties
+        sidebarWidth
+          ? ({ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties)
+          : undefined
       }
     >
       <Group
@@ -97,15 +92,4 @@ function ModuleMain({ config }: { config: IModuleConfig }) {
       </div>
     </div>
   );
-}
-
-function backdropStyle(
-  background: ModuleBackground | undefined,
-): CSSProperties {
-  return {
-    backgroundColor: background?.color ?? "var(--sidebar)",
-    backgroundImage: background?.image
-      ? `url("${background.image}")`
-      : undefined,
-  };
 }

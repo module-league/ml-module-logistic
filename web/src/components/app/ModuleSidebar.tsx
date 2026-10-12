@@ -35,6 +35,7 @@ import type {
   INavItemConfig,
 } from "../../services/module.types";
 import { UserAvatar } from "../custom/UserAvatar";
+import { ModuleSettings } from "./ModuleSettings";
 
 const IS_MAC =
   typeof navigator !== "undefined" &&
@@ -192,10 +193,12 @@ export function ModuleSidebar({
         <SidebarMenu>
           <SidebarGroupLabel>System</SidebarGroupLabel>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Settings">
-              <Settings2 />
-              <span>Settings</span>
-            </SidebarMenuButton>
+            <ModuleSettings config={config}>
+              <SidebarMenuButton tooltip="Settings">
+                <Settings2 />
+                <span>Settings</span>
+              </SidebarMenuButton>
+            </ModuleSettings>
           </SidebarMenuItem>
 
           <SidebarMenuItem>

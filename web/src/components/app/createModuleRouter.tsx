@@ -1,4 +1,9 @@
 import { createBrowserRouter, redirect, type RouteObject } from "react-router";
+import {
+  applyModuleTheme,
+  readModuleSettings,
+  settingsKey,
+} from "../../lib/moduleSettingsUtil";
 // import NotFound from "@/pages/NotFound";
 import { ModuleLayout } from "./ModuleLayout";
 import { flattenNavItems } from "../../lib/navUtil";
@@ -43,6 +48,7 @@ export function createModuleRouter(config: IModuleConfig) {
   validateConfig(items, config?.homeKey);
   const homeKey = config?.homeKey ?? items[0].keyValue;
   const storageKey = workspaceKey(config?.code);
+  applyModuleTheme(readModuleSettings(settingsKey(config?.code)));
 
   const pageRoutes: RouteObject[] = items?.map((item) => ({
     path: item?.keyValue,

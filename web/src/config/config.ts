@@ -1,6 +1,5 @@
 import { lazy } from "react";
 import { ChartColumn, ClipboardClock, LayoutDashboard, MapPin, PackageCheck, Truck } from "lucide-react";
-import { mdBgPic1 } from "@/assets/moduleLayoutBgImg";
 import type { IModuleConfig } from "@/services/module.types";
 import { usePendingCount } from "@/services/sample-data";
 
@@ -8,10 +7,6 @@ export const moduleConfig: IModuleConfig = {
   code: "logistic",
   title: "Logistic",
   icon: Truck,
-  // Colours (primary etc.) live in src/styles/theme.css; only the backdrop is set per module
-  theme: {
-    background: { color: "#eef1f6", image: mdBgPic1 },
-  },
   homeKey: "logistics", // switch to "dashboard" once that page is built
   groups: [
     // {
