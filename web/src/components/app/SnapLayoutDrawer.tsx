@@ -15,10 +15,10 @@ export function SnapLayoutDrawer() {
   const { setNodeRef } = useDroppable({ id: SNAP_PANEL_ID });
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center">
       <div
         ref={setNodeRef}
-        className="animate-slide-down rounded-b-xl border border-t-0 bg-popover px-4 pt-2.5 pb-3 text-popover-foreground shadow-xl"
+        className="animate-slide-up rounded-t-xl border border-b-0 bg-popover px-4 pt-2.5 pb-3 text-popover-foreground shadow-[0_-8px_24px_-6px_rgb(0_0_0/0.15)]"
       >
         <p className="mb-2 text-center text-xs text-muted-foreground">
           Drop on a half to split, or on a pane to move the tab there

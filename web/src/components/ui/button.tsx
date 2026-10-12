@@ -99,7 +99,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       asChild = false,
       startIcon,
       isLoading,
-      loadingIconSize = 14,
+      loadingIconSize = 13,
       children,
       disabled,
       type = "button",

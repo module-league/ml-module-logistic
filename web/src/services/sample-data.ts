@@ -73,3 +73,30 @@ export function usePendingCount(): number {
   return useSampleLogistics().filter((r) => r.status === "Pending").length;
 }
 
+
+export const SAMPLE_PEOPLE: IUserInfo[] = [
+  person("u1", "Aisyah Rahman", "Logistic admin"),
+  person("u2", "Daniel Tan", "Dispatcher"),
+  person("u3", "Priya Nair", "Dispatcher"),
+  person("u4", "Hafiz Ismail", "Driver"),
+  person("u5", "Mei Ling Wong", "Warehouse lead"),
+  person("u6", "Ravi Kumar", "Driver"),
+  person("u7", "Siti Nurhaliza", "Customer service"),
+  person("u8", "Jason Lim", "Finance"),
+  person("u9", "Nurul Huda", "Driver"),
+];
+
+function person(id: string, displayName: string, userRole: string): IUserInfo {
+  const [firstName, ...rest] = displayName.split(" ");
+  const username = displayName.toLowerCase().replace(/\s+/g, ".");
+  return {
+    id,
+    displayName,
+    firstName,
+    lastName: rest.join(" "),
+    username,
+    email: `${username}@example.com`,
+    userRole,
+    createdTime: "2026-09-01T00:00:00Z",
+  };
+}

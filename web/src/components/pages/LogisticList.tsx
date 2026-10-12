@@ -48,16 +48,16 @@ export default function LogisticList() {
   return (
     <ModulePage
       actions={
-        <>
-          <Button variant="outline" onClick={notYet}>
-            <Download />
+        <div className="flex justify-end gap-2 w-full">
+          <Button variant="outline" onClick={notYet} size="xs">
+            <Download size={13} />
             Export
           </Button>
-          <Button onClick={notYet}>
-            <Plus />
+          <Button onClick={notYet} size="xs">
+            <Plus size={13} />
             New record
           </Button>
-        </>
+        </div>
       }
     >
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -125,9 +125,7 @@ export default function LogisticList() {
                   {l.origin} <span className="text-muted-foreground">→</span>{" "}
                   {l.destination}
                 </TableCell>
-                <TableCell>
-                  {STATUS_LABELS[l?.status]}
-                </TableCell>
+                <TableCell>{STATUS_LABELS[l?.status]}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {dateToFriendlyLongString(l.createTime)}
                 </TableCell>

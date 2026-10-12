@@ -2,11 +2,11 @@
 @import "./styles/theme.css";
 
 @theme {
-  --animate-slide-down: slide-down 160ms ease-out;
+  --animate-slide-up: slide-up 160ms ease-out;
 
-  @keyframes slide-down {
+  @keyframes slide-up {
     from {
-      clip-path: inset(0 0 100% 0);
+      clip-path: inset(100% 0 0 0);
     }
     to {
       clip-path: inset(0);
