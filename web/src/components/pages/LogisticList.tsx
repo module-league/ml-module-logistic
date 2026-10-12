@@ -13,7 +13,6 @@ import {
   toast,
 } from "@moduleleague/ui";
 import { ModulePage } from "@/components/app/ModulePage";
-import { StatusBadge } from "@/services/StatusBadge";
 import { useSampleLogistics } from "@/services/sample-data";
 import {
   LOGISTIC_STATUSES,
@@ -127,7 +126,7 @@ export default function LogisticList() {
                   {l.destination}
                 </TableCell>
                 <TableCell>
-                  <StatusBadge status={l.status} />
+                  {STATUS_LABELS[l?.status]}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {dateToFriendlyLongString(l.createTime)}

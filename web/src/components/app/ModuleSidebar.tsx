@@ -29,8 +29,11 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@moduleleague/ui";
-import { useCurrentUser } from "./current-user";
-import type { IModuleConfig, INavItemConfig } from "./type";
+import { useCurrentUser } from "../../services/current.user";
+import type {
+  IModuleConfig,
+  INavItemConfig,
+} from "../../services/module.types";
 import { UserAvatar } from "../custom/UserAvatar";
 
 const IS_MAC =

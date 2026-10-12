@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import { ChartColumn, ClipboardClock, LayoutDashboard, MapPin, PackageCheck, Truck } from "lucide-react";
 import { mdBgPic1 } from "@/assets/moduleLayoutBgImg";
-import type { IModuleConfig } from "@/components/app/type";
+import type { IModuleConfig } from "@/services/module.types";
 import { usePendingCount } from "@/services/sample-data";
 
 export const moduleConfig: IModuleConfig = {

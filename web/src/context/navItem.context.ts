@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { INavItemConfig } from  "./type";
+import type { INavItemConfig } from  "../services/module.types";
  
 /** Holds the config entry of the page currently shown. Set by the router. */
 export const NavItemContext = createContext<INavItemConfig | null>(null);

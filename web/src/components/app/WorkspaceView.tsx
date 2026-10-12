@@ -19,15 +19,15 @@ import {
 } from "react-resizable-panels";
 import { cn, Skeleton, useIsMobile } from "@moduleleague/ui";
 import { ModuleViewerTab } from "./ModuleViewerTab";
-import { NavItemContext } from "./nav-item-context";
-import { flattenNavItems } from "./nav-util";
-import type { IModuleConfig } from "./type";
+import { NavItemContext } from "../../context/navItem.context";
+import { flattenNavItems } from "../../lib/navUtil";
+import type { IModuleConfig } from "../../services/module.types";
 import {
   WorkspaceContext,
   useWorkspaceContext,
   type DraggedTab,
   type WorkspaceContextValue,
-} from "./workspace-context";
+} from "../../context/workspace.context";
 import {
   canDrop,
   findPane,
@@ -36,13 +36,15 @@ import {
   moveTab,
   useWorkspace,
   workspaceKey,
-  type DropTarget,
-  type DropZone,
-  type LayoutNode,
-  type PaneNode,
-  type SplitEdge,
-  type SplitNode,
-} from "./workspace-store";
+} from "../../lib/workspaceUtil";
+import type {
+  DropTarget,
+  DropZone,
+  LayoutNode,
+  PaneNode,
+  SplitEdge,
+  SplitNode,
+} from "../../services/workspace.types";
 
 // Panes can't be resized smaller than this (px).
 const MIN_PANE_SIZE = 280;

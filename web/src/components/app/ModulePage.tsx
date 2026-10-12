@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { PageHeader } from "@moduleleague/ui";
-import { useCurrentNavItem } from "./nav-item-context";
+import { useCurrentNavItem } from "../../context/navItem.context";
 
 interface ModulePageProps {
   /** Buttons shown on the right of the page header. */

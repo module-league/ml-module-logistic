@@ -4,7 +4,10 @@ import { SidebarInset, SidebarProvider, useIsMobile } from "@moduleleague/ui";
 import { ModuleSidebar } from "./ModuleSidebar";
 import { TopBarActions } from "./TopBarActions";
 import { WorkspaceView } from "./WorkspaceView";
-import type { ModuleBackground, IModuleConfig } from "./type";
+import type {
+  ModuleBackground,
+  IModuleConfig,
+} from "../../services/module.types";
 
 const BACKDROP_CLASS = "bg-cover bg-fixed bg-center";
 

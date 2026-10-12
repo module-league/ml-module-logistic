@@ -1,11 +1,9 @@
-import type { IModuleConfig, INavItemConfig } from "./type";
+import type { IModuleConfig, INavItemConfig } from "../services/module.types";
  
-/** All items of all groups, in sidebar order. */
 export function flattenNavItems(config: IModuleConfig): INavItemConfig[] {
   return config?.groups?.flatMap((group) => group?.items);
 }
  
-/** The sidebar entry (and its group) that matches the current URL. */
 export function findActiveNav(config: IModuleConfig, pathname: string) {
   for (const group of config.groups) {
     for (const item of group.items) {
@@ -18,7 +16,6 @@ export function findActiveNav(config: IModuleConfig, pathname: string) {
   return undefined;
 }
  
-/** "awaiting-task" → "AwaitingTask": the expected page file name. */
 export function toPageFileName(keyValue: string): string {
   return keyValue
     .split("-")

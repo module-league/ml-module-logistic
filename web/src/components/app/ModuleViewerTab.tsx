@@ -12,18 +12,23 @@ import {
   Spinner,
 } from "@moduleleague/ui";
 import { XIcon } from "@/components/custom/XIcon";
-import type { INavItemConfig } from "./type";
-import { useWorkspaceContext, type DraggedTab } from "./workspace-context";
+import type { INavItemConfig } from "../../services/module.types";
+import {
+  useWorkspaceContext,
+  type DraggedTab,
+} from "../../context/workspace.context";
 import {
   canDrop,
   closeTab,
   focusedKey,
   listPanes,
   moveTab,
-  type DropTarget,
-  type PaneNode,
-  type SplitEdge,
-} from "./workspace-store";
+} from "../../lib/workspaceUtil";
+import type {
+  DropTarget,
+  PaneNode,
+  SplitEdge,
+} from "../../services/workspace.types";
 
 export function ModuleViewerTab({
   pane,

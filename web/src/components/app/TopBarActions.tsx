@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@moduleleague/ui";
 import { UserAvatar } from "@/components/custom/UserAvatar";
-import { useCurrentUser } from "./current-user";
+import { useCurrentUser } from "../../services/current.user";
 
 /** Right side of the top bar: notifications, then the signed-in user. */
 export function TopBarActions() {

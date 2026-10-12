@@ -1,9 +1,15 @@
 import { createBrowserRouter, redirect, type RouteObject } from "react-router";
 // import NotFound from "@/pages/NotFound";
 import { ModuleLayout } from "./ModuleLayout";
-import { flattenNavItems } from "./nav-util";
-import { openTab, workspaceKey } from "./workspace-store";
-import type { IModuleConfig, INavItemConfig } from "./type";
+import { flattenNavItems } from "../../lib/navUtil";
+import {
+  openTab,
+  workspaceKey,
+} from "../../lib/workspaceUtil";
+import type {
+  IModuleConfig,
+  INavItemConfig,
+} from "../../services/module.types";
 
 const KEY_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 

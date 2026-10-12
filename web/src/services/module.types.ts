@@ -21,7 +21,7 @@ export interface INavItemConfig {
 }
  
 /** A titled section of the sidebar, e.g. "Operations". */
-export interface NavGroupConfig {
+export interface INavGroupConfig {
   label: string;
   items: INavItemConfig[];
 }
@@ -54,5 +54,5 @@ export interface IModuleConfig {
   theme: ModuleTheme;
   /** keyValue of the page that "/" opens. Defaults to the first sidebar item. */
   homeKey?: string;
-  groups: NavGroupConfig[];
+  groups: INavGroupConfig[];
 }

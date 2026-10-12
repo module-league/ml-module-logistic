@@ -1,37 +1,11 @@
 import { useSyncExternalStore } from "react";
-
-
-// split side by side ("horizontal") or one above the other ("vertical").
-export interface PaneNode {
-  type: "pane";
-  id: string;
-  /** keyValues of the pages in this pane, in tab order. */
-  tabs: string[];
-  activeKey: string | null;
-}
-
-export interface SplitNode {
-  type: "split";
-  id: string;
-  orientation: "horizontal" | "vertical";
-  children: LayoutNode[];
-}
-
-export type LayoutNode = PaneNode | SplitNode;
-
-export interface Workspace {
-  root: LayoutNode;
-  /** The pane the URL follows; new pages open here. */
-  currentViewerId: string;
-}
-
-export type SplitEdge = "left" | "right" | "top" | "bottom";
-export type DropZone = SplitEdge | "center";
-/** Where a dragged tab is dropped: an edge of a pane splits it, the center moves the tab into it. */
-export interface DropTarget {
-  paneId: string;
-  zone: DropZone;
-}
+import type {
+  DropTarget,
+  IWorkspace,
+  LayoutNode,
+  PaneNode,
+  SplitEdge,
+} from "../services/workspace.types";
 
 /** Splitting stops here so panes stay usable. */
 export const MAX_PANES = 2;
@@ -52,7 +26,7 @@ export function findPane(node: LayoutNode, id: string): PaneNode | undefined {
 }
 
 /** The page the URL should show: the focused pane's active tab. */
-export function focusedKey(workspace: Workspace): string | null {
+export function focusedKey(workspace: IWorkspace): string | null {
   return findPane(workspace.root, workspace.currentViewerId)?.activeKey ?? null;
 }
 
@@ -110,10 +84,10 @@ function withoutTab(pane: PaneNode, key: string): PaneNode {
 }
 
 // ---- Store ----
-const cache = new Map<string, Workspace>();
+const cache = new Map<string, IWorkspace>();
 const listeners = new Set<() => void>();
 
-function emptyWorkspace(tabs: string[] = []): Workspace {
+function emptyWorkspace(tabs: string[] = []): IWorkspace {
   return {
     root: { type: "pane", id: "main", tabs, activeKey: tabs.at(-1) ?? null },
     currentViewerId: "main",
@@ -128,11 +102,11 @@ function isNode(value: unknown): value is LayoutNode {
   return false;
 }
 
-function load(storageKey: string): Workspace {
+function load(storageKey: string): IWorkspace {
   try {
     const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? "null");
-    if (saved && typeof saved === "object" && isNode((saved as Workspace).root)) {
-      const workspace = saved as Workspace;
+    if (saved && typeof saved === "object" && isNode((saved as IWorkspace).root)) {
+      const workspace = saved as IWorkspace;
       const focusedExists = findPane(workspace.root, workspace.currentViewerId);
       return focusedExists ? workspace : { ...workspace, currentViewerId: listPanes(workspace.root)[0].id };
     }
@@ -145,7 +119,7 @@ function load(storageKey: string): Workspace {
   return emptyWorkspace();
 }
 
-function read(storageKey: string): Workspace {
+function read(storageKey: string): IWorkspace {
   let workspace = cache.get(storageKey);
   if (!workspace) {
     workspace = load(storageKey);
@@ -154,7 +128,7 @@ function read(storageKey: string): Workspace {
   return workspace;
 }
 
-function write(storageKey: string, workspace: Workspace) {
+function write(storageKey: string, workspace: IWorkspace) {
   cache.set(storageKey, workspace);
   try {
     localStorage.setItem(storageKey, JSON.stringify(workspace));
@@ -169,7 +143,7 @@ function subscribe(notify: () => void) {
   return () => listeners.delete(notify);
 }
 
-export function useWorkspace(storageKey: string): Workspace {
+export function useWorkspace(storageKey: string): IWorkspace {
   return useSyncExternalStore(subscribe, () => read(storageKey), () => read(storageKey));
 }
 
@@ -194,13 +168,13 @@ export function openTab(storageKey: string, key: string) {
   });
 }
 
-export function closeTab(storageKey: string, paneId: string, key: string): Workspace {
+export function closeTab(storageKey: string, paneId: string, key: string): IWorkspace {
   const workspace = read(storageKey);
   const pane = findPane(workspace.root, paneId);
   if (!pane) return workspace;
 
   const rest = withoutTab(pane, key);
-  let next: Workspace;
+  let next: IWorkspace;
   if (rest.tabs.length > 0) {
     next = { ...workspace, root: replacePane(workspace.root, paneId, rest) };
   } else {
@@ -213,7 +187,7 @@ export function closeTab(storageKey: string, paneId: string, key: string): Works
   return next;
 }
 
-export function canDrop(workspace: Workspace, fromPaneId: string, target: DropTarget): boolean {
+export function canDrop(workspace: IWorkspace, fromPaneId: string, target: DropTarget): boolean {
   const from = findPane(workspace.root, fromPaneId);
   if (!from || !findPane(workspace.root, target.paneId)) return false;
   if (target.zone === "center") return target.paneId !== fromPaneId;
@@ -222,7 +196,7 @@ export function canDrop(workspace: Workspace, fromPaneId: string, target: DropTa
   return !(target.paneId === fromPaneId && from.tabs.length === 1);
 }
 
-export function moveTab(storageKey: string, key: string, fromPaneId: string, target: DropTarget): Workspace {
+export function moveTab(storageKey: string, key: string, fromPaneId: string, target: DropTarget): IWorkspace {
   const workspace = read(storageKey);
   if (!canDrop(workspace, fromPaneId, target)) return workspace;
 

@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Clock } from "lucide-react";
 import { Button, toast } from "@moduleleague/ui";
 import { ModulePage } from "@/components/app/ModulePage";
-import { StatusBadge } from "@/services/StatusBadge";
 import { sampleStore, useSampleLogistics } from "@/services/sample-data";
 import type { Logistic } from "@/services/types";
 import { formatDocNo } from "@/lib/formatDocNo";
