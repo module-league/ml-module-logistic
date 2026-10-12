@@ -69,6 +69,7 @@ export * from "./components/ml/page-header";
 // Hooks
 export * from "./hooks/use-mobile";
 export * from "./hooks/useDialog";
+export * from "./hooks/useDrawer";
 export * from "./hooks/useErrorParser";
 
 // Helpers
