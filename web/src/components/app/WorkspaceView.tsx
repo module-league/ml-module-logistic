@@ -227,8 +227,8 @@ function PaneView({ pane }: { pane: PaneNode }) {
     >
       <ModuleViewerTab pane={pane} focused={focused} />
       <div className="relative min-h-0 flex-1">
-        <div className="absolute inset-0 overflow-auto bg-muted/40 p-4 md:p-6">
-          <div className="mx-auto w-full max-w-[calc(100%-2rem)]">
+        <div className="absolute inset-0 overflow-auto bg-muted/40">
+          <div className="w-full max-w-full">
             {active ? (
               <NavItemContext.Provider value={active}>
                 <Suspense fallback={<PageLoading />}>

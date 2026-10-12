@@ -64,7 +64,11 @@ export * from "./components/ui/toggle-group";
 export * from "./components/ui/tooltip";
 
 // Module League components
-export * from "./components/ml/page-header";
+export * from "./components/ml/pageHeader";
+export * from "./components/ml/pageHeader.types";
+export * from "./components/ml/pageToolbar";
+export * from "./components/ml/pageToolbar.types";
+export * from "./components/ml/pageToolbar.utils";
 
 // Hooks
 export * from "./hooks/use-mobile";

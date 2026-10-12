@@ -1,9 +1,6 @@
-import { useMemo, useState } from "react";
-import { Download, Plus, Search } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Button,
-  cn,
-  Input,
   Table,
   TableBody,
   TableCell,
@@ -11,134 +8,91 @@ import {
   TableHeader,
   TableRow,
   toast,
+  type PageToolbarFilterValue,
+  type PageToolbarInputOption,
+  type PageToolbarProps,
 } from "@moduleleague/ui";
 import { ModulePage } from "@/components/app/ModulePage";
 import { useSampleLogistics } from "@/services/sample-data";
 import {
   LOGISTIC_STATUSES,
   STATUS_LABELS,
-  type LogisticStatus,
+  type Logistic,
 } from "@/services/types";
 import { formatDocNo } from "@/lib/formatDocNo";
 import { dateToFriendlyLongString } from "@/lib/dateHelper";
 
-type StatusFilter = LogisticStatus | "All";
-const FILTERS: StatusFilter[] = ["All", ...LOGISTIC_STATUSES];
 const COLUMN_COUNT = 6;
 
 export default function LogisticList() {
   const logistics = useSampleLogistics();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
+  const [filter, setFilter] = useState<PageToolbarFilterValue>({});
+  const [view, setView] = useState("list");
+
+  const inputOptions = useMemo<PageToolbarInputOption[]>(
+    () => [
+      {
+        key: "status",
+        label: "Status",
+        options: LOGISTIC_STATUSES.map((status) => ({
+          value: status,
+          label: STATUS_LABELS[status],
+        })),
+      },
+      {
+        key: "origin",
+        label: "Origin",
+        options: [...new Set(logistics?.map((l) => l?.origin))]
+          .sort()
+          .map((origin) => ({ value: origin, label: origin })),
+      },
+    ],
+    [logistics],
+  );
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return logistics.filter((l) => {
-      if (statusFilter !== "All" && l.status !== statusFilter) return false;
+      if (filter?.status?.length && !filter.status.includes(l?.status)) return false;
+      if (filter?.origin?.length && !filter.origin.includes(l?.origin)) return false;
       if (!term) return true;
       return [l.trackingNo, l.origin, l.destination, formatDocNo(l.docId)].some(
         (v) => v.toLowerCase().includes(term),
       );
     });
-  }, [logistics, search, statusFilter]);
+  }, [logistics, search, filter]);
 
   // Create/edit dialogs arrive with the API step
-  const notYet = () => toast.info("Create and edit come with the API step.");
+  const notYet = useCallback(
+    () => toast.info("Create and edit come with the API step."),
+    [],
+  );
+
+  const toolbar = useMemo<PageToolbarProps>(
+    () => ({
+      onAdd: notYet,
+      addLabel: "New record",
+      view,
+      onViewChange: setView,
+      inputOptions,
+      filterValue: filter,
+      onFilterChange: setFilter,
+      onExport: notYet,
+      search,
+      onSearchChange: setSearch,
+      searchPlaceholder: "Tracking no., origin, destination",
+    }),
+    [notYet, view, inputOptions, filter, search],
+  );
 
   return (
-    <ModulePage
-      actions={
-        <div className="flex justify-end gap-2 w-full">
-          <Button variant="outline" onClick={notYet} size="xs">
-            <Download size={13} />
-            Export
-          </Button>
-          <Button onClick={notYet} size="xs">
-            <Plus size={13} />
-            New record
-          </Button>
-        </div>
-      }
-    >
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative w-full max-w-xs">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Tracking no., origin, destination"
-            aria-label="Search records"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="bg-background pl-8"
-          />
-        </div>
-        {FILTERS.map((filter) => {
-          const isOn = statusFilter === filter;
-          return (
-            <Button
-              key={filter}
-              variant="outline"
-              size="sm"
-              aria-pressed={isOn}
-              onClick={() => setStatusFilter(filter)}
-              className={cn(
-                "rounded-full",
-                isOn &&
-                  "border-foreground bg-foreground text-background hover:bg-foreground/90 hover:text-background",
-              )}
-            >
-              {filter === "All" ? "All" : STATUS_LABELS[filter]}
-            </Button>
-          );
-        })}
-      </div>
-
-      <div className="overflow-x-auto rounded-lg border bg-background">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>Doc no.</TableHead>
-              <TableHead>Tracking no.</TableHead>
-              <TableHead>Route</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={COLUMN_COUNT}
-                  className="py-10 text-center text-muted-foreground"
-                >
-                  No records match your search.
-                </TableCell>
-              </TableRow>
-            )}
-            {filtered.map((l) => (
-              <TableRow key={l.objId}>
-                <TableCell className="font-mono text-xs text-muted-foreground">
-                  {formatDocNo(l.docId)}
-                </TableCell>
-                <TableCell className="font-medium">{l.trackingNo}</TableCell>
-                <TableCell>
-                  {l.origin} <span className="text-muted-foreground">→</span>{" "}
-                  {l.destination}
-                </TableCell>
-                <TableCell>{STATUS_LABELS[l?.status]}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {dateToFriendlyLongString(l.createTime)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="outline" size="sm" onClick={notYet}>
-                    Edit
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+    <ModulePage toolbar={toolbar}>
+      {view === "grid" ? (
+        <LogisticGrid records={filtered} onEdit={notYet} />
+      ) : (
+        <LogisticTable records={filtered} onEdit={notYet} />
+      )}
 
       <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
         <span>
@@ -154,5 +108,107 @@ export default function LogisticList() {
         </div>
       </div>
     </ModulePage>
+  );
+}
+
+interface LogisticViewProps {
+  records: Logistic[];
+  onEdit: () => void;
+}
+
+function LogisticTable({ records, onEdit }: LogisticViewProps) {
+  return (
+    <div className="overflow-x-auto rounded-lg border bg-background">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/50">
+            <TableHead>Doc no.</TableHead>
+            <TableHead>Tracking no.</TableHead>
+            <TableHead>Route</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {records?.length === 0 && (
+            <TableRow>
+              <TableCell
+                colSpan={COLUMN_COUNT}
+                className="py-10 text-center text-muted-foreground"
+              >
+                No records match your search.
+              </TableCell>
+            </TableRow>
+          )}
+          {records?.map((l) => (
+            <TableRow key={l.objId}>
+              <TableCell className="font-mono text-xs text-muted-foreground">
+                {formatDocNo(l.docId)}
+              </TableCell>
+              <TableCell className="font-medium">{l.trackingNo}</TableCell>
+              <TableCell>
+                {l.origin} <span className="text-muted-foreground">→</span>{" "}
+                {l.destination}
+              </TableCell>
+              <TableCell>{STATUS_LABELS[l?.status]}</TableCell>
+              <TableCell className="text-muted-foreground">
+                {dateToFriendlyLongString(l.createTime)}
+              </TableCell>
+              <TableCell className="text-right">
+                <Button variant="outline" size="sm" onClick={onEdit}>
+                  Edit
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function LogisticGrid({ records, onEdit }: LogisticViewProps) {
+  if (!records?.length) {
+    return (
+      <div className="rounded-lg border bg-background py-10 text-center text-sm text-muted-foreground">
+        No records match your search.
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {records.map((l) => (
+        <div
+          key={l?.objId}
+          className="flex flex-col gap-3 rounded-lg border bg-background p-4"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-col">
+              <span className="font-medium">{l?.trackingNo}</span>
+              <span className="font-mono text-xs text-muted-foreground">
+                {formatDocNo(l?.docId)}
+              </span>
+            </div>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+              {STATUS_LABELS[l?.status]}
+            </span>
+          </div>
+          <div className="text-sm">
+            {l?.origin} <span className="text-muted-foreground">→</span>{" "}
+            {l?.destination}
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-muted-foreground">
+              {dateToFriendlyLongString(l?.createTime)}
+            </span>
+            <Button variant="outline" size="xs" onClick={onEdit}>
+              Edit
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

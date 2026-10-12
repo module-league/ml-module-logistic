@@ -1,29 +1,10 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo } from "react";
 import { UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/custom/UserAvatar";
-
-export interface PageHeaderProps {
-  /** Main page title, e.g. "Job Orders". */
-  title: string;
-  /** Optional line shown under the title. */
-  description?: string;
-  /** Buttons or other actions shown on the right. */
-  actions?: ReactNode;
-  /** Extra Tailwind classes. They override the defaults. */
-  className?: string;
-  hidePageSeparator?: boolean;
-  headerClassName?: string;
-  actionClassName?: string;
-  /** People on this page, shown as avatars on the right of the title. */
-  people?: IUserInfo[];
-  /** @default 6 */
-  maxPeople?: number;
-  /** Shows an Invite button next to the people. */
-  onInvitePeople?: () => void;
-}
+import type { PageHeaderProps, PeopleStackProps } from "./pageHeader.types";
 
 /**
  * Standard header at the top of every module page.
@@ -45,7 +26,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "mb-6 flex items-start justify-between gap-4 pb-4 flex-col",
+        "flex items-start justify-between gap-4 p-4 flex-col",
         !hidePageSeparator && "border-b",
         className,
       )}
@@ -56,7 +37,7 @@ export function PageHeader({
           headerClassName,
         )}
       >
-        <div className="flex flex-col">
+        <div className="flex flex-col w-full">
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           {description && (
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
@@ -86,7 +67,7 @@ export function PageHeader({
   );
 }
 
-function PeopleStack({ people, max }: { people: IUserInfo[]; max: number }) {
+function PeopleStack({ people, max }: PeopleStackProps) {
   const visible = useMemo(() => people?.slice(0, max), [people, max]);
   const hidden = useMemo(() => people?.slice(max), [people, max]);
 
