@@ -242,7 +242,11 @@ function WorkspaceViewerTab({
           Split down
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem disabled={!closable} onSelect={close}>
+        <ContextMenuItem
+          variant="destructive"
+          disabled={!closable}
+          onSelect={close}
+        >
           <XIcon />
           Close
         </ContextMenuItem>

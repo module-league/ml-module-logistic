@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, ReactElement, ReactNode } from "react";
 
 export interface PageToolbarOption {
   value: string;
@@ -47,10 +47,21 @@ export interface FilterDropdownProps {
   inputOptions: PageToolbarInputOption[];
   value?: PageToolbarFilterValue;
   onChange?: (value: PageToolbarFilterValue) => void;
+  /** Icon-only button with a tooltip. */
+  compact?: boolean;
 }
 
-export interface ViewComboboxProps {
+export interface ModuleAppViewDropdownProps {
   views: PageToolbarViewOption[];
   value?: string;
   onChange: (value: string) => void;
+  /** Icon-only button with a tooltip. */
+  compact?: boolean;
+}
+
+export interface ToolbarTooltipProps {
+  label: string;
+  /** Only icon-only buttons need a tooltip. */
+  enabled: boolean;
+  children: ReactElement;
 }

@@ -64,6 +64,8 @@ export * from "./components/ui/toggle-group";
 export * from "./components/ui/tooltip";
 
 // Module League components
+export * from "./components/ml/moduleAddNewButton";
+export * from "./components/ml/moduleAddNewButton.types";
 export * from "./components/ml/pageHeader";
 export * from "./components/ml/pageHeader.types";
 export * from "./components/ml/pageToolbar";

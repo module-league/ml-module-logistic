@@ -38,9 +38,13 @@ export function PageHeader({
         )}
       >
         <div className="flex flex-col w-full">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight truncate">
+            {title}
+          </h1>
           {description && (
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+            <p className="mt-1 text-sm text-muted-foreground truncate">
+              {description}
+            </p>
           )}
         </div>
         {(people?.length || onInvitePeople) && (

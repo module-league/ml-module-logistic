@@ -55,8 +55,6 @@ export function ModuleSidebar({
     useSidebar();
   const collapsed = state === "collapsed" && !isMobile;
   const toggleLabel = collapsed ? "Expand sidebar" : "Collapse sidebar";
-  const user = useCurrentUser();
-  const ModuleIcon = config?.icon;
 
   // Ctrl/⌘+K anywhere, or "/" when not typing, jumps to "Search pages".
   // An effect is needed here: it is a window-wide shortcut, and React has no event for that.
