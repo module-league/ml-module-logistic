@@ -1,2 +1,15 @@
 @import "tailwindcss";
 @import "./styles/theme.css";
+
+@theme {
+  --animate-slide-down: slide-down 160ms ease-out;
+
+  @keyframes slide-down {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+}

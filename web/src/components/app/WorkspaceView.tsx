@@ -9,6 +9,7 @@ import {
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
@@ -19,6 +20,7 @@ import {
 } from "react-resizable-panels";
 import { cn, Skeleton, useIsMobile } from "@moduleleague/ui";
 import { ModuleViewerTab } from "./ModuleViewerTab";
+import { SNAP_PANEL_ID, SnapLayoutDrawer } from "./SnapLayoutDrawer";
 import { NavItemContext } from "../../context/navItem.context";
 import { flattenNavItems } from "../../lib/navUtil";
 import type { IModuleConfig } from "../../services/module.types";
@@ -34,6 +36,7 @@ import {
   focusedKey,
   listPanes,
   moveTab,
+  snapTab,
   useWorkspace,
   workspaceKey,
 } from "../../lib/workspaceUtil";
@@ -42,6 +45,7 @@ import type {
   DropZone,
   LayoutNode,
   PaneNode,
+  SnapTarget,
   SplitEdge,
   SplitNode,
 } from "../../services/workspace.types";
@@ -67,6 +71,17 @@ const PREVIEW: Record<DropZone, string> = {
   top: "inset-x-0 top-0 h-1/2",
   bottom: "inset-x-0 bottom-0 h-1/2",
   center: "inset-0",
+};
+
+// The snap drawer sits on top of the panes, so its halves win over the drop zones under it
+const collisionDetection: CollisionDetection = (args) => {
+  const hits = pointerWithin(args);
+  const snapCells = hits.filter(
+    (hit) => String(hit.id).startsWith("snap:") && hit.id !== SNAP_PANEL_ID,
+  );
+  if (snapCells.length > 0) return snapCells;
+  const panel = hits.filter((hit) => hit.id === SNAP_PANEL_ID);
+  return panel.length > 0 ? panel : hits;
 };
 
 export function WorkspaceView({ config }: { config: IModuleConfig }) {
@@ -105,11 +120,16 @@ export function WorkspaceView({ config }: { config: IModuleConfig }) {
   function handleDragEnd(event: DragEndEvent) {
     setDragging(null);
     const tab = event.active.data.current as DraggedTab | undefined;
-    const target = event.over?.data.current as DropTarget | undefined;
+    const target = event.over?.data.current as
+      | DropTarget
+      | SnapTarget
+      | undefined;
     if (!tab || !target) return;
-    context.goTo(
-      focusedKey(moveTab(storageKey, tab.key, tab.fromPaneId, target)),
-    );
+    const next =
+      "snap" in target
+        ? snapTab(storageKey, tab.key, tab.fromPaneId, target.snap)
+        : moveTab(storageKey, tab.key, tab.fromPaneId, target);
+    context.goTo(focusedKey(next));
   }
 
   // Phones show only the focused pane, full size
@@ -122,7 +142,7 @@ export function WorkspaceView({ config }: { config: IModuleConfig }) {
     <WorkspaceContext.Provider value={context}>
       <DndContext
         sensors={sensors}
-        collisionDetection={pointerWithin}
+        collisionDetection={collisionDetection}
         onDragStart={(event) =>
           setDragging(event.active.data.current as DraggedTab)
         }
@@ -134,9 +154,12 @@ export function WorkspaceView({ config }: { config: IModuleConfig }) {
         </div>
 
         {createPortal(
-          <DragOverlay dropAnimation={null}>
-            {dragging && <DraggedTabChip tab={dragging} />}
-          </DragOverlay>,
+          <>
+            {dragging && <SnapLayoutDrawer />}
+            <DragOverlay dropAnimation={null}>
+              {dragging && <DraggedTabChip tab={dragging} />}
+            </DragOverlay>
+          </>,
           document.body,
         )}
       </DndContext>

@@ -29,3 +29,8 @@ export interface DropTarget {
   paneId: string;
   zone: DropZone;
 }
+
+/** Where a dragged tab is dropped in the snap layout: that half of the whole workspace. */
+export interface SnapTarget {
+  snap: SplitEdge;
+}

@@ -220,3 +220,43 @@ export function moveTab(storageKey: string, key: string, fromPaneId: string, tar
   write(storageKey, next);
   return next;
 }
+
+function mergePanes(node: LayoutNode, preferredActiveKey: string | null): PaneNode {
+  const panes = listPanes(node);
+  const tabs = [...new Set(panes.flatMap((pane) => pane.tabs))].slice(-MAX_TABS_PER_PANE);
+  const activeKey = preferredActiveKey && tabs.includes(preferredActiveKey) ? preferredActiveKey : (tabs.at(-1) ?? null);
+  return { type: "pane", id: panes[0].id, tabs, activeKey };
+}
+
+/** Puts the tab alone on one half of the workspace; everything else stays on the other half. */
+export function snapTab(storageKey: string, key: string, fromPaneId: string, edge: SplitEdge): IWorkspace {
+  const workspace = read(storageKey);
+  const from = findPane(workspace.root, fromPaneId);
+  if (!from?.tabs.includes(key)) return workspace;
+
+  const remaining = withoutTab(from, key);
+  let rest =
+    remaining.tabs.length > 0
+      ? replacePane(workspace.root, fromPaneId, remaining)
+      : removePane(workspace.root, fromPaneId);
+  if (!rest) return workspace;
+  if (listPanes(rest).length >= MAX_PANES) {
+    rest = mergePanes(rest, findPane(rest, workspace.currentViewerId)?.activeKey ?? null);
+  }
+
+  const orientation = edge === "left" || edge === "right" ? "horizontal" : "vertical";
+  const before = edge === "left" || edge === "top";
+  const pane: PaneNode = { type: "pane", id: newId("p"), tabs: [key], activeKey: key };
+  const joinsRest = rest.type === "split" && rest.orientation === orientation;
+  const others = joinsRest && rest.type === "split" ? rest.children : [rest];
+  const root: LayoutNode = {
+    type: "split",
+    id: joinsRest ? rest.id : newId("s"),
+    orientation,
+    children: before ? [pane, ...others] : [...others, pane],
+  };
+
+  const next = { root, currentViewerId: pane.id };
+  write(storageKey, next);
+  return next;
+}
