@@ -183,6 +183,8 @@ export function ModuleSidebar({
         )}
       </SidebarContent>
 
+      {!!collapsed && <SidebarSeparator className="border-b" />}
+
       <SidebarFooter>
         <SidebarMenu>
           <SidebarGroupLabel>System</SidebarGroupLabel>
