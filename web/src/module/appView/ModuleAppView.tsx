@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import type { ModuleAppViewProps } from "./moduleAppView.types";
 import { ModuleEmptyAppView } from "./ModuleEmptyAppView";
-import { GridView } from "./GridView";
-import { ListView } from "./ListView";
+import { GridView } from "./GridView/GridView";
+import { ListView } from "./ListView/ListView";
 import QueryWrapper from "@/components/custom/QueryWrapper";
 
 export function ModuleAppView<T>({

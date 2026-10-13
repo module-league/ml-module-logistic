@@ -43,8 +43,8 @@ import type {
   ModuleListHeaderCellProps,
   ModuleListViewProps,
   ModuleSortableRowProps,
-} from "./moduleAppView.types";
-import { ModuleEmptyAppView } from "./ModuleEmptyAppView";
+} from "../moduleAppView.types";
+import { ModuleEmptyAppView } from "../ModuleEmptyAppView";
 import {
   COLUMN_WIDTH,
   lockToDragAxis,
@@ -306,6 +306,7 @@ export function ListView<T>({
                             aria-label="Select record"
                             checked={selected}
                             onCheckedChange={() => toggleRow(key)}
+                            className="bg-white"
                           />
                           {onRowExpand && (
                             <Button
