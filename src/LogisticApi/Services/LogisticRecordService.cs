@@ -100,6 +100,11 @@ namespace LogisticApi.Services
                         throw ApiProblemException.BadRequest("Invalid number.", $"'{field.sidebarName}' needs a number.");
                     return number.ToString(CultureInfo.InvariantCulture);
 
+                case "checkbox":
+                    if (!bool.TryParse(text, out var ticked))
+                        throw ApiProblemException.BadRequest("Invalid checkbox value.", $"'{field.sidebarName}' needs true or false.");
+                    return ticked ? "true" : null;
+
                 case "single_select":
                     if (!Guid.TryParse(text, out var optionId) || field.options.All(o => o.ObjId != optionId))
                         throw ApiProblemException.BadRequest("Invalid option.", $"'{field.sidebarName}' has no such option.");

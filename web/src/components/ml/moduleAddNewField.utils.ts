@@ -22,6 +22,12 @@ export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
     description: "One choice from a list.",
     icon: FIELD_TYPE_ICONS.single_select,
   },
+  {
+    fieldType: "checkbox",
+    label: "Checkbox",
+    description: "A tick for yes or no.",
+    icon: FIELD_TYPE_ICONS.checkbox,
+  },
 ];
 
 /** Moves a dragged item up and down only, and never past the list that holds it, so the list can't grow while dragging. */

@@ -160,7 +160,7 @@ function AddFieldSteps({
           <div
             role="radiogroup"
             aria-label="Field type"
-            className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2"
           >
             {MODULE_FIELD_TYPES.map(
               ({ fieldType, label, description, icon: TypeIcon }) => (

@@ -282,7 +282,7 @@ export function RecordGrid<T>({
             {headers.map((header, index) => (
               <col key={header.id} style={{ width: widths[index] }} />
             ))}
-            {hasAddField && <col />}
+            {hasAddField && <col style={{ width: "100%" }} />}
           </colgroup>
           <TableHeader
             ref={measureHeader}

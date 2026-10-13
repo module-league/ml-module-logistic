@@ -1,4 +1,5 @@
 import { cn } from "@/ui-kit";
+import { Square, SquareCheck } from "lucide-react";
 import type { ReactNode } from "react";
 
 type SpanProps = Omit<
@@ -39,6 +40,13 @@ export function RecordValueNode({
   field: IField;
   value?: string | null;
 }) {
+  if (field?.type === "checkbox") {
+    return value === "true" ? (
+      <SquareCheck aria-label="Ticked" className="size-4 text-primary" />
+    ) : (
+      <Square aria-label="Not ticked" className="size-4 text-muted-foreground/40" />
+    );
+  }
   if (!value) return <span className="text-muted-foreground">—</span>;
   if (field?.type === "single_select") {
     const option = field?.dropDownValues?.find((o) => o?.id === value);

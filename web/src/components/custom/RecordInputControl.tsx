@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import {
   AutosizeTextarea,
   Button,
+  Checkbox,
   Input,
   Select,
   SelectContent,
@@ -81,6 +82,25 @@ export function RecordInputControl(props: RecordInputControlProps) {
       <span className={props.className} style={props.style}>
         <em>-Field is not editable-</em>
       </span>
+    );
+  }
+
+  if (field.type === "checkbox") {
+    return (
+      <div
+        className={cn("flex h-9 items-center", props.className)}
+        style={props.style}
+      >
+        <Checkbox
+          id={id}
+          name={name}
+          checked={value === "true"}
+          disabled={disabled}
+          autoFocus={autoFocus}
+          onCheckedChange={(checked) => onChange?.(checked === true ? "true" : "")}
+          onBlur={onBlur}
+        />
+      </div>
     );
   }
 
