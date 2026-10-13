@@ -45,7 +45,7 @@ function SnapCell({ edge }: { edge: SplitEdge }) {
   const target: SnapTarget = useMemo(() => ({ snap: edge }), [edge]);
   const { setNodeRef, isOver } = useDroppable({ id: `snap:${edge}`, data: target });
   const Icon = useMemo(
-    () => items?.find((item) => item?.keyValue === dragging?.key)?.icon,
+    () => items?.find((item) => item?.sidebarId === dragging?.key)?.sidebarIcon,
     [items, dragging?.key],
   );
 

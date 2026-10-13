@@ -7,7 +7,7 @@ export function flattenNavItems(config: IModuleConfig): INavItemConfig[] {
 export function findActiveNav(config: IModuleConfig, pathname: string) {
   for (const group of config.groups) {
     for (const item of group.items) {
-      const path = `/${item.keyValue}`;
+      const path = `/${item.sidebarId}`;
       if (pathname === path || pathname.startsWith(`${path}/`)) {
         return { item, groupLabel: group.label };
       }
@@ -16,8 +16,8 @@ export function findActiveNav(config: IModuleConfig, pathname: string) {
   return undefined;
 }
  
-export function toPageFileName(keyValue: string): string {
-  return keyValue
+export function toPageFileName(sidebarId: string): string {
+  return sidebarId
     .split("-")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join("");

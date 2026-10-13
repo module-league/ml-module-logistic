@@ -25,6 +25,13 @@ export interface ModuleAppRowOrder {
   onRowReorder?: (activeKey: string, overKey: string) => void;
 }
 
+export interface ModuleAppRowMenu {
+  /** Keys (from getKey) of rows held under the header, in the order they were pinned. */
+  pinnedRows?: string[];
+  onRowPinToggle?: (key: string) => void;
+  onRowDelete?: (key: string) => void;
+}
+
 export interface ModuleAppSelection {
   /** Keys (from getKey) of the ticked records. */
   selectedKeys?: string[];
@@ -55,7 +62,8 @@ export interface ModuleAppViewProps<T>
   extends ModuleAppColumnLayout,
     ModuleAppAddAction,
     ModuleAppSelection,
-    ModuleAppRowOrder {
+    ModuleAppRowOrder,
+    ModuleAppRowMenu {
   records: T[];
   getKey: (record: T) => string;
   columns: ModuleAppColumn<T>[];
@@ -74,8 +82,9 @@ export interface ModuleListViewProps<T>
   extends ModuleAppColumnLayout,
     ModuleAppAddAction,
     ModuleAppSelection,
-    ModuleAppRowOrder {
-  /** The rows of the current page. */
+    ModuleAppRowOrder,
+    ModuleAppRowMenu {
+  /** Pinned rows first, then the rows of the current page. */
   records: T[];
   /** Empty rows fill the page up to this many, so the grid keeps its shape. */
   pageSize?: number;
@@ -102,11 +111,17 @@ export interface ModuleColumnPin {
 
 export interface ModuleSortableRowProps {
   rowId: string;
+  rowKey: string;
   sortable: boolean;
   measureRef?: (node: HTMLTableRowElement | null) => void;
   selected?: boolean;
+  /** Distance (px) from the top of the scroll area while the row is pinned. */
+  pinnedTop?: number;
   className?: string;
   children: ReactNode;
+  onPinToggle?: (key: string) => void;
+  onSelectToggle?: (key: string) => void;
+  onDelete?: (key: string) => void;
 }
 
 export interface ModuleCardGridProps<T> {
@@ -126,4 +141,6 @@ export interface ModulePageFooterProps {
   /** How many records are ticked; shown with a Clear button when above 0. */
   selectedCount?: number;
   onClearSelection?: () => void;
+  /** Rows pinned to the top; they sit above every page, so paging skips them. */
+  pinnedCount?: number;
 }

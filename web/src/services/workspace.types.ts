@@ -2,7 +2,7 @@
 export interface PaneNode {
   type: "pane";
   id: string;
-  /** keyValues of the pages in this pane, in tab order. */
+  /** sidebarIds of the pages in this pane, in tab order. */
   tabs: string[];
   activeKey: string | null;
 }

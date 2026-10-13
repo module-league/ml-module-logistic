@@ -85,7 +85,7 @@ export function ModuleSidebar({
     .map((group) => ({
       ...group,
       items: term
-        ? group.items.filter((item) => item.text.toLowerCase().includes(term))
+        ? group.items.filter((item) => item.sidebarText.toLowerCase().includes(term))
         : group.items,
     }))
     .filter((group) => group.items.length > 0);
@@ -173,7 +173,7 @@ export function ModuleSidebar({
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarMenu className="space-y-1">
               {group.items.map((item) => (
-                <SidebarNavItem key={item.keyValue} item={item} />
+                <SidebarNavItem key={item.sidebarId} item={item} />
               ))}
             </SidebarMenu>
           </SidebarGroup>
@@ -214,26 +214,26 @@ export function ModuleSidebar({
 const useNoBadge = () => undefined;
 
 function SidebarNavItem({ item }: { item: INavItemConfig }) {
-  const path = `/${item.keyValue}`;
+  const path = `/${item.sidebarId}`;
   const isActive = useMatch({ path, end: false }) !== null;
   const useBadge = item?.useBadge ?? useNoBadge;
   const badge = useBadge();
-  const Icon = item.icon;
+  const Icon = item.sidebarIcon;
 
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         asChild
         isActive={isActive}
-        tooltip={item.text}
+        tooltip={item.sidebarText}
         className={cn("relative", item?.className)}
       >
-        <NavLink to={path} title={item.description}>
+        <NavLink to={path} title={item.sidebarDesc}>
           {isActive && (
             <span className="absolute top-1/2 left-0 h-4 -translate-y-1/2 border-l-2 border-primary" />
           )}
           {Icon && <Icon />}
-          <span>{item.text}</span>
+          <span>{item.sidebarText}</span>
         </NavLink>
       </SidebarMenuButton>
       {badge ? (

@@ -5,15 +5,15 @@ type IconComponent = ComponentType<{ className?: string }>;
 /** One sidebar entry = one page = one URL. */
 export interface INavItemConfig {
   /** Unique key. Also the URL path, so use kebab-case: "awaiting-task" → /awaiting-task */
-  keyValue: string;
+  sidebarId: string;
   /** Sidebar label and page title. */
-  text: string;
+  sidebarText: string;
   /** Page subtitle and sidebar hover text. */
-  description: string;
+  sidebarDesc: string;
   /** The page component in src/pages. Use lazy() so each page loads on demand. */
   page: ComponentType;
   /** Sidebar icon; the only thing shown when the sidebar is collapsed. */
-  icon?: IconComponent;
+  sidebarIcon?: IconComponent;
   /** Extra Tailwind classes for this one sidebar entry. */
   className?: string;
   /** Optional hook returning a count for the pill on the right, e.g. items waiting. */
@@ -35,7 +35,7 @@ export interface IModuleConfig {
   title: string;
   /** Module icon in the sidebar header. */
   icon: IconComponent;
-  /** keyValue of the page that "/" opens. Defaults to the first sidebar item. */
+  /** sidebarId of the page that "/" opens. Defaults to the first sidebar item. */
   homeKey?: string;
   groups: INavGroupConfig[];
 }

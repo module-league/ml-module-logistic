@@ -225,11 +225,11 @@ function SplitView({ node }: { node: SplitNode }) {
 function PaneView({ pane }: { pane: PaneNode }) {
   const { workspace, items, dragging, goTo } = useWorkspaceContext();
   const focused = pane.id === workspace.currentViewerId;
-  const active = items.find((item) => item.keyValue === pane.activeKey);
+  const active = items.find((item) => item.sidebarId === pane.activeKey);
 
   return (
     <section
-      aria-label={active?.text ?? "Empty pane"}
+      aria-label={active?.sidebarText ?? "Empty pane"}
       className="flex h-full min-h-0 flex-col"
       // Clicking anywhere in another pane focuses it, and the URL follows
       onPointerDownCapture={() => {
@@ -328,14 +328,14 @@ function DropZoneArea({
 /** The tab that follows the pointer while dragging. */
 function DraggedTabChip({ tab }: { tab: DraggedTab }) {
   const { items } = useWorkspaceContext();
-  const item = items.find((entry) => entry.keyValue === tab.key);
+  const item = items.find((entry) => entry.sidebarId === tab.key);
   if (!item) return null;
-  const Icon = item.icon;
+  const Icon = item.sidebarIcon;
   return (
     // Fills the drag overlay, which takes the size of the dragged tab
     <div className="flex h-7 w-full cursor-grabbing items-center gap-1.5 rounded-md border bg-background px-2.5 text-sm font-medium text-primary shadow-lg">
       {Icon && <Icon className="size-5" />}
-      <span>{item?.text}</span>
+      <span>{item?.sidebarText}</span>
     </div>
   );
 }

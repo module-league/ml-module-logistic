@@ -40,6 +40,9 @@ interface ModulePageProps<T> {
     | "selectedKeys"
     | "onSelectionChange"
     | "onRowReorder"
+    | "pinnedRows"
+    | "onRowPinToggle"
+    | "onRowDelete"
     | "onAdd"
     | "addLabel"
   >;
@@ -59,6 +62,7 @@ export function ModulePage<T>({
   const [pinnedColumns, setPinnedColumns] = useState<string[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [rowOrder, setRowOrder] = useState<string[]>([]);
+  const [pinnedRows, setPinnedRows] = useState<string[]>([]);
   const orderedRecords = useMemo(() => {
     if (!rowOrder.length) return appView?.records ?? [];
     const position = new Map(rowOrder.map((key, index) => [key, index]));
@@ -77,11 +81,29 @@ export function ModulePage<T>({
     },
     [orderedRecords, appView?.getKey],
   );
+  const shownPinnedRows = useMemo(() => {
+    if (!pinnedRows.length) return pinnedRows;
+    const keys = new Set(
+      appView?.records?.map((record) => appView?.getKey(record)),
+    );
+    return pinnedRows.filter((key) => keys.has(key));
+  }, [appView?.records, appView?.getKey, pinnedRows]);
+  const togglePinnedRow = useCallback(
+    (key: string) =>
+      setPinnedRows((current) =>
+        current.includes(key)
+          ? current.filter((pinned) => pinned !== key)
+          : [...current, key],
+      ),
+    [],
+  );
   const total = appView?.records?.length ?? 0;
+  const pinnedCount = view === "list" ? shownPinnedRows.length : 0;
   const pageSize = appView?.pageSize ?? 20;
   const currentPage = useMemo(
-    () => Math.min(page, Math.max(1, Math.ceil(total / pageSize))),
-    [page, total, pageSize],
+    () =>
+      Math.min(page, Math.max(1, Math.ceil((total - pinnedCount) / pageSize))),
+    [page, total, pinnedCount, pageSize],
   );
   const invitePeople = useCallback(
     () => toast.info("Inviting people comes with the API step."),
@@ -158,6 +180,10 @@ export function ModulePage<T>({
     toolbar?.onDelete?.(selectedKeys);
     setSelectedKeys([]);
   }, [toolbar, selectedKeys]);
+  const deleteRow = useCallback(
+    (key: string) => toolbar?.onDelete?.([key]),
+    [toolbar],
+  );
 
   const pageToolbar = useMemo<PageToolbarProps | undefined>(
     () =>
@@ -190,10 +216,10 @@ export function ModulePage<T>({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <main className="flex min-h-0 flex-1 flex-col">
-        {item?.text?.length || item?.description?.length ? (
+        {item?.sidebarText?.length || item?.sidebarDesc?.length ? (
           <PageHeader
-            title={item?.text}
-            description={item?.description}
+            title={item?.sidebarText}
+            description={item?.sidebarDesc}
             hidePageSeparator={item?.hidePageSeparator}
             actions={actions}
             people={SAMPLE_PEOPLE}
@@ -215,6 +241,9 @@ export function ModulePage<T>({
           onSelectionChange={setSelectedKeys}
           records={orderedRecords}
           onRowReorder={reorderRow}
+          pinnedRows={shownPinnedRows}
+          onRowPinToggle={togglePinnedRow}
+          onRowDelete={toolbar?.onDelete ? deleteRow : undefined}
           onAdd={toolbar?.onAdd}
           addLabel={toolbar?.addLabel}
           appView={view}
@@ -230,6 +259,7 @@ export function ModulePage<T>({
         appView={view}
         selectedCount={selectedCount}
         onClearSelection={clearSelection}
+        pinnedCount={pinnedCount}
       />
     </div>
   );

@@ -11,18 +11,20 @@ export function ModulePageFooter({
   onPageChange,
   selectedCount = 0,
   onClearSelection,
+  pinnedCount = 0,
 }: ModulePageFooterProps) {
   const paginated = appView !== "grid";
+  const paged = total - pinnedCount;
   const pageCount = useMemo(
-    () => Math.max(1, Math.ceil(total / pageSize)),
-    [total, pageSize],
+    () => Math.max(1, Math.ceil(paged / pageSize)),
+    [paged, pageSize],
   );
   const range = useMemo(
     () =>
-      paginated && total > pageSize
-        ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} of ${total}`
+      paginated && paged > pageSize
+        ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, paged)} of ${paged}`
         : null,
-    [paginated, total, page, pageSize],
+    [paginated, paged, page, pageSize],
   );
 
   return (
@@ -33,6 +35,9 @@ export function ModulePageFooter({
         </span>
         &nbsp;
         {total === 1 ? "record" : "records"}
+        {pinnedCount > 0 && (
+          <span className="ml-2 tabular-nums">· {pinnedCount} pinned</span>
+        )}
         {range && <span className="ml-2 tabular-nums">· Showing {range}</span>}
         {selectedCount > 0 && (
           <span className="ml-2 flex items-center gap-1.5 text-primary">

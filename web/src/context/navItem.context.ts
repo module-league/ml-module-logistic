@@ -4,7 +4,7 @@ import type { INavItemConfig } from  "../services/module.types";
 /** Holds the config entry of the page currently shown. Set by the router. */
 export const NavItemContext = createContext<INavItemConfig | null>(null);
  
-/** The sidebar entry (text, description, ...) of the current page. */
+/** The sidebar entry (sidebarText, sidebarDesc, ...) of the current page. */
 export function useCurrentNavItem(): INavItemConfig {
   const item = useContext(NavItemContext);
   if (!item) {

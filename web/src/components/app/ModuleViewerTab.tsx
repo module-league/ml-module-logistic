@@ -47,7 +47,7 @@ export function ModuleViewerTab({
   const tabs = useMemo(
     () =>
       pane.tabs
-        .map((key) => items.find((item) => item.keyValue === key))
+        .map((key) => items.find((item) => item.sidebarId === key))
         .filter((item): item is INavItemConfig => item !== undefined),
     [pane.tabs, items],
   );
@@ -61,7 +61,7 @@ export function ModuleViewerTab({
   );
 
   const tabIds = useMemo(
-    () => tabs.map((tab) => `${pane.id}:${tab.keyValue}`),
+    () => tabs.map((tab) => `${pane.id}:${tab.sidebarId}`),
     [tabs, pane.id],
   );
 
@@ -84,10 +84,10 @@ export function ModuleViewerTab({
       <SortableContext items={tabIds} strategy={horizontalListSortingStrategy}>
         {tabs.map((tab) => (
           <WorkspaceViewerTab
-            key={tab.keyValue}
+            key={tab.sidebarId}
             pane={pane}
             item={tab}
-            active={tab.keyValue === pane.activeKey}
+            active={tab.sidebarId === pane.activeKey}
             focused={focused}
             closable={totalTabs > 1}
             movable={totalTabs > 1}
@@ -116,7 +116,7 @@ function WorkspaceViewerTab({
 }) {
   const { workspace, storageKey, canSplit, goTo } = useWorkspaceContext();
   const draggable = canSplit && movable;
-  const tab: DraggedTab = { key: item.keyValue, fromPaneId: pane.id };
+  const tab: DraggedTab = { key: item.sidebarId, fromPaneId: pane.id };
   // setNodeRef: the whole tab (what moves and what other tabs are dropped on).
   // setActivatorNodeRef + listeners: the grip (the only place a drag can start).
   const {
@@ -127,7 +127,7 @@ function WorkspaceViewerTab({
     transform,
     transition,
   } = useSortable({
-    id: `${pane.id}:${item.keyValue}`,
+    id: `${pane.id}:${item.sidebarId}`,
     data: tab,
     disabled: !draggable,
   });
@@ -138,8 +138,8 @@ function WorkspaceViewerTab({
     }),
     [transform, transition],
   );
-  const Icon = item.icon;
-  const path = `/${item.keyValue}`;
+  const Icon = item.sidebarIcon;
+  const path = `/${item.sidebarId}`;
   // The router is still navigating to this tab's page (what NavLink calls isPending)
   const pending = useNavigation().location?.pathname === path;
 
@@ -154,17 +154,17 @@ function WorkspaceViewerTab({
     (edge: SplitEdge) =>
       goTo(
         focusedKey(
-          moveTab(storageKey, item.keyValue, pane.id, {
+          moveTab(storageKey, item.sidebarId, pane.id, {
             paneId: pane.id,
             zone: edge,
           }),
         ),
       ),
-    [goTo, storageKey, item.keyValue, pane.id],
+    [goTo, storageKey, item.sidebarId, pane.id],
   );
   const close = useCallback(
-    () => goTo(focusedKey(closeTab(storageKey, pane.id, item.keyValue))),
-    [goTo, storageKey, pane.id, item.keyValue],
+    () => goTo(focusedKey(closeTab(storageKey, pane.id, item.sidebarId))),
+    [goTo, storageKey, pane.id, item.sidebarId],
   );
 
   return (
@@ -204,7 +204,7 @@ function WorkspaceViewerTab({
                     type="button"
                     // Pointer only: the right-click menu offers the same moves from the keyboard
                     tabIndex={-1}
-                    aria-label={`Drag ${item.text} to move or split`}
+                    aria-label={`Drag ${item.sidebarText} to move or split`}
                     title="Drag to move or split"
                     className={cn(
                       "hidden size-5 cursor-grab items-center justify-center rounded hover:bg-foreground/10 active:cursor-grabbing group-hover:flex",
@@ -220,11 +220,11 @@ function WorkspaceViewerTab({
 
           <NavLink
             to={path}
-            title={item.description}
+            title={item.sidebarDesc}
             draggable={false}
             className="flex h-full items-center pr-1 pl-1 font-medium"
           >
-            {item.text}
+            {item.sidebarText}
           </NavLink>
 
           <button
