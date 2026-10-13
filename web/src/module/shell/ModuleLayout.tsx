@@ -79,8 +79,6 @@ export function ModuleLayout({ config }: { config: IModuleConfig }) {
 }
 
 function ModuleMain({ config }: { config: IModuleConfig }) {
-  // const { pathname } = useLocation();
-  // const active = findActiveNav(config, pathname);
   // const { isMobile: showTrigger } = useSidebar();
 
   return (

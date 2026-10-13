@@ -15,10 +15,9 @@ import { errorParser } from "@/hooks/useErrorParser";
 import QueryWrapper from "@/components/custom/QueryWrapper";
 import { RecordInputControl } from "./RecordInputControl";
 import type {
-  ModuleNewRecordFieldsProps,
   ModuleNewRecordFormProps,
+  ModuleRecordFormProps,
   ModuleRecordFormValues,
-  ModuleRecordValues,
 } from "./moduleRecord.types";
 
 const DIALOG_STYLE = {
@@ -46,7 +45,7 @@ export function ModuleNewRecordForm({
     [saving, onOpenChange],
   );
   const save = useCallback(
-    async (values: ModuleRecordValues) => {
+    async (values: ISidebarRecordValues) => {
       setSaving(true);
       try {
         await onSave(values);
@@ -91,7 +90,7 @@ function NewRecordFields({
   saving,
   onCancel,
   onSave,
-}: ModuleNewRecordFieldsProps) {
+}: ModuleRecordFormProps) {
   const defaultValues = useMemo<ModuleRecordFormValues>(
     () => ({ values: fields?.map(() => "") ?? [] }),
     [fields],
@@ -102,7 +101,8 @@ function NewRecordFields({
       if (saving) return;
       onSave(
         Object.fromEntries(
-          fields?.map(({ key }, i) => [key, data?.values?.[i] ?? ""]) ?? [],
+          fields?.map((field, i) => [field?.objId, data?.values?.[i] ?? ""]) ??
+            [],
         ),
       );
     },
@@ -124,9 +124,9 @@ function NewRecordFields({
         className="flex min-h-0 flex-1 flex-col"
       >
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-8">
-          {fields.map(({ key, field }, index) => (
+          {fields.map((field, index) => (
             <FormField2
-              key={key}
+              key={field.objId}
               control={form.control}
               name={`values.${index}`}
               label={field?.name}

@@ -245,9 +245,9 @@ export function ListView<T>({
                     column={column}
                     resizable={!!onColumnResize && index < columns.length - 1}
                     sortable={!!onColumnReorder}
-                    onResize={onColumnResize}
+                    onColumnResize={onColumnResize}
                     pin={pins[index]}
-                    onPinToggle={onColumnPinToggle}
+                    onColumnPinToggle={onColumnPinToggle}
                   />
                 ))}
               </TableRow>
@@ -285,9 +285,9 @@ export function ListView<T>({
                         ? (headerHeight ?? 0) + pinnedAt * (rowHeight ?? 0)
                         : undefined
                     }
-                    onPinToggle={onRowPinToggle}
+                    onRowPinToggle={onRowPinToggle}
                     onSelectToggle={selectable ? toggleRow : undefined}
-                    onDelete={onRowDelete}
+                    onRowDelete={onRowDelete}
                     className={cn(
                       "group/row [&>td]:h-8",
                       selected
@@ -394,9 +394,9 @@ function SortableRow({
   pinnedTop,
   className,
   children,
-  onPinToggle,
+  onRowPinToggle,
   onSelectToggle,
-  onDelete,
+  onRowDelete,
 }: ModuleSortableRowProps) {
   const { setNodeRef, listeners, transform, transition, isDragging } =
     useSortable({
@@ -437,14 +437,14 @@ function SortableRow({
     </TableRow>
   );
 
-  if (!onPinToggle && !onSelectToggle && !onDelete) return row;
+  if (!onRowPinToggle && !onSelectToggle && !onRowDelete) return row;
 
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{row}</ContextMenuTrigger>
       <ContextMenuContent className="min-w-40">
-        {onPinToggle && (
-          <ContextMenuItem onSelect={() => onPinToggle(rowKey)}>
+        {onRowPinToggle && (
+          <ContextMenuItem onSelect={() => onRowPinToggle(rowKey)}>
             {pinned ? <PinOff /> : <Pin />}
             {pinned ? "Unpin from top" : "Pin to top"}
           </ContextMenuItem>
@@ -455,12 +455,12 @@ function SortableRow({
             {selected ? "Deselect" : "Select"}
           </ContextMenuItem>
         )}
-        {onDelete && (
+        {onRowDelete && (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem
               variant="destructive"
-              onSelect={() => onDelete(rowKey)}
+              onSelect={() => onRowDelete(rowKey)}
             >
               <Trash2 />
               Delete
@@ -476,9 +476,9 @@ function ListHeaderCell<T>({
   column,
   resizable,
   sortable,
-  onResize,
+  onColumnResize,
   pin,
-  onPinToggle,
+  onColumnPinToggle,
 }: ModuleListHeaderCellProps<T>) {
   const { setNodeRef, listeners, transform, transition, isDragging } =
     useSortable({
@@ -523,14 +523,14 @@ function ListHeaderCell<T>({
     >
       <span className="flex items-center gap-1">
         <span className="min-w-0 flex-1 truncate">{column?.header}</span>
-        {onPinToggle && (
+        {onColumnPinToggle && (
           <button
             type="button"
             aria-label={pin ? `Unpin ${label}` : `Pin ${label}`}
             aria-pressed={!!pin}
             title={pin ? "Unpin column" : "Pin column"}
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => onPinToggle(column?.key)}
+            onClick={() => onColumnPinToggle(column?.key)}
             className={cn(
               "flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground hover:bg-foreground/10 hover:text-foreground",
               pin
@@ -559,7 +559,7 @@ function ListHeaderCell<T>({
           onPointerMove={(e) => {
             const start = resizeStart.current;
             if (!start) return;
-            onResize?.(
+            onColumnResize?.(
               column?.key,
               Math.max(
                 COLUMN_WIDTH.min,

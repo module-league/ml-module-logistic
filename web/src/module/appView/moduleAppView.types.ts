@@ -51,6 +51,13 @@ export interface ModuleAppColumnLayout {
   onColumnPinToggle?: (key: string) => void;
 }
 
+/** A page's query state handed to a module part; the part shows the loader or the error with Try again. */
+export interface ModuleQueryState {
+  isLoading?: boolean;
+  error?: unknown;
+  onRetry?: () => void;
+}
+
 export interface ModuleAppEmptyState {
   /** @default "No records yet" */
   title?: string;
@@ -65,7 +72,8 @@ export interface ModuleAppViewProps<T>
     ModuleAppAddAction,
     ModuleAppSelection,
     ModuleAppRowOrder,
-    ModuleAppRowMenu {
+    ModuleAppRowMenu,
+    ModuleQueryState {
   records: T[];
   getKey: (record: T) => string;
   columns: ModuleAppColumn<T>[];
@@ -73,41 +81,29 @@ export interface ModuleAppViewProps<T>
   renderCard?: (record: T) => ReactNode;
   /** @default "list" */
   appView?: ModuleAppViewMode;
-  /** @default 20 */
+  /** Empty rows fill the page up to this many, so the grid keeps its shape. @default 20 */
   pageSize?: number;
   /** 1-based page to show; set by ModulePage. @default 1 */
   page?: number;
   empty?: ModuleAppEmptyState;
-  /** Records are being fetched for the first time; the table area shows the loader. */
-isLoading?: boolean;
-/** Loading the records failed; the table area shows the error with Try again. */
-error?: unknown;
-onRetry?: () => void;
-
 }
 
-export interface ModuleListViewProps<T>
-  extends ModuleAppColumnLayout,
-    ModuleAppAddAction,
-    ModuleAppSelection,
-    ModuleAppRowOrder,
-    ModuleAppRowMenu {
-  /** Pinned rows first, then the rows of the current page. */
-  records: T[];
-  /** Empty rows fill the page up to this many, so the grid keeps its shape. */
-  pageSize?: number;
-  getKey: (record: T) => string;
-  columns: ModuleAppColumn<T>[];
-  empty?: ModuleAppEmptyState;
-}
+/** The table gets the pinned rows first, then the rows of the current page. */
+export type ModuleListViewProps<T> = Omit<
+  ModuleAppViewProps<T>,
+  "renderCard" | "appView" | "page" | keyof ModuleQueryState
+>;
 
-export interface ModuleListHeaderCellProps<T> {
+export type ModuleCardGridProps<T> = Required<
+  Pick<ModuleAppViewProps<T>, "records" | "getKey" | "renderCard">
+>;
+
+export interface ModuleListHeaderCellProps<T>
+  extends Pick<ModuleAppColumnLayout, "onColumnResize" | "onColumnPinToggle"> {
   column: ModuleAppColumn<T>;
   resizable: boolean;
   sortable: boolean;
-  onResize?: (key: string, width: number) => void;
   pin?: ModuleColumnPin;
-  onPinToggle?: (key: string) => void;
 }
 
 /** Where a pinned column sticks; undefined for columns that scroll. */
@@ -117,7 +113,8 @@ export interface ModuleColumnPin {
   last: boolean;
 }
 
-export interface ModuleSortableRowProps {
+export interface ModuleSortableRowProps
+  extends Pick<ModuleAppRowMenu, "onRowPinToggle" | "onRowDelete"> {
   rowId: string;
   rowKey: string;
   sortable: boolean;
@@ -127,13 +124,5 @@ export interface ModuleSortableRowProps {
   pinnedTop?: number;
   className?: string;
   children: ReactNode;
-  onPinToggle?: (key: string) => void;
   onSelectToggle?: (key: string) => void;
-  onDelete?: (key: string) => void;
-}
-
-export interface ModuleCardGridProps<T> {
-  records: T[];
-  getKey: (record: T) => string;
-  renderCard: (record: T) => ReactNode;
 }

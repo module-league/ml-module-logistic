@@ -7,11 +7,14 @@ export interface ModuleFieldTypeOption {
   icon: LucideIcon;
 }
 
+/** Called with the field the Add field dialog built. Return a promise to keep the dialog open until it settles. */
+export type ModuleAddFieldHandler = (field: IField) => void | Promise<unknown>;
+
 export interface ModuleAddNewFieldDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Return a promise to keep the dialog open until it settles; a rejection shows its message and keeps the input. */
-  onAdd: (field: IField) => void | Promise<unknown>;
+  /** A rejection shows its message and keeps the input. */
+  onAdd: ModuleAddFieldHandler;
   /** Names already used by other fields; a field name must be unique. */
   takenNames?: string[];
 }

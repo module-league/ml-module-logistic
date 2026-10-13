@@ -1,23 +1,38 @@
 import { useCallback, useMemo, useState } from "react";
-import { PageHeader, ModulePageToolbar, toast } from "@moduleleague/ui";
-import { SAMPLE_PEOPLE } from "@/services/logistic/logistic.sample";
-import { useCurrentNavItem } from "@/module/shell/navItem.context";
-import type { ModuleAppViewMode } from "@/module/appView/moduleAppView.types";
-import type { ModulePageProps } from "./modulePage.types";
 import { arrayMove } from "@dnd-kit/sortable";
+import {
+  PageHeader,
+  ModulePageToolbar,
+  toast,
+  type PageToolbarFilterValue,
+  type PageToolbarInputOption,
+} from "@moduleleague/ui";
+import type { PageToolbarProps } from "@/components/ml/pageToolbar.types";
+import { useCurrentUser } from "@/services/user/current.user";
+import { useCurrentNavItem } from "@/module/shell/navItem.context";
+import type {
+  ModuleAppColumn,
+  ModuleAppViewMode,
+} from "@/module/appView/moduleAppView.types";
 import { ModuleAppView } from "@/module/appView/ModuleAppView";
-import { ModulePageFooter } from "./ModulePageFooter";
+import { ModuleNewRecordForm } from "@/module/record/ModuleNewRecordForm";
+import { ModuleRecordCard } from "@/module/record/ModuleRecordCard";
 import { RecordValueNode } from "@/module/record/RecordValueNode";
-import type { ModuleRecordField } from "@/module/record/moduleRecord.types";
+import { toRecordText } from "@/module/record/moduleRecord.utils";
+import { ModulePageFooter } from "./ModulePageFooter";
+import type { ModulePageProps } from "./modulePage.types";
 
-export function ModulePage<T>({
-  actions,
-  toolbar,
-  appView,
-  fields,
-  getRecordValues,
-}: ModulePageProps<T>) {
+const ADD_LABEL = "New record";
+const getRecordKey = (record: ISidebarRecord) => record?.objId;
+
+export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
+  const { fields, records } = data;
   const item = useCurrentNavItem();
+  const user = useCurrentUser();
+  const people = useMemo(() => [user], [user]);
+  const [newRecordOpen, setNewRecordOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<PageToolbarFilterValue>({});
   const [view, setView] = useState<ModuleAppViewMode>("list");
   const [page, setPage] = useState(1);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
@@ -27,43 +42,78 @@ export function ModulePage<T>({
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [rowOrder, setRowOrder] = useState<string[]>([]);
   const [pinnedRows, setPinnedRows] = useState<string[]>([]);
-  const [customFields, setCustomFields] = useState<IField[]>([]);
-  const addField = useCallback(
-    (field: IField) =>
-      setCustomFields((current) => [
-        ...current,
-        {
-          ...field,
-          displayOrder: (appView?.columns?.length ?? 0) + current.length,
-        },
-      ]),
-    [appView?.columns?.length],
+
+  const onRefreshFields = data.onRefreshFields;
+  const openNewRecord = useCallback(() => {
+    setNewRecordOpen(true);
+    onRefreshFields();
+  }, [onRefreshFields]);
+  const onAddRecord = data.onAddRecord;
+  const saveRecord = useCallback(
+    async (values: ISidebarRecordValues) => {
+      await onAddRecord(values);
+      toast.success("Record added");
+    },
+    [onAddRecord],
   );
-  const orderedRecords = useMemo(() => {
-    if (!rowOrder.length) return appView?.records ?? [];
-    const position = new Map(rowOrder.map((key, index) => [key, index]));
-    return [...(appView?.records ?? [])].sort(
-      (a, b) =>
-        (position.get(appView?.getKey(a)) ?? Number.MAX_SAFE_INTEGER) -
-        (position.get(appView?.getKey(b)) ?? Number.MAX_SAFE_INTEGER),
+
+  const inputOptions = useMemo<PageToolbarInputOption[]>(
+    () =>
+      fields
+        ?.filter((field) => field?.type === "single_select")
+        .map((field) => ({
+          key: field.objId,
+          label: field.name,
+          options:
+            field.dropDownValues?.map((option) => ({
+              value: option?.id,
+              label: option?.value,
+            })) ?? [],
+        })) ?? [],
+    [fields],
+  );
+  const filteredRecords = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return (
+      records?.filter((record) => {
+        const matchesFilter = Object.entries(filter).every(
+          ([fieldId, picked]) =>
+            !picked?.length || picked.includes(record?.values?.[fieldId] ?? ""),
+        );
+        if (!matchesFilter) return false;
+        if (!term) return true;
+        return fields?.some((field) =>
+          toRecordText(field, record?.values?.[field.objId])
+            .toLowerCase()
+            .includes(term),
+        );
+      }) ?? []
     );
-  }, [appView?.records, appView?.getKey, rowOrder]);
+  }, [records, fields, search, filter]);
+
+  const orderedRecords = useMemo(() => {
+    if (!rowOrder.length) return filteredRecords;
+    const position = new Map(rowOrder.map((key, index) => [key, index]));
+    return [...filteredRecords].sort(
+      (a, b) =>
+        (position.get(getRecordKey(a)) ?? Number.MAX_SAFE_INTEGER) -
+        (position.get(getRecordKey(b)) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }, [filteredRecords, rowOrder]);
   const reorderRow = useCallback(
     (activeKey: string, overKey: string) => {
-      const keys = orderedRecords.map((record) => appView?.getKey(record));
+      const keys = orderedRecords.map(getRecordKey);
       setRowOrder(
         arrayMove(keys, keys.indexOf(activeKey), keys.indexOf(overKey)),
       );
     },
-    [orderedRecords, appView?.getKey],
+    [orderedRecords],
   );
   const shownPinnedRows = useMemo(() => {
     if (!pinnedRows.length) return pinnedRows;
-    const keys = new Set(
-      appView?.records?.map((record) => appView?.getKey(record)),
-    );
+    const keys = new Set(filteredRecords.map(getRecordKey));
     return pinnedRows.filter((key) => keys.has(key));
-  }, [appView?.records, appView?.getKey, pinnedRows]);
+  }, [filteredRecords, pinnedRows]);
   const togglePinnedRow = useCallback(
     (key: string) =>
       setPinnedRows((current) =>
@@ -73,9 +123,8 @@ export function ModulePage<T>({
       ),
     [],
   );
-  const total = appView?.records?.length ?? 0;
+  const total = filteredRecords.length;
   const pinnedCount = view === "list" ? shownPinnedRows.length : 0;
-  const pageSize = appView?.pageSize ?? 20;
   const currentPage = useMemo(
     () =>
       Math.min(page, Math.max(1, Math.ceil((total - pinnedCount) / pageSize))),
@@ -89,56 +138,48 @@ export function ModulePage<T>({
     (next: string) => setView(next as ModuleAppViewMode),
     [],
   );
-  const hasGrid = !!appView?.renderCard;
-  const recordFields = useMemo<ModuleRecordField[]>(
-    () =>
-      fields
-        ? fields.map((field) => ({ key: field.objId, field }))
-        : customFields.map((field) => ({ key: `field:${field.name}`, field })),
-    [fields, customFields],
-  );
-  const orderedColumns = useMemo(() => {
+
+  const orderedColumns = useMemo<ModuleAppColumn<ISidebarRecord>[]>(() => {
     const position = (key: string) => {
       const index = columnOrder.indexOf(key);
       return index < 0 ? Number.MAX_SAFE_INTEGER : index;
     };
-    const fieldColumns = recordFields.map(({ key, field }) => ({
-      key,
-      header: field.name,
-      cell: (record: T) => (
-        <RecordValueNode
-          field={field}
-          value={getRecordValues?.(record)?.[key]}
-        />
-      ),
-    }));
-    return [...(appView?.columns ?? []), ...fieldColumns].sort(
-      (a, b) => position(a?.key) - position(b?.key),
+    return (
+      fields
+        ?.map((field) => ({
+          key: field.objId,
+          header: field.name,
+          cell: (record: ISidebarRecord) => (
+            <RecordValueNode
+              field={field}
+              value={record?.values?.[field.objId]}
+            />
+          ),
+        }))
+        .sort((a, b) => position(a.key) - position(b.key)) ?? []
     );
-  }, [appView?.columns, recordFields, columnOrder, getRecordValues]);
+  }, [fields, columnOrder]);
   const columnOptions = useMemo(
     () =>
-      orderedColumns?.map((column) => ({
-        key: column?.key,
-        label: typeof column?.header === "string" ? column.header : column?.key,
+      orderedColumns.map((column) => ({
+        key: column.key,
+        label: String(column.header),
       })),
     [orderedColumns],
   );
   const visibleColumns = useMemo(() => {
-    const shown = orderedColumns?.filter(
-      (column) => !hiddenColumns.includes(column?.key),
+    const shown = orderedColumns.filter(
+      (column) => !hiddenColumns.includes(column.key),
     );
     return [
-      ...shown.filter((column) => pinnedColumns.includes(column?.key)),
-      ...shown.filter((column) => !pinnedColumns.includes(column?.key)),
+      ...shown.filter((column) => pinnedColumns.includes(column.key)),
+      ...shown.filter((column) => !pinnedColumns.includes(column.key)),
     ];
   }, [orderedColumns, hiddenColumns, pinnedColumns]);
   const selectedCount = useMemo(() => {
-    const keys = new Set(
-      appView?.records?.map((record) => appView?.getKey(record)),
-    );
+    const keys = new Set(records?.map(getRecordKey));
     return selectedKeys.filter((key) => keys.has(key)).length;
-  }, [appView?.records, appView?.getKey, selectedKeys]);
+  }, [records, selectedKeys]);
   const clearSelection = useCallback(() => setSelectedKeys([]), []);
   const togglePinnedColumn = useCallback(
     (key: string) =>
@@ -149,7 +190,6 @@ export function ModulePage<T>({
       ),
     [],
   );
-
   const resizeColumn = useCallback(
     (key: string, width: number) =>
       setColumnWidths((current) => ({ ...current, [key]: width })),
@@ -160,50 +200,63 @@ export function ModulePage<T>({
       let next = 0;
       setColumnOrder(
         orderedColumns.map((column) =>
-          hiddenColumns.includes(column?.key)
-            ? column?.key
-            : visibleKeys[next++],
+          hiddenColumns.includes(column.key) ? column.key : visibleKeys[next++],
         ),
       );
     },
     [orderedColumns, hiddenColumns],
   );
 
-  const deleteSelected = useCallback(() => {
-    toolbar?.onDelete?.(selectedKeys);
-    setSelectedKeys([]);
-  }, [toolbar, selectedKeys]);
-  const deleteRow = useCallback(
-    (key: string) => toolbar?.onDelete?.([key]),
-    [toolbar],
+  const renderCard = useCallback(
+    (record: ISidebarRecord) => (
+      <ModuleRecordCard record={record} fields={fields} />
+    ),
+    [fields],
+  );
+  const empty = useMemo(
+    () =>
+      records?.length
+        ? {
+            title: "No matching records",
+            description: "Try another search or clear the filters.",
+          }
+        : { actionLabel: ADD_LABEL, onAction: openNewRecord },
+    [records?.length, openNewRecord],
   );
 
-  const pageToolbar = useMemo<PageToolbarProps | undefined>(
-    () =>
-      toolbar && {
-        ...toolbar,
-        ...(hasGrid && { view, onViewChange: changeView }),
-        ...(view === "list" && {
-          columnOptions,
-          hiddenColumns,
-          onHiddenColumnsChange: setHiddenColumns,
-          onColumnOrderChange: setColumnOrder,
-          onAddField: toolbar?.onAddField ?? addField,
-        }),
-        selectedCount,
-        onDeleteSelected: toolbar?.onDelete ? deleteSelected : undefined,
-        onCancelSelection: clearSelection,
-      },
+  const pageToolbar = useMemo<PageToolbarProps>(
+    () => ({
+      onAdd: openNewRecord,
+      addLabel: ADD_LABEL,
+      view,
+      onViewChange: changeView,
+      inputOptions,
+      filterValue: filter,
+      onFilterChange: setFilter,
+      search,
+      onSearchChange: setSearch,
+      searchPlaceholder: "Search records",
+      ...(view === "list" && {
+        columnOptions,
+        hiddenColumns,
+        onHiddenColumnsChange: setHiddenColumns,
+        onColumnOrderChange: setColumnOrder,
+        onAddField: data.onAddField,
+      }),
+      selectedCount,
+      onCancelSelection: clearSelection,
+    }),
     [
-      toolbar,
-      hasGrid,
+      openNewRecord,
       view,
       changeView,
+      inputOptions,
+      filter,
+      search,
       columnOptions,
       hiddenColumns,
-      addField,
+      data.onAddField,
       selectedCount,
-      deleteSelected,
       clearSelection,
     ],
   );
@@ -211,22 +264,24 @@ export function ModulePage<T>({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <main className="flex min-h-0 flex-1 flex-col">
-        {item?.sidebarText?.length || item?.sidebarDesc?.length ? (
+        {!!(item?.sidebarText?.length || item?.sidebarDesc?.length) && (
           <PageHeader
             title={item?.sidebarText}
             description={item?.sidebarDesc}
             hidePageSeparator={item?.hidePageSeparator}
             actions={actions}
-            people={SAMPLE_PEOPLE}
+            people={people}
             onInvitePeople={invitePeople}
           />
-        ) : (
-          <></>
         )}
-        {pageToolbar && <ModulePageToolbar {...pageToolbar} />}
+        <ModulePageToolbar {...pageToolbar} />
         <ModuleAppView
-          {...appView}
+          {...data.recordsState}
+          records={orderedRecords}
+          getKey={getRecordKey}
           columns={visibleColumns}
+          renderCard={renderCard}
+          empty={empty}
           columnWidths={columnWidths}
           onColumnResize={resizeColumn}
           onColumnReorder={reorderVisibleColumns}
@@ -234,13 +289,11 @@ export function ModulePage<T>({
           onColumnPinToggle={togglePinnedColumn}
           selectedKeys={selectedKeys}
           onSelectionChange={setSelectedKeys}
-          records={orderedRecords}
           onRowReorder={reorderRow}
           pinnedRows={shownPinnedRows}
           onRowPinToggle={togglePinnedRow}
-          onRowDelete={toolbar?.onDelete ? deleteRow : undefined}
-          onAdd={toolbar?.onAdd}
-          addLabel={toolbar?.addLabel}
+          onAdd={openNewRecord}
+          addLabel={ADD_LABEL}
           appView={view}
           page={currentPage}
           pageSize={pageSize}
@@ -255,6 +308,13 @@ export function ModulePage<T>({
         selectedCount={selectedCount}
         onClearSelection={clearSelection}
         pinnedCount={pinnedCount}
+      />
+      <ModuleNewRecordForm
+        {...data.fieldsState}
+        open={newRecordOpen}
+        onOpenChange={setNewRecordOpen}
+        fields={fields}
+        onSave={saveRecord}
       />
     </div>
   );

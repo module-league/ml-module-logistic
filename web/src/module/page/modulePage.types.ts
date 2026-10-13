@@ -1,50 +1,41 @@
 import type { ReactNode } from "react";
-import type { PageToolbarProps } from "@/components/ml/pageToolbar.types";
 import type {
   ModuleAppViewMode,
-  ModuleAppViewProps,
+  ModuleQueryState,
 } from "@/module/appView/moduleAppView.types";
 
-export interface ModulePageProps<T> {
+/** The API functions a page hands to useModuleData; each page picks its own, all return the same shapes. */
+export interface ModuleDataApi {
+  getFields: (sidebarId: string) => Promise<ISidebarField[]>;
+  getRecords: (sidebarId: string) => Promise<ISidebarRecord[]>;
+  createRecord: (
+    sidebarId: string,
+    values: ISidebarRecordValues,
+  ) => Promise<ISidebarRecord>;
+  createField: (
+    sidebarId: string,
+    body: ISidebarFieldCreate,
+  ) => Promise<ISidebarField>;
+}
+
+/** What every page passes into ModulePage, whichever API it came from. */
+export interface ModuleData {
+  fields: ISidebarField[];
+  /** Fetching state of the fields; refetched each time the New record dialog opens. */
+  fieldsState: ModuleQueryState;
+  records: ISidebarRecord[];
+  recordsState: ModuleQueryState;
+  onRefreshFields: () => void;
+  onAddRecord: (values: ISidebarRecordValues) => Promise<unknown>;
+  onAddField: (field: IField) => Promise<unknown>;
+}
+
+export interface ModulePageProps {
+  data: ModuleData;
   /** Buttons shown on the right of the page header. */
   actions?: ReactNode;
-  /** Add, filter, export and search row shown under the page header. */
-  toolbar?: Omit<
-    PageToolbarProps,
-    | "view"
-    | "onViewChange"
-    | "columnOptions"
-    | "hiddenColumns"
-    | "onHiddenColumnsChange"
-    | "onColumnOrderChange"
-    | "selectedCount"
-    | "onDeleteSelected"
-    | "onCancelSelection"
-  >;
-  /** The records, shown as a table by default. */
-  appView: Omit<
-    ModuleAppViewProps<T>,
-    | "appView"
-    | "page"
-    | "columnWidths"
-    | "onColumnResize"
-    | "onColumnReorder"
-    | "pinnedColumns"
-    | "onColumnPinToggle"
-    | "selectedKeys"
-    | "onSelectionChange"
-    | "onRowReorder"
-    | "pinnedRows"
-    | "onRowPinToggle"
-    | "onRowDelete"
-    | "onRowExpand"
-    | "onAdd"
-    | "addLabel"
-  >;
-  /** Field templates shown as extra columns, e.g. from useFields(). Without it, added fields only live in this page. */
-  fields?: ISidebarField[];
-  /** Reads a record's field values (by field key) for the field columns. */
-  getRecordValues?: (record: T) => Record<string, string | null | undefined>;
+  /** @default 20 */
+  pageSize?: number;
 }
 
 export interface ModulePageFooterProps {

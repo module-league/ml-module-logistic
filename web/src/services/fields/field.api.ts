@@ -6,16 +6,27 @@ import {
 import { fieldKeys, putInLists, toOptionInputs } from "./field.utils";
 import { apiClient } from "@/lib/apiClient";
 
-async function getFields(sidebarId: string) {
+export async function getLogisticFields(sidebarId: string) {
   const { data } = await apiClient.get<ISidebarField[]>(
     `/sidebars/${encodeURIComponent(sidebarId)}/fields`,
   );
   return data;
 }
 
-async function getField(objId: string) {
+export async function getLogisticField(objId: string) {
   const { data } = await apiClient.get<ISidebarField>(
     `/fields/${encodeURIComponent(objId)}`,
+  );
+  return data;
+}
+
+export async function createLogisticField(
+  sidebarId: string,
+  body: ISidebarFieldCreate,
+) {
+  const { data } = await apiClient.post<ISidebarField>(
+    `/sidebars/${encodeURIComponent(sidebarId)}/fields`,
+    body,
   );
   return data;
 }
@@ -34,7 +45,7 @@ export function toFieldCreate(field: IField): ISidebarFieldCreate {
 export function useFields(sidebarId?: string) {
   return useQuery({
     queryKey: fieldKeys.list(sidebarId ?? ""),
-    queryFn: () => getFields(sidebarId ?? ""),
+    queryFn: () => getLogisticFields(sidebarId ?? ""),
     enabled: !!sidebarId,
   });
 }
@@ -43,7 +54,7 @@ export function useFields(sidebarId?: string) {
 export function useField(objId?: string) {
   return useQuery({
     queryKey: fieldKeys.detail(objId ?? ""),
-    queryFn: () => getField(objId ?? ""),
+    queryFn: () => getLogisticField(objId ?? ""),
     enabled: !!objId,
   });
 }
@@ -51,13 +62,8 @@ export function useField(objId?: string) {
 export function useCreateField(sidebarId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (body: ISidebarFieldCreate) => {
-      const { data } = await apiClient.post<ISidebarField>(
-        `/sidebars/${encodeURIComponent(sidebarId)}/fields`,
-        body,
-      );
-      return data;
-    },
+    mutationFn: (body: ISidebarFieldCreate) =>
+      createLogisticField(sidebarId, body),
     onSuccess: (created) => {
       queryClient.setQueryData(fieldKeys.detail(created.objId), created);
       putInLists(queryClient, sidebarId, (fields) => [...fields, created]);

@@ -1,7 +1,6 @@
 import { lazy } from "react";
 import { ChartColumn, ClipboardClock, LayoutDashboard, MapPin, PackageCheck, Truck } from "lucide-react";
 import type { IModuleConfig } from "@/module/shell/module.types";
-import { usePendingCount } from "@/services/logistic/logistic.sample";
 
 export const moduleConfig: IModuleConfig = {
   code: "logistic",
@@ -37,7 +36,6 @@ export const moduleConfig: IModuleConfig = {
           sidebarDesc: "Pending shipments waiting to be dispatched.",
           sidebarIcon: ClipboardClock,
           className: "text-amber-700",
-          useBadge: usePendingCount,
           page: lazy(() => import("@/pages/AwaitingTask")),
         },
         {
