@@ -31,3 +31,15 @@ export async function createLogisticRecord(
   );
   return data;
 }
+
+export async function updateLogisticRecord(
+  sidebarId: string,
+  objId: string,
+  body: ISidebarRecordUpdate,
+) {
+  const { data } = await apiClient.put<ISidebarRecord>(
+    `/sidebars/${encodeURIComponent(sidebarId)}/records/${encodeURIComponent(objId)}`,
+    body,
+  );
+  return data;
+}

@@ -13,6 +13,7 @@ import { useCurrentNavItem } from "@/module/shell/navItem.context";
 import type { ModuleAppColumn } from "@/module/appView/moduleAppView.types";
 import { ModuleAppView } from "@/module/appView/ModuleAppView";
 import { ModuleNewRecordForm } from "@/module/record/ModuleNewRecordForm";
+import { ModuleOpenRecord } from "@/module/record/ModuleOpenRecord";
 import { RecordValueNode } from "@/components/custom/RecordValueNode";
 import { toRecordText } from "@/module/record/moduleRecord.utils";
 import { ModulePageFooter } from "./ModulePageFooter";
@@ -43,6 +44,16 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     setNewRecordOpen(true);
     onRefreshFields();
   }, [onRefreshFields]);
+  const onOpenRecord = data.onOpenRecord;
+  const openRecord = useCallback(
+    (objId: string) => {
+      onOpenRecord(objId);
+      onRefreshFields();
+    },
+    [onOpenRecord, onRefreshFields],
+  );
+  const openedRecordLoading =
+    !!data.fieldsState?.isLoading || !!data.openedRecordState?.isLoading;
   const onAddRecord = data.onAddRecord;
   const saveRecord = useCallback(
     async (values: ISidebarRecordValues) => {
@@ -270,6 +281,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           onRowReorder={reorderRow}
           pinnedRows={shownPinnedRows}
           onRowPinToggle={togglePinnedRow}
+          onRowExpand={openRecord}
           onAdd={openNewRecord}
           addLabel={ADD_LABEL}
           pageSize={pageSize}
@@ -291,6 +303,16 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
         onOpenChange={setNewRecordOpen}
         fields={fields}
         onSave={saveRecord}
+      />
+      <ModuleOpenRecord
+        recordKey={data.openedRecordId}
+        onClose={data.onCloseRecord}
+        fields={fields}
+        record={data.openedRecord}
+        isLoading={openedRecordLoading}
+        error={data.openedRecordState?.error ?? data.fieldsState?.error}
+        onRetry={data.openedRecordState?.onRetry}
+        onSave={data.onUpdateRecord}
       />
     </div>
   );

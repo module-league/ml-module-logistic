@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using LogisticApi.MVVM;
 using LogisticApi.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -38,6 +38,19 @@ namespace LogisticApi.Controllers
     Guid objId,
     CancellationToken ct) =>
     records.GetAsync(sidebarId, objId, ct);
+
+        /// <summary>Replaces the record's values. Send the versionNo you last read; a stale one is rejected with 409.</summary>
+        [HttpPut("{objId:guid}")]
+        [ProducesResponseType<LogisticRecordResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+        public Task<LogisticRecordResponse> UpdateRecord(
+            [FromRoute, MaxLength(100), RegularExpression(SidebarIdPattern)] string sidebarId,
+            Guid objId,
+            [FromBody] LogisticRecordUpdateRequest request,
+            CancellationToken ct) =>
+            records.UpdateAsync(sidebarId, objId, request, ct);
 
     }
 }

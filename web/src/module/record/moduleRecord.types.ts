@@ -5,14 +5,24 @@ export interface ModuleRecordFormValues {
   values: string[];
 }
 
+/** Where useAutoSave is: an edit waiting for the pause, a save running, the last save done or failed. */
+export type AutoSaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
+
 /** The inputs and buttons shared by the new and the open record dialogs. */
 export interface ModuleRecordFormProps {
   fields: ISidebarField[];
-  /** Starting values when opening an existing record. */
+  /** Starting values of an existing record; Save then stays off until something changes. */
   values?: ISidebarRecordValues;
-  saving: boolean;
-  onCancel: () => void;
-  onSave: (values: ISidebarRecordValues) => void;
+  saving?: boolean;
+  /** Inputs are disabled. */
+  readOnly?: boolean;
+  submitLabel?: string;
+  savingLabel?: string;
+  onCancel?: () => void;
+  /** Shows the Cancel and submit buttons. */
+  onSave?: (values: ISidebarRecordValues) => void;
+  /** Called with every value after each edit; used for auto-save. */
+  onValuesChange?: (values: ISidebarRecordValues) => void;
 }
 
 export interface ModuleNewRecordFormProps extends ModuleQueryState {
@@ -28,7 +38,11 @@ export interface ModuleOpenRecordProps extends ModuleQueryState {
   recordKey?: string;
   onClose: () => void;
   fields: ISidebarField[];
-  values?: ISidebarRecordValues;
-  /** Without it the dialog is read-only. */
+  record?: ISidebarRecord;
+  /** Called by auto-save after edits pause; without it the dialog is read-only. A rejection shows its message. */
   onSave?: (values: ISidebarRecordValues) => void | Promise<unknown>;
+}
+
+export interface ModuleAutoSaveStatusProps {
+  status: AutoSaveStatus;
 }

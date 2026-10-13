@@ -5,9 +5,15 @@ import type { ModuleQueryState } from "@/module/shell/module.types";
 export interface ModuleDataApi {
   getFields: (sidebarId: string) => Promise<ISidebarField[]>;
   getRecords: (sidebarId: string) => Promise<ISidebarRecord[]>;
+  getRecord: (sidebarId: string, objId: string) => Promise<ISidebarRecord>;
   createRecord: (
     sidebarId: string,
     values: ISidebarRecordValues,
+  ) => Promise<ISidebarRecord>;
+  updateRecord: (
+    sidebarId: string,
+    objId: string,
+    body: ISidebarRecordUpdate,
   ) => Promise<ISidebarRecord>;
   createField: (
     sidebarId: string,
@@ -24,6 +30,15 @@ export interface ModuleData {
   recordsState: ModuleQueryState;
   onRefreshFields: () => void;
   onAddRecord: (values: ISidebarRecordValues) => Promise<unknown>;
+  /** objId of the record open in ModuleOpenRecord. */
+  openedRecordId?: string;
+  /** The open record; the row from the list shows while the fresh copy loads. */
+  openedRecord?: ISidebarRecord;
+  openedRecordState: ModuleQueryState;
+  onOpenRecord: (objId: string) => void;
+  onCloseRecord: () => void;
+  /** Saves the open record with its latest versionNo, so back-to-back auto-saves don't conflict. */
+  onUpdateRecord: (values: ISidebarRecordValues) => Promise<unknown>;
   onAddField: (field: IField) => Promise<unknown>;
 }
 

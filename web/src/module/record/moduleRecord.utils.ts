@@ -1,3 +1,11 @@
+/** Size of the new and open record dialogs. */
+export const RECORD_DIALOG_STYLE = {
+  width: "100%",
+  maxWidth: "60%",
+  height: "80%",
+  marginTop: "3%",
+};
+
 /** The text a value shows in a cell: a select shows its option's label instead of the option id. */
 export function toRecordText(field: IField, value?: string | null) {
   if (!value) return "";

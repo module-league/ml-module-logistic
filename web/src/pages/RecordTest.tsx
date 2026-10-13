@@ -8,13 +8,17 @@ import {
 } from "@/services/fields/field.api";
 import {
   createLogisticRecord,
+  getLogisticRecord,
   getLogisticRecords,
+  updateLogisticRecord,
 } from "@/services/records/record.api";
 
 const recordTestApi: ModuleDataApi = {
   getFields: getLogisticFields,
   getRecords: getLogisticRecords,
+  getRecord: getLogisticRecord,
   createRecord: createLogisticRecord,
+  updateRecord: updateLogisticRecord,
   createField: createLogisticField,
 };
 

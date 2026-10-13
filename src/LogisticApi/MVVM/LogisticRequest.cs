@@ -1,8 +1,14 @@
-﻿namespace LogisticApi.MVVM
+namespace LogisticApi.MVVM
 {
     public class LogisticRecordCreateRequest 
     {
         public Dictionary<Guid, string?> values { get; set; } = [];
+    }
+
+    public class LogisticRecordUpdateRequest
+    {
+        public Dictionary<Guid, string?> values { get; set; } = [];
+        public int versionNo { get; set; }
     }
 
     public class LogisticRecordValue
