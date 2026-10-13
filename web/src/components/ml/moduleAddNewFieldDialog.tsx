@@ -163,10 +163,10 @@ function AddFieldSteps({
             aria-label="Field type"
             className="grid grid-cols-1 gap-3 sm:grid-cols-3"
           >
-            {MODULE_FIELD_TYPES.map((fieldType) => (
+            {MODULE_FIELD_TYPES.map((typeOption) => (
               <FieldTypeCard
-                key={fieldType.value}
-                option={fieldType}
+                key={typeOption.fieldType}
+                option={typeOption}
                 onChoose={setType}
               />
             ))}
@@ -259,7 +259,7 @@ function FieldTypeCard({ option, onChoose }: ModuleFieldTypeCardProps) {
       type="button"
       role="radio"
       aria-checked={false}
-      onClick={() => onChoose(option?.value)}
+      onClick={() => onChoose(option?.fieldType)}
       className="flex cursor-pointer flex-col gap-2 rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-primary-10 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
     >
       <span className="flex size-8 items-center justify-center rounded-md bg-primary-10 text-primary">

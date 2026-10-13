@@ -30,6 +30,8 @@ export interface ModuleAppRowMenu {
   pinnedRows?: string[];
   onRowPinToggle?: (key: string) => void;
   onRowDelete?: (key: string) => void;
+  /** The row's expand button; without it the button is hidden. */
+  onRowExpand?: (key: string) => void;
 }
 
 export interface ModuleAppSelection {

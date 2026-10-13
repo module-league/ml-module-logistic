@@ -5,19 +5,19 @@ import type { ModuleFieldTypeOption } from "./moduleAddNewField.types";
 
 export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
   {
-    value: "text",
+    fieldType: "text",
     label: "Text",
     description: "Names, notes, references.",
     icon: Type,
   },
   {
-    value: "number",
+    fieldType: "number",
     label: "Number",
     description: "Quantities, weights, prices.",
     icon: Hash,
   },
   {
-    value: "single_select",
+    fieldType: "single_select",
     label: "Select",
     description: "One choice from a list.",
     icon: ListChecks,
@@ -30,7 +30,7 @@ export const lockToVerticalAxis: Modifier = ({ transform }) => ({
 });
 
 export function fieldTypeOption(type: IField["type"]) {
-  return MODULE_FIELD_TYPES.find((option) => option.value === type);
+  return MODULE_FIELD_TYPES.find((option) => option.fieldType === type);
 }
 
 export function isFieldNameTaken(name: string, takenNames?: string[]) {

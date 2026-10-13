@@ -31,9 +31,6 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   ModuleAddNewButton,
   Table,
   TableBody,
@@ -76,6 +73,7 @@ export function ListView<T>({
   pinnedRows,
   onRowPinToggle,
   onRowDelete,
+  onRowExpand,
 }: ModuleListViewProps<T>) {
   const selectable = !!onSelectionChange;
   const pageKeys = useMemo(
@@ -108,10 +106,6 @@ export function ListView<T>({
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
-  const [expandedKey, setExpandedKey] = useState<string>();
-  const changeExpanded = useCallback((open: boolean) => {
-    if (!open) setExpandedKey(undefined);
-  }, []);
   const [rowHeight, setRowHeight] = useState<number>();
   const measureRow = useCallback((node: HTMLTableRowElement | null) => {
     if (node) setRowHeight(node.getBoundingClientRect().height);
@@ -313,17 +307,19 @@ export function ListView<T>({
                             checked={selected}
                             onCheckedChange={() => toggleRow(key)}
                           />
-                          <Button
-                            type="button"
-                            aria-label="Expand record"
-                            title="Expand"
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={() => setExpandedKey(key)}
-                            startIcon={<Maximize2 className="size-2" />}
-                            variant={"outline"}
-                            size="xs"
-                            className="shadow-md opacity-0 group-hover/row:opacity-100 hover:bg-foreground/10 hover:text-foreground focus-visible:opacity-100"
-                          ></Button>
+                          {onRowExpand && (
+                            <Button
+                              type="button"
+                              aria-label="Expand record"
+                              title="Expand"
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onClick={() => onRowExpand(key)}
+                              startIcon={<Maximize2 className="size-2" />}
+                              variant={"outline"}
+                              size="xs"
+                              className="shadow-md opacity-0 group-hover/row:opacity-100 hover:bg-foreground/10 hover:text-foreground focus-visible:opacity-100"
+                            ></Button>
+                          )}
                         </div>
                       </TableCell>
                     )}
@@ -385,15 +381,6 @@ export function ListView<T>({
           </TableBody>
         </Table>
       </DndContext>
-
-      <Dialog open={!!expandedKey} onOpenChange={changeExpanded}>
-        <DialogContent
-          aria-describedby={undefined}
-          className="h-72 w-72 sm:max-w-72"
-        >
-          <DialogTitle className="sr-only">Record</DialogTitle>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

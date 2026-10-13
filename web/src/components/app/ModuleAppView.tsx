@@ -26,6 +26,7 @@ export function ModuleAppView<T>({
   pinnedRows,
   onRowPinToggle,
   onRowDelete,
+  onRowExpand,
 }: ModuleAppViewProps<T>) {
   const total = records?.length ?? 0;
   const visible = useMemo(() => {
@@ -73,6 +74,7 @@ export function ModuleAppView<T>({
           pinnedRows={pinnedRows}
           onRowPinToggle={onRowPinToggle}
           onRowDelete={onRowDelete}
+          onRowExpand={onRowExpand}
         />
       )}
     </div>

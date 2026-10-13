@@ -10,6 +10,7 @@ import {
 
 const RECORDS: { objId: string }[] = [];
 const getRecordKey = (record: { objId: string }) => record.objId;
+const EMPTY = { actionLabel: "New record" };
 
 export default function RecordTest() {
   const sidebarId = useCurrentNavItem()?.sidebarId;
@@ -21,10 +22,9 @@ export default function RecordTest() {
   );
   const [search, setSearch] = useState("");
 
-  const notYet = useCallback(
-    () => toast.info("Creating records comes with the records API."),
-    [],
-  );
+  const saveRecord = useCallback(() => {
+    toast.info("Saving records comes with the records API.");
+  }, []);
   const deleteRecords = useCallback(
     (keys: string[]) =>
       toast.info(
@@ -35,7 +35,6 @@ export default function RecordTest() {
 
   const toolbar = useMemo(
     () => ({
-      onAdd: notYet,
       addLabel: "New record",
       onDelete: deleteRecords,
       onAddField: addField,
@@ -43,18 +42,19 @@ export default function RecordTest() {
       onSearchChange: setSearch,
       searchPlaceholder: "Search records",
     }),
-    [notYet, deleteRecords, addField, search],
+    [deleteRecords, addField, search],
   );
 
   return (
     <ModulePage
       toolbar={toolbar}
       fields={fields}
+      onSaveRecord={saveRecord}
       appView={{
         records: RECORDS,
         getKey: getRecordKey,
         columns: [],
-        empty: { actionLabel: "New record", onAction: notYet },
+        empty: EMPTY,
       }}
     />
   );

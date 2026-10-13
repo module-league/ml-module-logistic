@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 
 export interface ModuleFieldTypeOption {
-  value: IField["type"];
+  fieldType: IField["type"];
   label: string;
   description: string;
   icon: LucideIcon;
