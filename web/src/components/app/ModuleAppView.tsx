@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { ModuleAppViewProps } from "../../services/moduleAppView.types";
+import type { ModuleAppViewProps } from "../../services/modules/moduleAppView.types";
 import { ModuleEmptyAppView } from "./ModuleEmptyAppView";
 import { GridView } from "./view/GridView";
 import { ListView } from "./view/ListView";

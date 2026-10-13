@@ -5,7 +5,7 @@ import type {
   LayoutNode,
   PaneNode,
   SplitEdge,
-} from "../services/workspace.types";
+} from "../services/workspaces/workspace.types";
 
 /** Splitting stops here so panes stay usable. */
 export const MAX_PANES = 2;

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@moduleleague/ui";
-import type { ModulePageFooterProps } from "../../services/moduleAppView.types";
+import type { ModulePageFooterProps } from "../../services/modules/moduleAppView.types";
 
 export function ModulePageFooter({
   total,

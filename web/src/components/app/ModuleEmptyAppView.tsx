@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Layers, Plus } from "lucide-react";
 import { cn, ModuleAddNewButton } from "@moduleleague/ui";
-import type { ModuleAppEmptyState } from "../../services/moduleAppView.types";
+import type { ModuleAppEmptyState } from "../../services/modules/moduleAppView.types";
 
 const BLUEPRINT_CORNERS = [
   "top-2 left-2",

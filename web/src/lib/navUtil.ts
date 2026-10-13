@@ -1,4 +1,4 @@
-import type { IModuleConfig, INavItemConfig } from "../services/module.types";
+import type { IModuleConfig, INavItemConfig } from "../services/modules/module.types";
  
 export function flattenNavItems(config: IModuleConfig): INavItemConfig[] {
   return config?.groups?.flatMap((group) => group?.items);

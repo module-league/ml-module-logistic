@@ -5,7 +5,7 @@ import { ResizeSeparator } from "../custom/ResizeSeparator";
 import { ModuleSidebar } from "./ModuleSidebar";
 import { TopBarActions } from "./TopBarActions";
 import { WorkspaceView } from "./WorkspaceView";
-import type { IModuleConfig } from "../../services/module.types";
+import type { IModuleConfig } from "../../services/modules/module.types";
 
 const BACKDROP_CLASS = "bg-sidebar bg-(image:--module-backdrop) bg-fixed";
 

@@ -1,13 +1,15 @@
 import { useMemo } from "react";
 import { Button } from "@moduleleague/ui";
 import { STATUS_LABELS, type Logistic } from "@/services/types";
-import type { ModuleAppColumn } from "@/services/moduleAppView.types";
+import type { ModuleAppColumn } from "@/services/modules/moduleAppView.types";
 import { formatDocNo } from "@/lib/formatDocNo";
 import { dateToFriendlyLongString } from "@/lib/dateHelper";
 
 export const getLogisticKey = (logistic: Logistic) => logistic?.objId;
 
-export function useLogisticColumns(onEdit: () => void): ModuleAppColumn<Logistic>[] {
+export function useLogisticColumns(
+  onEdit: () => void,
+): ModuleAppColumn<Logistic>[] {
   return useMemo(
     () => [
       {

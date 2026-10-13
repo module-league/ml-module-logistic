@@ -1,4 +1,4 @@
-import type { PrimaryPreset } from "../services/moduleSettings.types";
+import type { PrimaryPreset } from "../services/modules/moduleSettings.types";
 
 /**
  * Generate random deep color and return as hex string format

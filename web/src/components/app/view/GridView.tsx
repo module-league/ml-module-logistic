@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import type { ModuleCardGridProps } from "../../../services/moduleAppView.types";
+import type { ModuleCardGridProps } from "../../../services/modules/moduleAppView.types";
 import { columnsFor } from "./GridView.utils";
 
 export function GridView<T>({

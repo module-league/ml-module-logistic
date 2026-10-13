@@ -35,7 +35,7 @@ import type {
   ModuleListHeaderCellProps,
   ModuleListViewProps,
   ModuleSortableRowProps,
-} from "../../../services/moduleAppView.types";
+} from "../../../services/modules/moduleAppView.types";
 import { ModuleEmptyAppView } from "../ModuleEmptyAppView";
 import {
   COLUMN_WIDTH,
@@ -102,12 +102,9 @@ export function ListView<T>({
     if (node) setRowHeight(node.getBoundingClientRect().height);
   }, []);
   const [headerHeight, setHeaderHeight] = useState<number>();
-  const measureHeader = useCallback(
-    (node: HTMLTableSectionElement | null) => {
-      if (node) setHeaderHeight(node.getBoundingClientRect().height);
-    },
-    [],
-  );
+  const measureHeader = useCallback((node: HTMLTableSectionElement | null) => {
+    if (node) setHeaderHeight(node.getBoundingClientRect().height);
+  }, []);
   const pinnedIndex = useMemo(
     () =>
       new Map(
@@ -179,10 +176,7 @@ export function ListView<T>({
     ({ active, over }: DragEndEvent) => {
       if (!over || active?.id === over?.id) return;
       if (active?.data?.current?.type === "row") {
-        onRowReorder?.(
-          active.data.current?.key,
-          over.data.current?.key,
-        );
+        onRowReorder?.(active.data.current?.key, over.data.current?.key);
         return;
       }
       onColumnReorder?.(
@@ -225,9 +219,7 @@ export function ListView<T>({
             >
               <TableRow className="border-b-foreground/20 hover:bg-transparent">
                 {selectable && (
-                  <TableHead
-                    className="sticky left-0 z-20 h-4 px-0 bg-table-head sticky-line"
-                  >
+                  <TableHead className="sticky left-0 z-20 h-4 px-0 bg-table-head sticky-line">
                     <span className="flex items-center justify-center">
                       <Checkbox
                         aria-label="Select all on this page"

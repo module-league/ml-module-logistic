@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
-import type { IModuleConfig, INavItemConfig } from "../services/module.types";
-import type { IWorkspace } from "../services/workspace.types";
+import type { IModuleConfig, INavItemConfig } from "../services/modules/module.types";
+import type { IWorkspace } from "../services/workspaces/workspace.types";
 
 /** The tab being dragged and the pane it came from. */
 export interface DraggedTab {

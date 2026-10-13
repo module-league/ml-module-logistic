@@ -3,7 +3,7 @@ import {
   type CollisionDetection,
   type Modifier,
 } from "@dnd-kit/core";
-import type { ModuleColumnPin } from "../../../services/moduleAppView.types";
+import type { ModuleColumnPin } from "../../../services/modules/moduleAppView.types";
 
 export const COLUMN_WIDTH = { default: 160, min: 64, last: 120, select: 36 };
 

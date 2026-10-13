@@ -29,12 +29,12 @@ import {
   updateModuleSettings,
   useModuleSettings,
 } from "../../lib/moduleSettingsUtil";
-import type { IModuleConfig } from "../../services/module.types";
+import type { IModuleConfig } from "../../services/modules/module.types";
 import type {
   IModuleSettings,
   ModuleThemeMode,
   PrimaryPreset,
-} from "../../services/moduleSettings.types";
+} from "../../services/modules/moduleSettings.types";
 
 interface ModuleSettingsProps {
   config: IModuleConfig;
@@ -107,7 +107,8 @@ export function ModuleSettings({ config, children }: ModuleSettingsProps) {
             {config?.title} settings
           </DialogTitle>
           <DialogDescription>
-            Preview your choice here; it is applied when you click Done and saved on this device.
+            Preview your choice here; it is applied when you click Done and
+            saved on this device.
           </DialogDescription>
         </DialogHeader>
 

@@ -4,7 +4,7 @@ import { Button, toast } from "@moduleleague/ui";
 import { ModulePage } from "@/components/app/ModulePage";
 import { sampleStore, useSampleLogistics } from "@/services/sample-data";
 import type { Logistic } from "@/services/types";
-import type { ModuleAppColumn } from "@/services/moduleAppView.types";
+import type { ModuleAppColumn } from "@/services/modules/moduleAppView.types";
 import { formatDocNo } from "@/lib/formatDocNo";
 import { dateToFriendlyLongString } from "@/lib/dateHelper";
 

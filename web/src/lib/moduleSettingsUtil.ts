@@ -1,5 +1,5 @@
 import { useSyncExternalStore, type CSSProperties } from "react";
-import type { IModuleSettings } from "../services/moduleSettings.types";
+import type { IModuleSettings } from "../services/modules/moduleSettings.types";
 import {
   DEFAULT_BACKGROUND,
   DEFAULT_PRIMARY,

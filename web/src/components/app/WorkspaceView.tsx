@@ -19,7 +19,7 @@ import { ModuleViewerTab } from "./ModuleViewerTab";
 import { SNAP_PANEL_ID, SnapLayoutDrawer } from "./SnapLayoutDrawer";
 import { NavItemContext } from "../../context/navItem.context";
 import { flattenNavItems } from "../../lib/navUtil";
-import type { IModuleConfig } from "../../services/module.types";
+import type { IModuleConfig } from "../../services/modules/module.types";
 import {
   WorkspaceContext,
   useWorkspaceContext,
@@ -45,7 +45,7 @@ import type {
   SnapTarget,
   SplitEdge,
   SplitNode,
-} from "../../services/workspace.types";
+} from "../../services/workspaces/workspace.types";
 
 // Panes can't be resized smaller than this (px).
 const MIN_PANE_SIZE = 280;
@@ -79,7 +79,9 @@ const collisionDetection: CollisionDetection = (args) => {
   if (snapCells.length > 0) return snapCells;
   const panel = hits.filter((hit) => hit.id === SNAP_PANEL_ID);
   if (panel.length > 0) return panel;
-  const tabs = hits.filter((hit) => "key" in (hit.data?.droppableContainer?.data?.current ?? {}));
+  const tabs = hits.filter(
+    (hit) => "key" in (hit.data?.droppableContainer?.data?.current ?? {}),
+  );
   return tabs.length > 0 ? tabs : hits;
 };
 
@@ -126,7 +128,8 @@ export function WorkspaceView({ config }: { config: IModuleConfig }) {
       | undefined;
     if (!tab || !target) return;
     if ("key" in target) {
-      if (target.key === tab.key && target.fromPaneId === tab.fromPaneId) return;
+      if (target.key === tab.key && target.fromPaneId === tab.fromPaneId)
+        return;
       if (target.fromPaneId !== tab.fromPaneId) {
         moveTab(storageKey, tab.key, tab.fromPaneId, {
           paneId: target.fromPaneId,
@@ -134,7 +137,9 @@ export function WorkspaceView({ config }: { config: IModuleConfig }) {
         });
       }
       context.goTo(
-        focusedKey(reorderTab(storageKey, target.fromPaneId, tab.key, target.key)),
+        focusedKey(
+          reorderTab(storageKey, target.fromPaneId, tab.key, target.key),
+        ),
       );
       return;
     }

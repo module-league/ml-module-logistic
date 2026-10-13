@@ -29,11 +29,11 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@moduleleague/ui";
-import { useCurrentUser } from "../../services/current.user";
+import { useCurrentUser } from "../../services/user/current.user";
 import type {
   IModuleConfig,
   INavItemConfig,
-} from "../../services/module.types";
+} from "../../services/modules/module.types";
 import { UserAvatar } from "../custom/UserAvatar";
 import { ModuleSettings } from "./ModuleSettings";
 
@@ -85,7 +85,9 @@ export function ModuleSidebar({
     .map((group) => ({
       ...group,
       items: term
-        ? group.items.filter((item) => item.sidebarText.toLowerCase().includes(term))
+        ? group.items.filter((item) =>
+            item.sidebarText.toLowerCase().includes(term),
+          )
         : group.items,
     }))
     .filter((group) => group.items.length > 0);

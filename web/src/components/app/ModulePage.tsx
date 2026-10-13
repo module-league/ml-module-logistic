@@ -6,7 +6,7 @@ import type { PageToolbarProps } from "../ml/pageToolbar.types";
 import type {
   ModuleAppViewMode,
   ModuleAppViewProps,
-} from "../../services/moduleAppView.types";
+} from "../../services/modules/moduleAppView.types";
 import { arrayMove } from "@dnd-kit/sortable";
 import { ModuleAppView } from "./ModuleAppView";
 import { ModulePageFooter } from "./ModulePageFooter";

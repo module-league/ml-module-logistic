@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import { ChartColumn, ClipboardClock, LayoutDashboard, MapPin, PackageCheck, Truck } from "lucide-react";
-import type { IModuleConfig } from "@/services/module.types";
+import type { IModuleConfig } from "@/services/modules/module.types";
 import { usePendingCount } from "@/services/sample-data";
 
 export const moduleConfig: IModuleConfig = {

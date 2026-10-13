@@ -17,7 +17,7 @@ import {
   Spinner,
 } from "@moduleleague/ui";
 import { XIcon } from "@/components/custom/XIcon";
-import type { INavItemConfig } from "../../services/module.types";
+import type { INavItemConfig } from "../../services/modules/module.types";
 import {
   useWorkspaceContext,
   type DraggedTab,
@@ -33,7 +33,7 @@ import type {
   DropTarget,
   PaneNode,
   SplitEdge,
-} from "../../services/workspace.types";
+} from "../../services/workspaces/workspace.types";
 
 export function ModuleViewerTab({
   pane,

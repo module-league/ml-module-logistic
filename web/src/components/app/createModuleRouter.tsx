@@ -7,14 +7,11 @@ import {
 // import NotFound from "@/pages/NotFound";
 import { ModuleLayout } from "./ModuleLayout";
 import { flattenNavItems } from "../../lib/navUtil";
-import {
-  openTab,
-  workspaceKey,
-} from "../../lib/workspaceUtil";
+import { openTab, workspaceKey } from "../../lib/workspaceUtil";
 import type {
   IModuleConfig,
   INavItemConfig,
-} from "../../services/module.types";
+} from "../../services/modules/module.types";
 
 const KEY_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
