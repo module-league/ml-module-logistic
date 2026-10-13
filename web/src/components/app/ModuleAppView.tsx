@@ -50,7 +50,7 @@ export function ModuleAppView<T>({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-background">
-      <QueryWrapper isLoading={isLoading} error={error}>
+      <QueryWrapper isLoading={isLoading} error={error} onRetry={onRetry}>
         {appView === "grid" && renderCard ? (
           total === 0 ? (
             <div className="min-h-0 flex-1 overflow-auto">

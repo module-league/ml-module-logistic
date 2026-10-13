@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import classes from "./LoadingIcon.module.scss";
+import classes from "./LoadingIcon.module.css";
 import { memo } from "react";
 
 type LoadingIconProps = Omit<

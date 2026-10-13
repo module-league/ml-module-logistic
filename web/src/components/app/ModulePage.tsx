@@ -4,19 +4,14 @@ import { SAMPLE_PEOPLE } from "../../services/sample-data";
 import { useCurrentNavItem } from "../../context/navItem.context";
 import type { PageToolbarProps } from "../ml/pageToolbar.types";
 import type {
-  ModuleOpenRecordProps,
-  ModuleOpenRecordTarget,
-  ModuleRecordField,
-} from "../../services/modules/moduleOpenRecord.types";
-import type {
   ModuleAppViewMode,
   ModuleAppViewProps,
 } from "../../services/modules/moduleAppView.types";
 import { arrayMove } from "@dnd-kit/sortable";
 import { ModuleAppView } from "./ModuleAppView";
-import { ModuleNewRecordForm } from "./ModuleNewRecordForm";
 import { ModulePageFooter } from "./ModulePageFooter";
 import { RecordValueNode } from "../custom/RecordValueNode";
+import type { ModuleRecordField } from "@/services/modules/moduleRecord.types";
 
 interface ModulePageProps<T> {
   /** Buttons shown on the right of the page header. */
@@ -56,8 +51,7 @@ interface ModulePageProps<T> {
   >;
   /** Field templates shown as extra columns, e.g. from useFields(). Without it, added fields only live in this page. */
   fields?: ISidebarField[];
-  /** Saves a record from ModuleOpenRecord. With it, "New record" opens that dialog instead of calling toolbar.onAdd. */
-  onSaveRecord?: ModuleOpenRecordProps["onSave"];
+  /** Reads a record's field values (by field key) for the field columns. */
   getRecordValues?: (record: T) => Record<string, string | null | undefined>;
 }
 
@@ -66,7 +60,6 @@ export function ModulePage<T>({
   toolbar,
   appView,
   fields,
-  onSaveRecord,
   getRecordValues,
 }: ModulePageProps<T>) {
   const item = useCurrentNavItem();
@@ -80,24 +73,6 @@ export function ModulePage<T>({
   const [rowOrder, setRowOrder] = useState<string[]>([]);
   const [pinnedRows, setPinnedRows] = useState<string[]>([]);
   const [customFields, setCustomFields] = useState<IField[]>([]);
-  const [openRecord, setOpenRecord] = useState<ModuleOpenRecordTarget>();
-  const closeRecord = useCallback(() => setOpenRecord(undefined), []);
-  const expandRecord = useCallback(
-    (recordKey: string) => setOpenRecord({ mode: "open", recordKey }),
-    [],
-  );
-  const newRecord = useMemo(
-    () =>
-      onSaveRecord ? () => setOpenRecord({ mode: "new" }) : toolbar?.onAdd,
-    [onSaveRecord, toolbar?.onAdd],
-  );
-  const empty = useMemo(
-    () =>
-      onSaveRecord
-        ? { ...appView?.empty, onAction: newRecord }
-        : appView?.empty,
-    [onSaveRecord, appView?.empty, newRecord],
-  );
   const addField = useCallback(
     (field: IField) =>
       setCustomFields((current) => [
@@ -252,7 +227,6 @@ export function ModulePage<T>({
     () =>
       toolbar && {
         ...toolbar,
-        onAdd: newRecord,
         ...(hasGrid && { view, onViewChange: changeView }),
         ...(view === "list" && {
           columnOptions,
@@ -267,7 +241,6 @@ export function ModulePage<T>({
       },
     [
       toolbar,
-      newRecord,
       hasGrid,
       view,
       changeView,
@@ -311,9 +284,7 @@ export function ModulePage<T>({
           pinnedRows={shownPinnedRows}
           onRowPinToggle={togglePinnedRow}
           onRowDelete={toolbar?.onDelete ? deleteRow : undefined}
-          onRowExpand={expandRecord}
-          empty={empty}
-          onAdd={newRecord}
+          onAdd={toolbar?.onAdd}
           addLabel={toolbar?.addLabel}
           appView={view}
           page={currentPage}
@@ -329,12 +300,6 @@ export function ModulePage<T>({
         selectedCount={selectedCount}
         onClearSelection={clearSelection}
         pinnedCount={pinnedCount}
-      />
-      <ModuleNewRecordForm
-        target={openRecord}
-        onClose={closeRecord}
-        fields={recordFields}
-        onSave={onSaveRecord}
       />
     </div>
   );

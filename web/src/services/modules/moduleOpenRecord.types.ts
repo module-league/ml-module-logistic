@@ -1,16 +1,10 @@
-/** Field values of one record, keyed by ModuleRecordField.key. A select stores the option id. */
-export type ModuleRecordValues = Record<string, string>;
+import type { ModuleRecordField, ModuleRecordValues } from "./moduleRecord.types";
 
 /** What ModuleOpenRecord shows: a blank record to add, or an existing row by its getKey value. */
 export type ModuleOpenRecordTarget =
   | { mode: "new" }
   | { mode: "open"; recordKey: string };
 
-/** A field with the key its column and record value use (objId for API fields). */
-export interface ModuleRecordField {
-  key: string;
-  field: IField;
-}
 
 export interface ModuleOpenRecordProps {
   /** The record to show; undefined keeps the dialog closed. */
@@ -35,7 +29,3 @@ export interface ModuleOpenRecordFormProps {
   onSave?: (values: ModuleRecordValues) => void;
 }
 
-/** react-hook-form values of RecordForm: one entry per field, in field order (field keys can contain dots). */
-export interface ModuleRecordFormValues {
-  values: string[];
-}
