@@ -1,50 +1,34 @@
 import { useCallback, useMemo, useState } from "react";
-import {
-  toast,
-  type PageToolbarFilterValue,
-  type PageToolbarInputOption,
-} from "@moduleleague/ui";
+import { toast } from "@moduleleague/ui";
 import { ModulePage } from "@/components/app/ModulePage";
+import { useCurrentNavItem } from "@/context/navItem.context";
 import {
-  LOGISTIC_STATUSES,
-  STATUS_LABELS,
-  type Logistic,
-} from "@/services/types";
-import {
-  getLogisticKey,
-  LogisticCard,
-  useLogisticColumns,
-} from "@/components/logistic/logisticView";
+  toFieldCreate,
+  useCreateField,
+  useFields,
+} from "@/services/fields/field.api";
 
-const RECORDS: Logistic[] = [];
+const RECORDS: { objId: string }[] = [];
+const getRecordKey = (record: { objId: string }) => record.objId;
 
 export default function RecordTest() {
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<PageToolbarFilterValue>({});
-
-  const inputOptions = useMemo<PageToolbarInputOption[]>(
-    () => [
-      {
-        key: "status",
-        label: "Status",
-        options: LOGISTIC_STATUSES.map((status) => ({
-          value: status,
-          label: STATUS_LABELS[status],
-        })),
-      },
-    ],
-    [],
+  const sidebarId = useCurrentNavItem()?.sidebarId;
+  const { data: fields } = useFields(sidebarId);
+  const { mutateAsync: createField } = useCreateField(sidebarId);
+  const addField = useCallback(
+    (field: IField) => createField(toFieldCreate(field)),
+    [createField],
   );
+  const [search, setSearch] = useState("");
 
   const notYet = useCallback(
-    () => toast.info("Create and edit come with the API step."),
+    () => toast.info("Creating records comes with the records API."),
     [],
   );
-  const columns = useLogisticColumns(notYet);
   const deleteRecords = useCallback(
     (keys: string[]) =>
       toast.info(
-        `Deleting ${keys.length} ${keys.length === 1 ? "record" : "records"} comes with the API step.`,
+        `Deleting ${keys.length} ${keys.length === 1 ? "record" : "records"} comes with the records API.`,
       ),
     [],
   );
@@ -53,33 +37,23 @@ export default function RecordTest() {
     () => ({
       onAdd: notYet,
       addLabel: "New record",
-      inputOptions,
-      filterValue: filter,
-      onFilterChange: setFilter,
-      onExport: notYet,
       onDelete: deleteRecords,
+      onAddField: addField,
       search,
       onSearchChange: setSearch,
-      searchPlaceholder: "Tracking no., origin, destination",
+      searchPlaceholder: "Search records",
     }),
-    [notYet, deleteRecords, inputOptions, filter, search],
-  );
-
-  const renderCard = useCallback(
-    (logistic: Logistic) => (
-      <LogisticCard logistic={logistic} onEdit={notYet} />
-    ),
-    [notYet],
+    [notYet, deleteRecords, addField, search],
   );
 
   return (
     <ModulePage
       toolbar={toolbar}
+      fields={fields}
       appView={{
         records: RECORDS,
-        getKey: getLogisticKey,
-        columns,
-        renderCard,
+        getKey: getRecordKey,
+        columns: [],
         empty: { actionLabel: "New record", onAction: notYet },
       }}
     />

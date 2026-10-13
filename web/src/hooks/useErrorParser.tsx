@@ -27,6 +27,10 @@ interface ServiceErrorResponse {
   errors: {
     [propertyName: string]: string[];
   };
+  /** ASP.NET ProblemDetails, e.g. "Field name already used." */
+  title?: string;
+  /** ASP.NET ProblemDetails, e.g. "A field named 'Carrier' already exists in this sidebar." */
+  detail?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,13 +46,19 @@ export function errorParser(error: any) {
     return undefined;
   } else if (axios.isAxiosError(error)) {
     const serverRespData = error.response?.data as
-      | ServiceErrorResponse
-      | undefined;
+      ServiceErrorResponse | undefined;
+
+    const problem = serverRespData?.detail ?? serverRespData?.title;
 
     if (error.response?.status === 400) {
-      _err.message = "Invalid input was sent";
+      _err.message =
+        Object.values(serverRespData?.errors ?? {})?.[0]?.[0] ??
+        problem ??
+        "Invalid input was sent";
       _err.exceptionName = "BadRequest";
       _err.errors = serverRespData?.errors ?? {};
+    } else if (typeof problem === "string") {
+      _err.message = problem;
     } else if (typeof serverRespData?.message === "string") {
       _err.message = serverRespData?.message;
     } else {
@@ -56,7 +66,8 @@ export function errorParser(error: any) {
       _err.exceptionName = error.stack ?? "";
     }
 
-    _err.isKnownError = serverRespData?.isKnownError ?? false;
+    _err.isKnownError =
+      serverRespData?.isKnownError ?? typeof problem === "string";
     _err.statusCode = error.response?.status;
   } else if (error instanceof Error) {
     _err = {

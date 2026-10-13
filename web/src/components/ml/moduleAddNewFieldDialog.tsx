@@ -34,21 +34,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
+import { errorParser } from "@/hooks/useErrorParser";
 import type {
   ModuleAddFieldStepsProps,
   ModuleAddNewFieldDialogProps,
   ModuleFieldOptionColorPickerProps,
   ModuleFieldOptionRowProps,
   ModuleFieldOptionsEditorProps,
-  ModuleFieldPreviewProps,
   ModuleFieldTypeCardProps,
 } from "./moduleAddNewField.types";
 import {
@@ -72,22 +65,43 @@ export function ModuleAddNewFieldDialog({
   onAdd,
   takenNames,
 }: ModuleAddNewFieldDialogProps) {
+  const [saving, setSaving] = useState(false);
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const changeOpen = useCallback(
+    (next: boolean) => {
+      if (!saving) onOpenChange(next);
+    },
+    [saving, onOpenChange],
+  );
   const add = useCallback(
-    (field: IField) => {
-      onAdd(field);
-      onOpenChange(false);
-      toast.success("Field added", {
-        description: `${field.name} was added as a ${fieldTypeOption(field.type)?.label.toLowerCase()} field.`,
-      });
+    async (field: IField) => {
+      setSaving(true);
+      try {
+        await onAdd(field);
+        onOpenChange(false);
+        toast.success("Field added", {
+          description: `${field.name} was added as a ${fieldTypeOption(field.type)?.label.toLowerCase()} field.`,
+        });
+      } catch (error) {
+        toast.error("Couldn't add field", {
+          description: errorParser(error)?.message,
+        });
+      } finally {
+        setSaving(false);
+      }
     },
     [onAdd, onOpenChange],
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={changeOpen}>
       <DialogContent className="flex h-[min(620px,90dvh)] flex-col gap-0 p-0 sm:max-w-lg">
-        <AddFieldSteps onAdd={add} onCancel={close} takenNames={takenNames} />
+        <AddFieldSteps
+          onAdd={add}
+          onCancel={close}
+          takenNames={takenNames}
+          saving={saving}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -97,6 +111,7 @@ function AddFieldSteps({
   onAdd,
   onCancel,
   takenNames,
+  saving = false,
 }: ModuleAddFieldStepsProps) {
   const [type, setType] = useState<IField["type"] | null>(null);
   const [name, setName] = useState("");
@@ -127,10 +142,10 @@ function AddFieldSteps({
   const submit = useCallback(
     (event: SyntheticEvent) => {
       event.preventDefault();
-      if (!draft || !canAdd) return;
+      if (!draft || !canAdd || saving) return;
       onAdd(draft);
     },
-    [draft, canAdd, onAdd],
+    [draft, canAdd, saving, onAdd],
   );
 
   if (!type || !draft) {
@@ -227,8 +242,8 @@ function AddFieldSteps({
           <Button variant="outline" size="sm" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" size="sm" disabled={!canAdd}>
-            Add field
+          <Button type="submit" size="sm" disabled={!canAdd || saving}>
+            {saving ? "Adding…" : "Add field"}
           </Button>
         </div>
       </DialogFooter>

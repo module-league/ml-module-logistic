@@ -159,9 +159,9 @@ export function ModulePageToolbar({
       )}
     >
       {onAdd && <ModuleAddNewButton label={addLabel} onClick={onAdd} />}
-      {columnOptions?.length && onHiddenColumnsChange ? (
+      {(columnOptions?.length || onAddField) && onHiddenColumnsChange ? (
         <FieldsDropdown
-          fields={columnOptions}
+          fields={columnOptions ?? []}
           hidden={hiddenColumns ?? []}
           onChange={onHiddenColumnsChange}
           onReorder={onColumnOrderChange}
@@ -520,6 +520,11 @@ function FieldsDropdown({
               })}
             </SortableContext>
           </DndContext>
+          {!fields?.length && (
+            <p className="px-2 py-1.5 text-xs text-muted-foreground">
+              No fields yet.
+            </p>
+          )}
           {hidden?.length > 0 && (
             <>
               <DropdownMenuSeparator />

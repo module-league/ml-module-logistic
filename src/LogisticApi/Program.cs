@@ -52,7 +52,12 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// In development the web app reaches the API through the Vite proxy on plain http://localhost:5000;
+// a redirect to https would send the browser cross-origin
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthorization();
 
 app.MapControllers();

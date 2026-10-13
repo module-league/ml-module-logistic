@@ -23,7 +23,6 @@ interface ModulePageProps<T> {
     | "hiddenColumns"
     | "onHiddenColumnsChange"
     | "onColumnOrderChange"
-    | "onAddField"
     | "selectedCount"
     | "onDeleteSelected"
     | "onCancelSelection"
@@ -47,12 +46,15 @@ interface ModulePageProps<T> {
     | "onAdd"
     | "addLabel"
   >;
+  /** Field templates shown as extra columns, e.g. from useFields(). Without it, added fields only live in this page. */
+  fields?: ISidebarField[];
 }
 
 export function ModulePage<T>({
   actions,
   toolbar,
   appView,
+  fields,
 }: ModulePageProps<T>) {
   const item = useCurrentNavItem();
   const [view, setView] = useState<ModuleAppViewMode>("list");
@@ -132,15 +134,18 @@ export function ModulePage<T>({
       const index = columnOrder.indexOf(key);
       return index < 0 ? Number.MAX_SAFE_INTEGER : index;
     };
-    const customColumns = customFields.map((field) => ({
-      key: `field:${field.name}`,
+    const fieldColumn = (key: string, field: IField) => ({
+      key,
       header: field.name,
       cell: () => <span className="text-muted-foreground">—</span>,
-    }));
-    return [...(appView?.columns ?? []), ...customColumns].sort(
+    });
+    const fieldColumns = fields
+      ? fields.map((field) => fieldColumn(field.objId, field))
+      : customFields.map((field) => fieldColumn(`field:${field.name}`, field));
+    return [...(appView?.columns ?? []), ...fieldColumns].sort(
       (a, b) => position(a?.key) - position(b?.key),
     );
-  }, [appView?.columns, customFields, columnOrder]);
+  }, [appView?.columns, fields, customFields, columnOrder]);
   const columnOptions = useMemo(
     () =>
       orderedColumns?.map((column) => ({
@@ -213,7 +218,7 @@ export function ModulePage<T>({
           hiddenColumns,
           onHiddenColumnsChange: setHiddenColumns,
           onColumnOrderChange: setColumnOrder,
-          onAddField: addField,
+          onAddField: toolbar?.onAddField ?? addField,
         }),
         selectedCount,
         onDeleteSelected: toolbar?.onDelete ? deleteSelected : undefined,

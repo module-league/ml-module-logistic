@@ -126,4 +126,31 @@ declare global {
     /** Field Id of linked category */
     linkFieldId: string;
   };
+
+  /** A field template of one sidebar, as the API returns it (lg_sidebar_field). */
+  type ISidebarField = IField & {
+    objId: string;
+    sidebarId: string;
+    /** Send back on update; a stale value is rejected with 409. */
+    versionNo: number;
+    createTime: string;
+    updateTime?: string;
+  };
+
+  type ISidebarFieldOptionInput = Pick<IFieldDropDownValue, "value" | "colorCode" | "displayOrder"> & {
+    /** An existing option's id; omit for a new option. */
+    id?: string;
+  };
+
+  type ISidebarFieldCreate = Pick<IField, "name" | "type" | "description"> & {
+    isPrimaryField?: boolean;
+    dropDownValues?: ISidebarFieldOptionInput[];
+  };
+
+  /** The type can't change once a field exists. Options left out of dropDownValues are deleted. */
+  type ISidebarFieldUpdate = Pick<IField, "name" | "description"> & {
+    versionNo: number;
+    isPrimaryField?: boolean;
+    dropDownValues?: ISidebarFieldOptionInput[];
+  };
 }

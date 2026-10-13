@@ -10,7 +10,8 @@ export interface ModuleFieldTypeOption {
 export interface ModuleAddNewFieldDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAdd: (field: IField) => void;
+  /** Return a promise to keep the dialog open until it settles; a rejection shows its message and keeps the input. */
+  onAdd: (field: IField) => void | Promise<unknown>;
   /** Names already used by other fields; a field name must be unique. */
   takenNames?: string[];
 }
@@ -19,6 +20,8 @@ export interface ModuleAddFieldStepsProps {
   onAdd: (field: IField) => void;
   onCancel: () => void;
   takenNames?: string[];
+  /** The field is being saved; Add is disabled. */
+  saving?: boolean;
 }
 
 export interface ModuleFieldTypeCardProps {
