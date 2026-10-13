@@ -42,7 +42,6 @@ import type {
   ModuleFieldOptionColorPickerProps,
   ModuleFieldOptionRowProps,
   ModuleFieldOptionsEditorProps,
-  ModuleFieldTypeCardProps,
 } from "./moduleAddNewField.types";
 import {
   createDropDownValue,
@@ -163,13 +162,26 @@ function AddFieldSteps({
             aria-label="Field type"
             className="grid grid-cols-1 gap-3 sm:grid-cols-3"
           >
-            {MODULE_FIELD_TYPES.map((typeOption) => (
-              <FieldTypeCard
-                key={typeOption.fieldType}
-                option={typeOption}
-                onChoose={setType}
-              />
-            ))}
+            {MODULE_FIELD_TYPES.map(
+              ({ fieldType, label, description, icon: TypeIcon }) => (
+                <button
+                  key={fieldType}
+                  type="button"
+                  role="radio"
+                  aria-checked={false}
+                  onClick={() => setType(fieldType)}
+                  className="flex cursor-pointer flex-col gap-2 rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-primary-10 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
+                >
+                  <span className="flex size-8 items-center justify-center rounded-md bg-primary-10 text-primary">
+                    <TypeIcon className="size-4" />
+                  </span>
+                  <span className="text-sm font-medium">{label}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {description}
+                  </span>
+                </button>
+              ),
+            )}
           </div>
         </div>
         <DialogFooter className="m-0 shrink-0">
@@ -248,28 +260,6 @@ function AddFieldSteps({
         </div>
       </DialogFooter>
     </form>
-  );
-}
-
-function FieldTypeCard({ option, onChoose }: ModuleFieldTypeCardProps) {
-  const Icon = option?.icon;
-
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={false}
-      onClick={() => onChoose(option?.fieldType)}
-      className="flex cursor-pointer flex-col gap-2 rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-primary-10 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
-    >
-      <span className="flex size-8 items-center justify-center rounded-md bg-primary-10 text-primary">
-        <Icon className="size-4" />
-      </span>
-      <span className="text-sm font-medium">{option?.label}</span>
-      <span className="text-xs text-muted-foreground">
-        {option?.description}
-      </span>
-    </button>
   );
 }
 

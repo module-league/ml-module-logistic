@@ -19,17 +19,12 @@ export interface ModuleAddNewFieldDialogProps {
   takenNames?: string[];
 }
 
-export interface ModuleAddFieldStepsProps {
+export interface ModuleAddFieldStepsProps
+  extends Pick<ModuleAddNewFieldDialogProps, "takenNames"> {
   onAdd: (field: IField) => void;
   onCancel: () => void;
-  takenNames?: string[];
   /** The field is being saved; Add is disabled. */
   saving?: boolean;
-}
-
-export interface ModuleFieldTypeCardProps {
-  option: ModuleFieldTypeOption;
-  onChoose: (type: IField["type"]) => void;
 }
 
 export interface ModuleFieldOptionsEditorProps {
@@ -53,8 +48,4 @@ export interface ModuleFieldOptionColorPickerProps {
   value?: string;
   label: string;
   onChange: (colorCode: string) => void;
-}
-
-export interface ModuleFieldPreviewProps {
-  field: IField;
 }

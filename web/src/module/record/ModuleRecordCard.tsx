@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { formatDocNo } from "@/lib/formatDocNo";
 import { dateToFriendlyLongString } from "@/lib/dateHelper";
-import { RecordValueNode } from "./RecordValueNode";
+import { RecordValueNode } from "../../components/custom/RecordValueNode";
 import { primaryFieldOf } from "./moduleRecord.utils";
 import type { ModuleRecordCardProps } from "./moduleRecord.types";
 

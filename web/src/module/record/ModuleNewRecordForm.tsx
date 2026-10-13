@@ -13,7 +13,7 @@ import {
 } from "@moduleleague/ui";
 import { errorParser } from "@/hooks/useErrorParser";
 import QueryWrapper from "@/components/custom/QueryWrapper";
-import { RecordInputControl } from "./RecordInputControl";
+import { RecordInputControl } from "../../components/custom/RecordInputControl";
 import type {
   ModuleNewRecordFormProps,
   ModuleRecordFormProps,

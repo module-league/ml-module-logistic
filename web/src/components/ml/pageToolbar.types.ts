@@ -1,16 +1,11 @@
 import type { ComponentType, ReactElement, ReactNode } from "react";
 import type { ModuleAddFieldHandler } from "./moduleAddNewField.types";
 
-export interface PageToolbarOption {
-  value: string;
-  label: ReactNode;
-}
-
 /** One group of choices in the filter dropdown, e.g. Status. */
 export interface PageToolbarInputOption {
   key: string;
   label: string;
-  options: PageToolbarOption[];
+  options: { value: string; label: ReactNode }[];
 }
 
 /** One way of showing the page's records, e.g. a table or cards. */
@@ -48,8 +43,6 @@ export interface PageToolbarProps {
   onColumnOrderChange?: (keys: string[]) => void;
   /** Shows "Add field" in the Fields menu; called with the field the dialog built. */
   onAddField?: ModuleAddFieldHandler;
-  /** Deletes the ticked records; shown as the toolbar's only action while records are ticked. */
-  onDelete?: (keys: string[]) => void;
   /** Set by ModulePage: how many records are ticked. Above 0 the toolbar switches to selection mode. */
   selectedCount?: number;
   onDeleteSelected?: () => void;
@@ -64,23 +57,25 @@ export interface PageToolbarProps {
   className?: string;
 }
 
-export interface FilterDropdownProps {
-  inputOptions: PageToolbarInputOption[];
-  value?: PageToolbarFilterValue;
-  onChange?: (value: PageToolbarFilterValue) => void;
+interface ToolbarCompactProps {
   /** Icon-only button with a tooltip. */
   compact?: boolean;
 }
 
-export interface FieldsDropdownProps {
-  fields: PageToolbarColumnOption[];
-  hidden: string[];
-  onChange: (hidden: string[]) => void;
-  onReorder?: (keys: string[]) => void;
-  onAddField?: ModuleAddFieldHandler;
-  /** Icon-only button with a tooltip. */
-  compact?: boolean;
-}
+export interface FilterDropdownProps
+  extends ToolbarCompactProps,
+    Required<Pick<PageToolbarProps, "inputOptions">>,
+    Pick<PageToolbarProps, "filterValue" | "onFilterChange"> {}
+
+export interface FieldsDropdownProps
+  extends ToolbarCompactProps,
+    Required<
+      Pick<
+        PageToolbarProps,
+        "columnOptions" | "hiddenColumns" | "onHiddenColumnsChange"
+      >
+    >,
+    Pick<PageToolbarProps, "onColumnOrderChange" | "onAddField"> {}
 
 export interface FieldsDropdownItemProps {
   field: PageToolbarColumnOption;
@@ -91,13 +86,10 @@ export interface FieldsDropdownItemProps {
   onToggle: (key: string) => void;
 }
 
-export interface ModuleAppViewDropdownProps {
-  views: PageToolbarViewOption[];
-  value?: string;
-  onChange: (value: string) => void;
-  /** Icon-only button with a tooltip. */
-  compact?: boolean;
-}
+export interface ModuleAppViewDropdownProps
+  extends ToolbarCompactProps,
+    Required<Pick<PageToolbarProps, "views" | "onViewChange">>,
+    Pick<PageToolbarProps, "view"> {}
 
 export interface ToolbarTooltipProps {
   label: string;

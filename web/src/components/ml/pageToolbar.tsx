@@ -161,10 +161,10 @@ export function ModulePageToolbar({
       {onAdd && <ModuleAddNewButton label={addLabel} onClick={onAdd} />}
       {(columnOptions?.length || onAddField) && onHiddenColumnsChange ? (
         <FieldsDropdown
-          fields={columnOptions ?? []}
-          hidden={hiddenColumns ?? []}
-          onChange={onHiddenColumnsChange}
-          onReorder={onColumnOrderChange}
+          columnOptions={columnOptions ?? []}
+          hiddenColumns={hiddenColumns ?? []}
+          onHiddenColumnsChange={onHiddenColumnsChange}
+          onColumnOrderChange={onColumnOrderChange}
           onAddField={onAddField}
           compact={compact}
         />
@@ -172,16 +172,16 @@ export function ModulePageToolbar({
       {onViewChange && views?.length ? (
         <ModuleAppViewDropdown
           views={views}
-          value={view}
-          onChange={onViewChange}
+          view={view}
+          onViewChange={onViewChange}
           compact={compact}
         />
       ) : null}
       {inputOptions?.length ? (
         <FilterDropdown
           inputOptions={inputOptions}
-          value={filterValue}
-          onChange={onFilterChange}
+          filterValue={filterValue}
+          onFilterChange={onFilterChange}
           compact={compact}
         />
       ) : null}
@@ -218,8 +218,8 @@ export function ModulePageToolbar({
 
 function ModuleAppViewDropdown({
   views,
-  value,
-  onChange,
+  view: value,
+  onViewChange: onChange,
   compact = false,
 }: ModuleAppViewDropdownProps) {
   const [open, setOpen] = useState(false);
@@ -311,8 +311,8 @@ function ModuleAppViewDropdown({
 
 function FilterDropdown({
   inputOptions,
-  value,
-  onChange,
+  filterValue: value,
+  onFilterChange: onChange,
   compact = false,
 }: FilterDropdownProps) {
   const [open, setOpen] = useState(false);
@@ -423,10 +423,10 @@ const lockToVerticalAxis: Modifier = ({ transform }) => ({
 });
 
 function FieldsDropdown({
-  fields,
-  hidden,
-  onChange,
-  onReorder,
+  columnOptions: fields,
+  hiddenColumns: hidden,
+  onHiddenColumnsChange: onChange,
+  onColumnOrderChange: onReorder,
   onAddField,
   compact = false,
 }: FieldsDropdownProps) {

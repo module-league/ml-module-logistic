@@ -17,7 +17,7 @@ import type {
 import { ModuleAppView } from "@/module/appView/ModuleAppView";
 import { ModuleNewRecordForm } from "@/module/record/ModuleNewRecordForm";
 import { ModuleRecordCard } from "@/module/record/ModuleRecordCard";
-import { RecordValueNode } from "@/module/record/RecordValueNode";
+import { RecordValueNode } from "@/components/custom/RecordValueNode";
 import { toRecordText } from "@/module/record/moduleRecord.utils";
 import { ModulePageFooter } from "./ModulePageFooter";
 import type { ModulePageProps } from "./modulePage.types";
