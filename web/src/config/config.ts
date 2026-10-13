@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import { ChartColumn, ClipboardClock, LayoutDashboard, MapPin, PackageCheck, Truck } from "lucide-react";
-import type { IModuleConfig } from "@/services/modules/module.types";
-import { usePendingCount } from "@/services/sample-data";
+import type { IModuleConfig } from "@/module/shell/module.types";
+import { usePendingCount } from "@/services/logistic/logistic.sample";
 
 export const moduleConfig: IModuleConfig = {
   code: "logistic",
@@ -29,7 +29,7 @@ export const moduleConfig: IModuleConfig = {
           sidebarText: "Logistics",
           sidebarDesc: "Track shipments from origin to destination.",
           sidebarIcon: Truck,
-          page: lazy(() => import("@/components/pages/LogisticList")),
+          page: lazy(() => import("@/pages/LogisticList")),
         },
         {
           sidebarId: "awaiting-task",
@@ -38,7 +38,7 @@ export const moduleConfig: IModuleConfig = {
           sidebarIcon: ClipboardClock,
           className: "text-amber-700",
           useBadge: usePendingCount,
-          page: lazy(() => import("@/components/pages/AwaitingTask")),
+          page: lazy(() => import("@/pages/AwaitingTask")),
         },
         {
           sidebarId: "record-test",
@@ -46,7 +46,7 @@ export const moduleConfig: IModuleConfig = {
           sidebarDesc: "",
           sidebarIcon: PackageCheck,
           hidePageSeparator: false,
-          page: lazy(() => import("@/components/pages/RecordTest")),
+          page: lazy(() => import("@/pages/RecordTest")),
         },
         // {
         //   sidebarId: "routes",
