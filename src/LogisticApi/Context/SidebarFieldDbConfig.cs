@@ -10,15 +10,6 @@ namespace LogisticApi.Context.Configurations
         protected override string TablePrefix => "lg_";
         protected override string TableName => "sidebar_field";
 
-        // Same list as IField["type"] in web/src/services/fields/field.types.ts
-        private static readonly string[] FieldTypes =
-        [
-            "text", "long_text", "number", "single_select", "multi_select", "checkbox",
-            "date", "member", "lookup", "mirror", "templating", "associate", "attachment",
-            "record_attachment", "sys_creator_id", "sys_create_time", "sys_updater_id",
-            "sys_update_time", "sys_running_number",
-        ];
-
         protected override void ConfigureEntity(EntityTypeBuilder<SidebarField> b)
         {
             // Columns
@@ -58,7 +49,7 @@ namespace LogisticApi.Context.Configurations
 
             b.ToTable(t =>
             {
-                t.HasCheckConstraint(Ck("type"), $"[type] IN ({string.Join(", ", FieldTypes.Select(type => $"'{type}'"))})");
+                t.HasCheckConstraint(Ck("type"), $"[type] IN ({string.Join(", ", FieldTypes.All.Select(type => $"'{type}'"))})");
                 t.HasCheckConstraint(Ck("settings_json"), "ISJSON([settings]) = 1");
             });
 

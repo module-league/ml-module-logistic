@@ -1,6 +1,73 @@
 @LogisticApi_HostAddress = http://localhost:5145
+@sidebarId = logistics
+@fieldId = 00000000-0000-0000-0000-000000000000
 
 GET {{LogisticApi_HostAddress}}/weatherforecast/
 Accept: application/json
+
+###
+
+# Field set of one sidebar, in display order
+GET {{LogisticApi_HostAddress}}/api/sidebars/{{sidebarId}}/fields
+Accept: application/json
+
+###
+
+# Add a select field (options keep the order given)
+POST {{LogisticApi_HostAddress}}/api/sidebars/{{sidebarId}}/fields
+Content-Type: application/json
+
+{
+  "name": "Carrier",
+  "type": "single_select",
+  "dropDownValues": [
+    { "value": "DHL", "colorCode": "#047857", "displayOrder": 0 },
+    { "value": "FedEx", "colorCode": "#0369A1", "displayOrder": 1 }
+  ]
+}
+
+###
+
+# Add a number field
+POST {{LogisticApi_HostAddress}}/api/sidebars/{{sidebarId}}/fields
+Content-Type: application/json
+
+{
+  "name": "Weight (kg)",
+  "type": "number"
+}
+
+###
+
+GET {{LogisticApi_HostAddress}}/api/fields/{{fieldId}}
+Accept: application/json
+
+###
+
+# Rename and replace the options: keep an option by sending its id, leave one out to delete it
+PUT {{LogisticApi_HostAddress}}/api/fields/{{fieldId}}
+Content-Type: application/json
+
+{
+  "name": "Courier",
+  "versionNo": 1,
+  "dropDownValues": [
+    { "value": "J&T", "colorCode": "#7350A5" }
+  ]
+}
+
+###
+
+# New display order: every field of the sidebar exactly once
+PUT {{LogisticApi_HostAddress}}/api/sidebars/{{sidebarId}}/fields/order
+Content-Type: application/json
+
+{
+  "fieldIds": ["{{fieldId}}"]
+}
+
+###
+
+DELETE {{LogisticApi_HostAddress}}/api/fields/{{fieldId}}
 
 ###

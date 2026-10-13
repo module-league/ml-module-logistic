@@ -21,6 +21,13 @@ builder.Services.AddDbContext<ContextDb>((sp, options) =>
                 sql => sql.MigrationsHistoryTable("__ef_migrations_lg"))
            .AddInterceptors(sp.GetRequiredService<MLAuditFieldsInterceptor>()));
 
+// Field templates per sidebar
+builder.Services.AddScoped<SidebarFieldService>();
+
+// Expected failures (400/404/409) thrown as ApiProblemException become ProblemDetails responses
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiProblemHandler>();
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -31,6 +38,8 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
