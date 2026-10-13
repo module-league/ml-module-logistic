@@ -20,11 +20,11 @@ declare global {
         | "associate"
         | "attachment"
         | "record_attachment"
-        | "sys_creator_id"
-        | "sys_create_time"
-        | "sys_updater_id"
-        | "sys_update_time"
-        | "sys_running_number";
+        | "ds_creator_id"
+        | "ds_create_time"
+        | "ds_updater_id"
+        | "ds_update_time"
+        | "ds_running_number";
       isPrimaryField: boolean;
       isEditable: boolean;
       isSystemField: boolean;

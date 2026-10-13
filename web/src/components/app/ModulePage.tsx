@@ -23,6 +23,7 @@ interface ModulePageProps<T> {
     | "hiddenColumns"
     | "onHiddenColumnsChange"
     | "onColumnOrderChange"
+    | "onAddField"
     | "selectedCount"
     | "onDeleteSelected"
     | "onCancelSelection"
@@ -63,6 +64,18 @@ export function ModulePage<T>({
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [rowOrder, setRowOrder] = useState<string[]>([]);
   const [pinnedRows, setPinnedRows] = useState<string[]>([]);
+  const [customFields, setCustomFields] = useState<IField[]>([]);
+  const addField = useCallback(
+    (field: IField) =>
+      setCustomFields((current) => [
+        ...current,
+        {
+          ...field,
+          displayOrder: (appView?.columns?.length ?? 0) + current.length,
+        },
+      ]),
+    [appView?.columns?.length],
+  );
   const orderedRecords = useMemo(() => {
     if (!rowOrder.length) return appView?.records ?? [];
     const position = new Map(rowOrder.map((key, index) => [key, index]));
@@ -119,10 +132,15 @@ export function ModulePage<T>({
       const index = columnOrder.indexOf(key);
       return index < 0 ? Number.MAX_SAFE_INTEGER : index;
     };
-    return [...(appView?.columns ?? [])].sort(
+    const customColumns = customFields.map((field) => ({
+      key: `field:${field.name}`,
+      header: field.name,
+      cell: () => <span className="text-muted-foreground">—</span>,
+    }));
+    return [...(appView?.columns ?? []), ...customColumns].sort(
       (a, b) => position(a?.key) - position(b?.key),
     );
-  }, [appView?.columns, columnOrder]);
+  }, [appView?.columns, customFields, columnOrder]);
   const columnOptions = useMemo(
     () =>
       orderedColumns?.map((column) => ({
@@ -195,6 +213,7 @@ export function ModulePage<T>({
           hiddenColumns,
           onHiddenColumnsChange: setHiddenColumns,
           onColumnOrderChange: setColumnOrder,
+          onAddField: addField,
         }),
         selectedCount,
         onDeleteSelected: toolbar?.onDelete ? deleteSelected : undefined,
@@ -207,6 +226,7 @@ export function ModulePage<T>({
       changeView,
       columnOptions,
       hiddenColumns,
+      addField,
       selectedCount,
       deleteSelected,
       clearSelection,

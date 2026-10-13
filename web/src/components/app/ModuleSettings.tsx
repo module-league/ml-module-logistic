@@ -20,11 +20,10 @@ import {
   Skeleton,
   toast,
 } from "@moduleleague/ui";
+import { PRIMARY_PRESETS, readableForeground } from "../../lib/colorUtils";
 import {
   DEFAULT_MODULE_SETTINGS,
   isDefaultModuleSettings,
-  PRIMARY_PRESETS,
-  readableForeground,
   settingsKey,
   themeScopeStyle,
   updateModuleSettings,

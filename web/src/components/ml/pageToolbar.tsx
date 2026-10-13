@@ -26,6 +26,7 @@ import {
   PlusIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModuleAddNewFieldDialog } from "./moduleAddNewFieldDialog";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -97,6 +98,7 @@ export function ModulePageToolbar({
   hiddenColumns,
   onHiddenColumnsChange,
   onColumnOrderChange,
+  onAddField,
   onExport,
   exportLabel = "Export",
   search,
@@ -163,6 +165,7 @@ export function ModulePageToolbar({
           hidden={hiddenColumns ?? []}
           onChange={onHiddenColumnsChange}
           onReorder={onColumnOrderChange}
+          onAddField={onAddField}
           compact={compact}
         />
       ) : null}
@@ -424,8 +427,14 @@ function FieldsDropdown({
   hidden,
   onChange,
   onReorder,
+  onAddField,
   compact = false,
 }: FieldsDropdownProps) {
+  const [addingField, setAddingField] = useState(false);
+  const fieldNames = useMemo(
+    () => fields?.map((field) => field?.label) ?? [],
+    [fields],
+  );
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
@@ -458,66 +467,83 @@ function FieldsDropdown({
   );
 
   return (
-    <DropdownMenu>
-      <ToolbarTooltip label="Fields" enabled={compact}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size={compact ? "icon-xs" : "xs"}
-            aria-label="Fields"
-            startIcon={<Columns3 size={13} />}
-          >
-            {!compact && "Fields"}
-          </Button>
-        </DropdownMenuTrigger>
-      </ToolbarTooltip>
-      <DropdownMenuContent align="start" className="w-60">
-        <DropdownMenuLabel>Show Fields</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <PlusIcon size={13} />
-            Add Field
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          modifiers={[lockToVerticalAxis]}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext items={keys} strategy={verticalListSortingStrategy}>
-            {fields?.map((field) => {
-              const shown = !hidden?.includes(field?.key);
-              return (
-                <FieldsDropdownItem
-                  key={field?.key}
-                  field={field}
-                  shown={shown}
-                  locked={shown && visibleCount <= 1}
-                  sortable={!!onReorder}
-                  onToggle={toggle}
-                />
-              );
-            })}
-          </SortableContext>
-        </DndContext>
-        {hidden?.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault();
-                onChange([]);
-              }}
+    <>
+      <DropdownMenu>
+        <ToolbarTooltip label="Fields" enabled={compact}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size={compact ? "icon-xs" : "xs"}
+              aria-label="Fields"
+              startIcon={<Columns3 size={13} />}
             >
-              Show all fields
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+              {!compact && "Fields"}
+            </Button>
+          </DropdownMenuTrigger>
+        </ToolbarTooltip>
+        <DropdownMenuContent align="start" className="w-60">
+          <DropdownMenuLabel>Show Fields</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {onAddField && (
+            <>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onSelect={() => setAddingField(true)}>
+                  <PlusIcon size={11} />
+                  <span className="text-xs">Add Field</span>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+            </>
+          )}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[lockToVerticalAxis]}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={keys}
+              strategy={verticalListSortingStrategy}
+            >
+              {fields?.map((field) => {
+                const shown = !hidden?.includes(field?.key);
+                return (
+                  <FieldsDropdownItem
+                    key={field?.key}
+                    field={field}
+                    shown={shown}
+                    locked={shown && visibleCount <= 1}
+                    sortable={!!onReorder}
+                    onToggle={toggle}
+                  />
+                );
+              })}
+            </SortableContext>
+          </DndContext>
+          {hidden?.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  onChange([]);
+                }}
+              >
+                Show all fields
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {onAddField && (
+        <ModuleAddNewFieldDialog
+          open={addingField}
+          onOpenChange={setAddingField}
+          onAdd={onAddField}
+          takenNames={fieldNames}
+        />
+      )}
+    </>
   );
 }
 

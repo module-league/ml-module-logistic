@@ -1,60 +1,17 @@
 import { useSyncExternalStore, type CSSProperties } from "react";
-import type {
-  IModuleSettings,
-  PrimaryPreset,
-} from "../services/moduleSettings.types";
-
-export const DEFAULT_PRIMARY = "#1d4ed8";
-
-export const DEFAULT_BACKGROUND =
-  "linear-gradient(180deg, #c6d8e2 0%, #d6e2ea 15%, #e2dae0 30%, #e8ccd7 45%, #ebc1da 65%, #c3bbd8 85%, #a6bcd6 100%)";
-
-export const PRIMARY_PRESETS: PrimaryPreset[] = [
-  { name: "Blue", primary: DEFAULT_PRIMARY, background: DEFAULT_BACKGROUND },
-  {
-    name: "Indigo",
-    primary: "#4338ca",
-    background: "linear-gradient(180deg, #d9def3 0%, #e4dcef 35%, #ecd3e6 65%, #c7c9ea 100%)",
-  },
-  {
-    name: "Violet",
-    primary: "#6d28d9",
-    background: "linear-gradient(180deg, #e6dcf3 0%, #efd3ea 35%, #f2c9de 65%, #cfc3ea 100%)",
-  },
-  {
-    name: "Teal",
-    primary: "#0f766e",
-    background: "linear-gradient(180deg, #cfe6e6 0%, #dfe3ea 35%, #ebd6e0 65%, #b9d3dc 100%)",
-  },
-  {
-    name: "Emerald",
-    primary: "#047857",
-    background: "linear-gradient(180deg, #d3eadf 0%, #e2e4e3 35%, #eed7df 65%, #bfd8d8 100%)",
-  },
-  {
-    name: "Amber",
-    primary: "#b45309",
-    background: "linear-gradient(180deg, #f6e3cf 0%, #f3d6d6 35%, #ebcde0 65%, #c9c8e0 100%)",
-  },
-  {
-    name: "Rose",
-    primary: "#be123c",
-    background: "linear-gradient(180deg, #f8d9e0 0%, #f1cde0 35%, #e2c6e3 65%, #bcc6e3 100%)",
-  },
-  {
-    name: "Slate",
-    primary: "#334155",
-    background: "linear-gradient(180deg, #d9dee5 0%, #e2dde3 35%, #e5d6de 65%, #bcc5d4 100%)",
-  },
-];
+import type { IModuleSettings } from "../services/moduleSettings.types";
+import {
+  DEFAULT_BACKGROUND,
+  DEFAULT_PRIMARY,
+  HEX_PATTERN,
+  readableForeground,
+} from "./colorUtils";
 
 export const DEFAULT_MODULE_SETTINGS: IModuleSettings = {
   mode: "light",
   primary: DEFAULT_PRIMARY,
   background: DEFAULT_BACKGROUND,
 };
-
-const HEX_PATTERN = /^#[0-9a-f]{6}$/i;
 
 export function settingsKey(moduleCode: string) {
   return `ml:${moduleCode}.settings`;
@@ -115,16 +72,6 @@ export function updateModuleSettings(storageKey: string, patch: Partial<IModuleS
 
 export function resetModuleSettings(storageKey: string) {
   write(storageKey, DEFAULT_MODULE_SETTINGS);
-}
-
-/** White or near-black text, whichever reads better on the colour. */
-export function readableForeground(hex: string): string {
-  const [r, g, b] = [1, 3, 5].map((i) => {
-    const channel = parseInt(hex.slice(i, i + 2), 16) / 255;
-    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-  });
-  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  return luminance > 0.4 ? "oklch(0.205 0 0)" : "oklch(0.985 0 0)";
 }
 
 /** theme.css stays the default; only a different choice is set inline on <html>. */

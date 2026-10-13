@@ -45,6 +45,8 @@ export interface PageToolbarProps {
   onHiddenColumnsChange?: (hidden: string[]) => void;
   /** Column keys in their new order, after a drag in the Columns menu. */
   onColumnOrderChange?: (keys: string[]) => void;
+  /** Shows "Add field" in the Fields menu; called with the field the dialog built. */
+  onAddField?: (field: IField) => void;
   /** Deletes the ticked records; shown as the toolbar's only action while records are ticked. */
   onDelete?: (keys: string[]) => void;
   /** Set by ModulePage: how many records are ticked. Above 0 the toolbar switches to selection mode. */
@@ -74,6 +76,7 @@ export interface FieldsDropdownProps {
   hidden: string[];
   onChange: (hidden: string[]) => void;
   onReorder?: (keys: string[]) => void;
+  onAddField?: (field: IField) => void;
   /** Icon-only button with a tooltip. */
   compact?: boolean;
 }
