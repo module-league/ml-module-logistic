@@ -1,6 +1,12 @@
 import { useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
-import { Button, DialogFooter, Form, FormField2 } from "@moduleleague/ui";
+import {
+  Button,
+  DialogFooter,
+  FieldTypeIcon,
+  Form,
+  FormField2,
+} from "@moduleleague/ui";
 import { RecordInputControl } from "@/components/custom/RecordInputControl";
 import type {
   ModuleRecordFormProps,
@@ -66,7 +72,12 @@ export function ModuleRecordForm({
               key={field.objId}
               control={form.control}
               name={`values.${index}`}
-              label={field?.name}
+              label={
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <FieldTypeIcon type={field?.type} />
+                  <span className="truncate">{field?.name}</span>
+                </span>
+              }
               labelProps={{ size: "sm" }}
               className="grid grid-cols-[minmax(0,12rem)_1fr] items-center gap-x-4"
               render={({ field: input }) => (

@@ -4,8 +4,7 @@ import {
   PageHeader,
   ModulePageToolbar,
   toast,
-  type PageToolbarFilterValue,
-  type PageToolbarInputOption,
+  FieldTypeIcon,
 } from "@moduleleague/ui";
 import type { PageToolbarProps } from "@/components/ml/pageToolbar.types";
 import { useCurrentUser } from "@/services/user/current.user";
@@ -29,7 +28,6 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
   const people = useMemo(() => [user], [user]);
   const [newRecordOpen, setNewRecordOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<PageToolbarFilterValue>({});
   const [page, setPage] = useState(1);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
@@ -63,39 +61,19 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [onAddRecord],
   );
 
-  const inputOptions = useMemo<PageToolbarInputOption[]>(
-    () =>
-      fields
-        ?.filter((field) => field?.type === "single_select")
-        .map((field) => ({
-          key: field.objId,
-          label: field.name,
-          options:
-            field.dropDownValues?.map((option) => ({
-              value: option?.id,
-              label: option?.value,
-            })) ?? [],
-        })) ?? [],
-    [fields],
-  );
   const filteredRecords = useMemo(() => {
     const term = search.trim().toLowerCase();
+    if (!term) return records ?? [];
     return (
-      records?.filter((record) => {
-        const matchesFilter = Object.entries(filter).every(
-          ([fieldId, picked]) =>
-            !picked?.length || picked.includes(record?.values?.[fieldId] ?? ""),
-        );
-        if (!matchesFilter) return false;
-        if (!term) return true;
-        return fields?.some((field) =>
+      records?.filter((record) =>
+        fields?.some((field) =>
           toRecordText(field, record?.values?.[field.objId])
             .toLowerCase()
             .includes(term),
-        );
-      }) ?? []
+        ),
+      ) ?? []
     );
-  }, [records, fields, search, filter]);
+  }, [records, fields, search]);
 
   const orderedRecords = useMemo(() => {
     if (!rowOrder.length) return filteredRecords;
@@ -151,6 +129,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
         ?.map((field) => ({
           key: field.objId,
           header: field.name,
+          icon: <FieldTypeIcon type={field.type} />,
           cell: (record: ISidebarRecord) => (
             <RecordValueNode
               field={field}
@@ -161,13 +140,18 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
         .sort((a, b) => position(a.key) - position(b.key)) ?? []
     );
   }, [fields, columnOrder]);
+  const fieldTypeById = useMemo(
+    () => new Map(fields?.map((field) => [field?.objId, field?.type])),
+    [fields],
+  );
   const columnOptions = useMemo(
     () =>
       orderedColumns.map((column) => ({
         key: column.key,
         label: String(column.header),
+        type: fieldTypeById.get(column.key),
       })),
-    [orderedColumns],
+    [orderedColumns, fieldTypeById],
   );
   const visibleColumns = useMemo(() => {
     const shown = orderedColumns.filter(
@@ -224,9 +208,6 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     () => ({
       onAdd: openNewRecord,
       addLabel: ADD_LABEL,
-      inputOptions,
-      filterValue: filter,
-      onFilterChange: setFilter,
       search,
       onSearchChange: setSearch,
       searchPlaceholder: "Search records",
@@ -240,8 +221,6 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     }),
     [
       openNewRecord,
-      inputOptions,
-      filter,
       search,
       columnOptions,
       hiddenColumns,

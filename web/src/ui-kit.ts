@@ -65,6 +65,9 @@ export * from "./components/ui/toggle-group";
 export * from "./components/ui/tooltip";
 
 // Module League components
+export * from "./components/ml/fieldTypeIcon";
+export * from "./components/ml/fieldTypeIcon.types";
+export * from "./components/ml/fieldTypeIcon.utils";
 export * from "./components/ml/moduleAddNewButton";
 export * from "./components/ml/moduleAddNewButton.types";
 export * from "./components/ml/moduleAddNewField.types";
@@ -78,6 +81,7 @@ export * from "./components/ml/pageToolbar.utils";
 
 // Hooks
 export * from "./hooks/use-mobile";
+export * from "./hooks/useAutoSave";
 export * from "./hooks/useDialog";
 export * from "./hooks/useDrawer";
 export * from "./hooks/useErrorParser";

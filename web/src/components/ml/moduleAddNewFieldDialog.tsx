@@ -184,11 +184,6 @@ function AddFieldSteps({
             )}
           </div>
         </div>
-        <DialogFooter className="m-0 shrink-0">
-          <Button variant="outline" size="sm" onClick={onCancel}>
-            Cancel
-          </Button>
-        </DialogFooter>
       </>
     );
   }
@@ -244,17 +239,17 @@ function AddFieldSteps({
       <DialogFooter className="m-0 shrink-0 items-center sm:justify-between">
         <Button
           variant="outline"
-          size="sm"
+          size="xs"
           onClick={() => setType(null)}
           startIcon={<ChevronLeft size={14} />}
         >
           Field type
         </Button>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onCancel}>
+          <Button variant="outline" size="xs" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" size="sm" disabled={!canAdd || saving}>
+          <Button type="submit" size="xs" disabled={!canAdd || saving}>
             {saving ? "Adding…" : "Add field"}
           </Button>
         </div>

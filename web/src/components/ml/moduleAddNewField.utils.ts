@@ -1,5 +1,5 @@
 import type { Modifier } from "@dnd-kit/core";
-import { Hash, ListChecks, Type } from "lucide-react";
+import { FIELD_TYPE_ICONS } from "./fieldTypeIcon.utils";
 import { presetColors } from "@/lib/colorUtils";
 import type { ModuleFieldTypeOption } from "./moduleAddNewField.types";
 
@@ -8,26 +8,38 @@ export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
     fieldType: "text",
     label: "Text",
     description: "Names, notes, references.",
-    icon: Type,
+    icon: FIELD_TYPE_ICONS.text,
   },
   {
     fieldType: "number",
     label: "Number",
     description: "Quantities, weights, prices.",
-    icon: Hash,
+    icon: FIELD_TYPE_ICONS.number,
   },
   {
     fieldType: "single_select",
     label: "Select",
     description: "One choice from a list.",
-    icon: ListChecks,
+    icon: FIELD_TYPE_ICONS.single_select,
   },
 ];
 
-export const lockToVerticalAxis: Modifier = ({ transform }) => ({
-  ...transform,
-  x: 0,
-});
+/** Moves a dragged item up and down only, and never past the list that holds it, so the list can't grow while dragging. */
+export const lockToVerticalAxis: Modifier = ({
+  transform,
+  draggingNodeRect,
+  containerNodeRect,
+}) => {
+  if (!draggingNodeRect || !containerNodeRect) return { ...transform, x: 0 };
+  return {
+    ...transform,
+    x: 0,
+    y: Math.min(
+      Math.max(transform.y, containerNodeRect.top - draggingNodeRect.top),
+      containerNodeRect.bottom - draggingNodeRect.bottom,
+    ),
+  };
+};
 
 export function fieldTypeOption(type: IField["type"]) {
   return MODULE_FIELD_TYPES.find((option) => option.fieldType === type);

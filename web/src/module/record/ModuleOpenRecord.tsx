@@ -65,7 +65,7 @@ export function ModuleOpenRecord({
       >
         <DialogHeader className="shrink-0 p-4 pr-10 pb-3 border-b">
           <DialogTitle className="flex min-w-0 items-center gap-3">
-            <span className="truncate flex-1">{title}</span>
+            <span className="truncate">{title}</span>
             <ModuleAutoSaveStatus status={status} />
           </DialogTitle>
         </DialogHeader>

@@ -8,6 +8,8 @@ export type ModuleAppViewMode = "grid";
 export interface ModuleAppColumn<T> {
   key: string;
   header: ReactNode;
+  /** Shown before the header text, e.g. the field's type icon. */
+  icon?: ReactNode;
   cell: (record: T) => ReactNode;
   /** Classes for the body cells. */
   className?: string;

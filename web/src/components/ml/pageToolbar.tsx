@@ -6,7 +6,6 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-  type Modifier,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -18,7 +17,6 @@ import {
   Columns3,
   GripVertical,
   Download,
-  ListFilter,
   Search,
   Trash2,
   X,
@@ -26,10 +24,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModuleAddNewFieldDialog } from "./moduleAddNewFieldDialog";
+import { lockToVerticalAxis } from "./moduleAddNewField.utils";
+import { FieldTypeIcon } from "./fieldTypeIcon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -52,29 +51,19 @@ import { Switch } from "@/components/ui/switch";
 import type {
   FieldsDropdownItemProps,
   FieldsDropdownProps,
-  FilterDropdownProps,
   PageToolbarProps,
   ToolbarTooltipProps,
 } from "./pageToolbar.types";
-import { toast } from "@/components/ui/sonner";
-import {
-  countActiveFilters,
-  PAGE_TOOLBAR_COMPACT_WIDTH,
-  sameFilterValue,
-  toggleFilterValue,
-} from "./pageToolbar.utils";
+import { PAGE_TOOLBAR_COMPACT_WIDTH } from "./pageToolbar.utils";
 
 /**
- * Row under the page header: add record, view, filter and export on the left, search on the right.
+ * Row under the page header: add record and fields on the left, search on the right.
  * @example
- * <ModulePageToolbar onAdd={create} inputOptions={[{ key: "status", label: "Status", options }]} filterValue={filter} onFilterChange={setFilter} search={search} onSearchChange={setSearch} />
+ * <ModulePageToolbar onAdd={create} search={search} onSearchChange={setSearch} />
  */
 export function ModulePageToolbar({
   onAdd,
   addLabel = "Add record",
-  inputOptions,
-  filterValue,
-  onFilterChange,
   columnOptions,
   hiddenColumns,
   onHiddenColumnsChange,
@@ -150,14 +139,6 @@ export function ModulePageToolbar({
           compact={compact}
         />
       ) : null}
-      {inputOptions?.length ? (
-        <FilterDropdown
-          inputOptions={inputOptions}
-          filterValue={filterValue}
-          onFilterChange={onFilterChange}
-          compact={compact}
-        />
-      ) : null}
       {/* {onExport && (
         <ToolbarTooltip label={exportLabel} enabled={compact}>
           <Button
@@ -188,119 +169,6 @@ export function ModulePageToolbar({
     </div>
   );
 }
-
-function FilterDropdown({
-  inputOptions,
-  filterValue: value,
-  onFilterChange: onChange,
-  compact = false,
-}: FilterDropdownProps) {
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState(value ?? {});
-  const activeCount = useMemo(() => countActiveFilters(value), [value]);
-  const draftCount = useMemo(() => countActiveFilters(draft), [draft]);
-  const changed = useMemo(() => !sameFilterValue(draft, value), [draft, value]);
-
-  const changeOpen = useCallback(
-    (next: boolean) => {
-      if (next) setDraft(value ?? {});
-      setOpen(next);
-    },
-    [value],
-  );
-  const toggle = useCallback(
-    (key: string, option: string, checked: boolean) =>
-      setDraft((current) => toggleFilterValue(current, key, option, checked)),
-    [],
-  );
-  const apply = useCallback(() => {
-    onChange?.(draft);
-    setOpen(false);
-    toast.success("Filters applied", {
-      description:
-        draftCount > 0
-          ? `${draftCount} ${draftCount === 1 ? "filter is" : "filters are"} on.`
-          : "Showing all records.",
-    });
-  }, [draft, draftCount, onChange]);
-
-  return (
-    <DropdownMenu open={open} onOpenChange={changeOpen}>
-      <ToolbarTooltip
-        label={activeCount > 0 ? `Filter (${activeCount} on)` : "Filter"}
-        enabled={compact}
-      >
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size={compact ? "icon-xs" : "xs"}
-            aria-label="Filter"
-            className="relative"
-            startIcon={<ListFilter size={13} />}
-          >
-            {!compact && "Filter"}
-            {activeCount > 0 && (
-              <span
-                className={cn(
-                  "rounded-full bg-primary text-primary-foreground tabular-nums",
-                  compact
-                    ? "absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center text-[10px]"
-                    : "px-1.5 text-xs leading-5",
-                )}
-              >
-                {activeCount}
-              </span>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-      </ToolbarTooltip>
-      <DropdownMenuContent align="start" className="w-56">
-        {inputOptions.map((input, index) => (
-          <DropdownMenuGroup key={input?.key}>
-            {index > 0 && <DropdownMenuSeparator />}
-            <DropdownMenuLabel>{input?.label}</DropdownMenuLabel>
-            {input?.options?.map((option) => (
-              <DropdownMenuCheckboxItem
-                key={option?.value}
-                checked={draft?.[input.key]?.includes(option?.value) ?? false}
-                onCheckedChange={(checked) =>
-                  toggle(input.key, option?.value, checked)
-                }
-                onSelect={(e) => e.preventDefault()}
-              >
-                {option?.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuGroup>
-        ))}
-        {draftCount > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault();
-                setDraft({});
-              }}
-            >
-              Clear filters
-            </DropdownMenuItem>
-          </>
-        )}
-        <DropdownMenuSeparator />
-        <div className="flex justify-end p-1">
-          <Button size="xs" onClick={apply} disabled={!changed}>
-            Apply
-          </Button>
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-const lockToVerticalAxis: Modifier = ({ transform }) => ({
-  ...transform,
-  x: 0,
-});
 
 function FieldsDropdown({
   columnOptions: fields,
@@ -352,12 +220,12 @@ function FieldsDropdown({
         <ToolbarTooltip label="Fields" enabled={compact}>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="outline"
+              variant="secondary"
               size={compact ? "icon-xs" : "xs"}
               aria-label="Fields"
               startIcon={<Columns3 size={13} />}
             >
-              {!compact && "Fields"}
+              {!compact && "Table Fields"}
             </Button>
           </DropdownMenuTrigger>
         </ToolbarTooltip>
@@ -385,38 +253,27 @@ function FieldsDropdown({
               items={keys}
               strategy={verticalListSortingStrategy}
             >
-              {fields?.map((field) => {
-                const shown = !hidden?.includes(field?.key);
-                return (
-                  <FieldsDropdownItem
-                    key={field?.key}
-                    field={field}
-                    shown={shown}
-                    locked={shown && visibleCount <= 1}
-                    sortable={!!onReorder}
-                    onToggle={toggle}
-                  />
-                );
-              })}
+              <DropdownMenuGroup>
+                {fields?.map((field) => {
+                  const shown = !hidden?.includes(field?.key);
+                  return (
+                    <FieldsDropdownItem
+                      key={field?.key}
+                      field={field}
+                      shown={shown}
+                      locked={shown && visibleCount <= 1}
+                      sortable={!!onReorder}
+                      onToggle={toggle}
+                    />
+                  );
+                })}
+              </DropdownMenuGroup>
             </SortableContext>
           </DndContext>
           {!fields?.length && (
             <p className="px-2 py-1.5 text-xs text-muted-foreground">
               No fields yet.
             </p>
-          )}
-          {hidden?.length > 0 && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault();
-                  onChange([]);
-                }}
-              >
-                Show all fields
-              </DropdownMenuItem>
-            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -468,6 +325,16 @@ function FieldsDropdownItem({
         if (!locked) onToggle(field?.key);
       }}
     >
+      <Switch
+        size="sm"
+        checked={shown}
+        disabled={locked}
+        tabIndex={-1}
+        aria-hidden
+        className="pointer-events-none"
+      />
+      <FieldTypeIcon type={field?.type} size={11} />
+      <span className="flex-1 truncate">{field?.label}</span>
       {sortable && (
         <button
           type="button"
@@ -481,15 +348,6 @@ function FieldsDropdownItem({
           <GripVertical className="size-3.5" />
         </button>
       )}
-      <span className="flex-1 truncate">{field?.label}</span>
-      <Switch
-        size="sm"
-        checked={shown}
-        disabled={locked}
-        tabIndex={-1}
-        aria-hidden
-        className="pointer-events-none"
-      />
     </DropdownMenuItem>
   );
 }

@@ -30,8 +30,9 @@ const buttonVariants = cva(
         warning_outline:
           "bg-background text-orange-600 border border-orange-600 hover:bg-orange-100",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-slate-200 text-secondary-foreground hover:bg-slate-300",
+          "border border-input bg-background text-primary hover:bg-primary-10 data-[state=open]:bg-primary-10",
+        secondary:
+          "bg-sidebar-accent text-sidebar-accent-foreground hover:bg-primary-20 data-[state=open]:bg-primary-20",
         ghost: "text-secondary hover:bg-black/10 hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
@@ -70,7 +71,7 @@ const spinnerVariants = cva("", {
       warning_ghost: "text-orange-600",
       warning_outline: "text-orange-600",
       outline: "",
-      secondary: "text-background",
+      secondary: "",
       ghost: "",
       link: "",
     },

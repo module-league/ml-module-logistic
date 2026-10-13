@@ -1,29 +1,18 @@
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 import type { ModuleAddFieldHandler } from "./moduleAddNewField.types";
-
-/** One group of choices in the filter dropdown, e.g. Status. */
-export interface PageToolbarInputOption {
-  key: string;
-  label: string;
-  options: { value: string; label: ReactNode }[];
-}
-
-/** Selected values per filter key; an empty or missing list means no filter. */
-export type PageToolbarFilterValue = Record<string, string[]>;
 
 /** A table column the user can show or hide. */
 export interface PageToolbarColumnOption {
   key: string;
   label: string;
+  /** Picks the icon beside the label. */
+  type?: IField["type"];
 }
 
 export interface PageToolbarProps {
   onAdd?: () => void;
   /** @default "Add record" */
   addLabel?: string;
-  inputOptions?: PageToolbarInputOption[];
-  filterValue?: PageToolbarFilterValue;
-  onFilterChange?: (value: PageToolbarFilterValue) => void;
   /** Shows the Columns button when set together with onHiddenColumnsChange. */
   columnOptions?: PageToolbarColumnOption[];
   hiddenColumns?: string[];
@@ -50,11 +39,6 @@ interface ToolbarCompactProps {
   /** Icon-only button with a tooltip. */
   compact?: boolean;
 }
-
-export interface FilterDropdownProps
-  extends ToolbarCompactProps,
-    Required<Pick<PageToolbarProps, "inputOptions">>,
-    Pick<PageToolbarProps, "filterValue" | "onFilterChange"> {}
 
 export interface FieldsDropdownProps
   extends ToolbarCompactProps,
