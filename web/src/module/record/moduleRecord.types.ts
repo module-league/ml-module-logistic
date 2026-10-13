@@ -1,4 +1,4 @@
-import type { ModuleQueryState } from "@/module/appView/moduleAppView.types";
+import type { ModuleQueryState } from "@/module/shell/module.types";
 
 /** react-hook-form values: one entry per field, in field order. */
 export interface ModuleRecordFormValues {
@@ -31,9 +31,4 @@ export interface ModuleOpenRecordProps extends ModuleQueryState {
   values?: ISidebarRecordValues;
   /** Without it the dialog is read-only. */
   onSave?: (values: ISidebarRecordValues) => void | Promise<unknown>;
-}
-
-export interface ModuleRecordCardProps {
-  record: ISidebarRecord;
-  fields: ISidebarField[];
 }

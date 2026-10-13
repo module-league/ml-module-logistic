@@ -7,13 +7,11 @@ export function ModulePageFooter({
   total,
   page,
   pageSize,
-  appView,
   onPageChange,
   selectedCount = 0,
   onClearSelection,
   pinnedCount = 0,
 }: ModulePageFooterProps) {
-  const paginated = appView !== "grid";
   const paged = total - pinnedCount;
   const pageCount = useMemo(
     () => Math.max(1, Math.ceil(paged / pageSize)),
@@ -21,10 +19,10 @@ export function ModulePageFooter({
   );
   const range = useMemo(
     () =>
-      paginated && paged > pageSize
+      paged > pageSize
         ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, paged)} of ${paged}`
         : null,
-    [paginated, paged, page, pageSize],
+    [paged, page, pageSize],
   );
 
   return (
@@ -54,27 +52,25 @@ export function ModulePageFooter({
         )}
       </span>
 
-      {paginated && (
-        <div className="ml-auto flex items-center gap-2 overflow-hidden">
-          <span className="text-xs tabular-nums truncate">
-            Page {page} of {pageCount}
-          </span>
-          <Button
-            variant="outline"
-            size="xs"
-            disabled={page <= 1}
-            onClick={() => onPageChange(page - 1)}
-            startIcon={<ChevronLeft size={13} />}
-          ></Button>
-          <Button
-            variant="outline"
-            size="xs"
-            disabled={page >= pageCount}
-            onClick={() => onPageChange(page + 1)}
-            startIcon={<ChevronRight size={13} />}
-          ></Button>
-        </div>
-      )}
+      <div className="ml-auto flex items-center gap-2 overflow-hidden">
+        <span className="text-xs tabular-nums truncate">
+          Page {page} of {pageCount}
+        </span>
+        <Button
+          variant="outline"
+          size="xs"
+          disabled={page <= 1}
+          onClick={() => onPageChange(page - 1)}
+          startIcon={<ChevronLeft size={13} />}
+        ></Button>
+        <Button
+          variant="outline"
+          size="xs"
+          disabled={page >= pageCount}
+          onClick={() => onPageChange(page + 1)}
+          startIcon={<ChevronRight size={13} />}
+        ></Button>
+      </div>
     </footer>
   );
 }

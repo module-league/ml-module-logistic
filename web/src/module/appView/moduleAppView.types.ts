@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
+import type { Header } from "@tanstack/react-table";
+import type { ModuleQueryState } from "@/module/shell/module.types";
 
-export type ModuleAppViewMode = "list" | "grid";
+/** The ways ModuleAppView can show records; only the grid for now. */
+export type ModuleAppViewMode = "grid";
 
 export interface ModuleAppColumn<T> {
   key: string;
@@ -51,13 +54,6 @@ export interface ModuleAppColumnLayout {
   onColumnPinToggle?: (key: string) => void;
 }
 
-/** A page's query state handed to a module part; the part shows the loader or the error with Try again. */
-export interface ModuleQueryState {
-  isLoading?: boolean;
-  error?: unknown;
-  onRetry?: () => void;
-}
-
 export interface ModuleAppEmptyState {
   /** @default "No records yet" */
   title?: string;
@@ -67,41 +63,36 @@ export interface ModuleAppEmptyState {
   onAction?: () => void;
 }
 
-export interface ModuleAppViewProps<T>
+/** Pinned rows come first in records, then the rows of the current page. */
+export interface RecordGridProps<T>
   extends ModuleAppColumnLayout,
     ModuleAppAddAction,
     ModuleAppSelection,
     ModuleAppRowOrder,
-    ModuleAppRowMenu,
-    ModuleQueryState {
+    ModuleAppRowMenu {
   records: T[];
   getKey: (record: T) => string;
   columns: ModuleAppColumn<T>[];
-  /** Card for the grid view; without it only the table view is offered. */
-  renderCard?: (record: T) => ReactNode;
-  /** @default "list" */
-  appView?: ModuleAppViewMode;
-  /** Empty rows fill the page up to this many, so the grid keeps its shape. @default 20 */
+  /** Empty rows fill the page up to this many, so the grid keeps its shape. */
   pageSize?: number;
-  /** 1-based page to show; set by ModulePage. @default 1 */
-  page?: number;
   empty?: ModuleAppEmptyState;
 }
 
-/** The table gets the pinned rows first, then the rows of the current page. */
-export type ModuleListViewProps<T> = Omit<
-  ModuleAppViewProps<T>,
-  "renderCard" | "appView" | "page" | keyof ModuleQueryState
->;
+export interface ModuleAppViewProps<T>
+  extends RecordGridProps<T>,
+    ModuleQueryState {
+  /** @default "grid" */
+  appView?: ModuleAppViewMode;
+  /** 1-based page to show; pinned rows sit above every page. @default 1 */
+  page?: number;
+}
 
-export type ModuleCardGridProps<T> = Required<
-  Pick<ModuleAppViewProps<T>, "records" | "getKey" | "renderCard">
->;
+export type GridViewProps<T> = Omit<ModuleAppViewProps<T>, "appView">;
 
-export interface ModuleListHeaderCellProps<T>
-  extends Pick<ModuleAppColumnLayout, "onColumnResize" | "onColumnPinToggle"> {
-  column: ModuleAppColumn<T>;
-  resizable: boolean;
+export interface RecordGridHeaderCellProps<T>
+  extends Pick<ModuleAppColumnLayout, "onColumnPinToggle"> {
+  header: Header<T, unknown>;
+  column?: ModuleAppColumn<T>;
   sortable: boolean;
   pin?: ModuleColumnPin;
 }

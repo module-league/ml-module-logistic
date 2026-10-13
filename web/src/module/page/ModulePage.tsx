@@ -10,13 +10,9 @@ import {
 import type { PageToolbarProps } from "@/components/ml/pageToolbar.types";
 import { useCurrentUser } from "@/services/user/current.user";
 import { useCurrentNavItem } from "@/module/shell/navItem.context";
-import type {
-  ModuleAppColumn,
-  ModuleAppViewMode,
-} from "@/module/appView/moduleAppView.types";
+import type { ModuleAppColumn } from "@/module/appView/moduleAppView.types";
 import { ModuleAppView } from "@/module/appView/ModuleAppView";
 import { ModuleNewRecordForm } from "@/module/record/ModuleNewRecordForm";
-import { ModuleRecordCard } from "@/module/record/ModuleRecordCard";
 import { RecordValueNode } from "@/components/custom/RecordValueNode";
 import { toRecordText } from "@/module/record/moduleRecord.utils";
 import { ModulePageFooter } from "./ModulePageFooter";
@@ -33,7 +29,6 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
   const [newRecordOpen, setNewRecordOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<PageToolbarFilterValue>({});
-  const [view, setView] = useState<ModuleAppViewMode>("list");
   const [page, setPage] = useState(1);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
@@ -124,7 +119,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [],
   );
   const total = filteredRecords.length;
-  const pinnedCount = view === "list" ? shownPinnedRows.length : 0;
+  const pinnedCount = shownPinnedRows.length;
   const currentPage = useMemo(
     () =>
       Math.min(page, Math.max(1, Math.ceil((total - pinnedCount) / pageSize))),
@@ -132,10 +127,6 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
   );
   const invitePeople = useCallback(
     () => toast.info("Inviting people comes with the API step."),
-    [],
-  );
-  const changeView = useCallback(
-    (next: string) => setView(next as ModuleAppViewMode),
     [],
   );
 
@@ -207,12 +198,6 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [orderedColumns, hiddenColumns],
   );
 
-  const renderCard = useCallback(
-    (record: ISidebarRecord) => (
-      <ModuleRecordCard record={record} fields={fields} />
-    ),
-    [fields],
-  );
   const empty = useMemo(
     () =>
       records?.length
@@ -228,28 +213,22 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     () => ({
       onAdd: openNewRecord,
       addLabel: ADD_LABEL,
-      view,
-      onViewChange: changeView,
       inputOptions,
       filterValue: filter,
       onFilterChange: setFilter,
       search,
       onSearchChange: setSearch,
       searchPlaceholder: "Search records",
-      ...(view === "list" && {
-        columnOptions,
-        hiddenColumns,
-        onHiddenColumnsChange: setHiddenColumns,
-        onColumnOrderChange: setColumnOrder,
-        onAddField: data.onAddField,
-      }),
+      columnOptions,
+      hiddenColumns,
+      onHiddenColumnsChange: setHiddenColumns,
+      onColumnOrderChange: setColumnOrder,
+      onAddField: data.onAddField,
       selectedCount,
       onCancelSelection: clearSelection,
     }),
     [
       openNewRecord,
-      view,
-      changeView,
       inputOptions,
       filter,
       search,
@@ -280,7 +259,6 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           records={orderedRecords}
           getKey={getRecordKey}
           columns={visibleColumns}
-          renderCard={renderCard}
           empty={empty}
           columnWidths={columnWidths}
           onColumnResize={resizeColumn}
@@ -294,9 +272,8 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           onRowPinToggle={togglePinnedRow}
           onAdd={openNewRecord}
           addLabel={ADD_LABEL}
-          appView={view}
-          page={currentPage}
           pageSize={pageSize}
+          page={currentPage}
         />
       </main>
       <ModulePageFooter
@@ -304,7 +281,6 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
         page={currentPage}
         pageSize={pageSize}
         onPageChange={setPage}
-        appView={view}
         selectedCount={selectedCount}
         onClearSelection={clearSelection}
         pinnedCount={pinnedCount}

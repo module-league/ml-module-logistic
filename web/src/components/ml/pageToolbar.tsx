@@ -15,7 +15,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import {
-  ChevronsUpDown,
   Columns3,
   GripVertical,
   Download,
@@ -28,19 +27,6 @@ import {
 import { cn } from "@/lib/utils";
 import { ModuleAddNewFieldDialog } from "./moduleAddNewFieldDialog";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -69,13 +55,11 @@ import type {
   FilterDropdownProps,
   PageToolbarProps,
   ToolbarTooltipProps,
-  ModuleAppViewDropdownProps,
 } from "./pageToolbar.types";
 import { toast } from "@/components/ui/sonner";
 import {
   countActiveFilters,
   PAGE_TOOLBAR_COMPACT_WIDTH,
-  PAGE_TOOLBAR_VIEWS,
   sameFilterValue,
   toggleFilterValue,
 } from "./pageToolbar.utils";
@@ -88,9 +72,6 @@ import {
 export function ModulePageToolbar({
   onAdd,
   addLabel = "Add record",
-  views = PAGE_TOOLBAR_VIEWS,
-  view,
-  onViewChange,
   inputOptions,
   filterValue,
   onFilterChange,
@@ -169,14 +150,6 @@ export function ModulePageToolbar({
           compact={compact}
         />
       ) : null}
-      {onViewChange && views?.length ? (
-        <ModuleAppViewDropdown
-          views={views}
-          view={view}
-          onViewChange={onViewChange}
-          compact={compact}
-        />
-      ) : null}
       {inputOptions?.length ? (
         <FilterDropdown
           inputOptions={inputOptions}
@@ -213,99 +186,6 @@ export function ModulePageToolbar({
         </InputGroup>
       )}
     </div>
-  );
-}
-
-function ModuleAppViewDropdown({
-  views,
-  view: value,
-  onViewChange: onChange,
-  compact = false,
-}: ModuleAppViewDropdownProps) {
-  const [open, setOpen] = useState(false);
-  const current = useMemo(
-    () => views?.find((option) => option?.value === value) ?? views?.[0],
-    [views, value],
-  );
-  const [draft, setDraft] = useState(current?.value);
-  const CurrentIcon = current?.icon;
-  const draftOption = useMemo(
-    () => views?.find((option) => option?.value === draft),
-    [views, draft],
-  );
-
-  const changeOpen = useCallback(
-    (next: boolean) => {
-      if (next) setDraft(current?.value);
-      setOpen(next);
-    },
-    [current?.value],
-  );
-  const apply = useCallback(() => {
-    if (!draft) return;
-    onChange(draft);
-    setOpen(false);
-    toast.success("View changed", {
-      description: `Showing records in ${draftOption?.label?.toLowerCase()}.`,
-    });
-  }, [draft, draftOption?.label, onChange]);
-
-  return (
-    <Popover open={open} onOpenChange={changeOpen}>
-      <ToolbarTooltip label={`View: ${current?.label}`} enabled={compact}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size={compact ? "icon-xs" : "xs"}
-            role="combobox"
-            aria-expanded={open}
-            aria-label="Change view"
-            className="gap-1.5"
-          >
-            {CurrentIcon && <CurrentIcon className="size-3.5" />}
-            {!compact && (
-              <>
-                {current?.label}
-                <ChevronsUpDown className="size-3.5 text-muted-foreground" />
-              </>
-            )}
-          </Button>
-        </PopoverTrigger>
-      </ToolbarTooltip>
-      <PopoverContent align="start" className="w-48 p-0">
-        <Command>
-          <CommandInput placeholder="Search view..." />
-          <CommandList>
-            <CommandEmpty>No view found.</CommandEmpty>
-            <CommandGroup>
-              {views?.map((option) => {
-                const Icon = option?.icon;
-                return (
-                  <CommandItem
-                    key={option?.value}
-                    value={option?.label}
-                    data-checked={option?.value === draft}
-                    onSelect={() => setDraft(option?.value)}
-                  >
-                    {Icon && <Icon />}
-                    {option?.label}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-        <div className="flex justify-end border-t p-2">
-          <Button
-            size="xs"
-            onClick={apply}
-            disabled={!draft || draft === current?.value}
-          >
-            Apply
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
   );
 }
 

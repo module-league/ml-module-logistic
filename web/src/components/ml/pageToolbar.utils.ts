@@ -1,16 +1,7 @@
-import { LayoutGrid, TableProperties } from "lucide-react";
-import type {
-  PageToolbarFilterValue,
-  PageToolbarViewOption,
-} from "./pageToolbar.types";
+import type { PageToolbarFilterValue } from "./pageToolbar.types";
 
-/** Below this toolbar width (px), view, filter and export collapse to icons so search stays on the same row. */
+/** Below this toolbar width (px), fields and filter collapse to icons so search stays on the same row. */
 export const PAGE_TOOLBAR_COMPACT_WIDTH = 640;
-
-export const PAGE_TOOLBAR_VIEWS: PageToolbarViewOption[] = [
-  { value: "list", label: "List view", icon: TableProperties },
-  { value: "grid", label: "Grid view", icon: LayoutGrid },
-];
 
 export function countActiveFilters(value: PageToolbarFilterValue | undefined): number {
   return Object.values(value ?? {}).reduce(

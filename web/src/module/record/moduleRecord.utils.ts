@@ -6,8 +6,3 @@ export function toRecordText(field: IField, value?: string | null) {
   }
   return value;
 }
-
-/** The field a card uses as its title: the primary field, else the first one. */
-export function primaryFieldOf(fields: ISidebarField[]) {
-  return fields?.find((field) => field?.isPrimaryField) ?? fields?.[0];
-}

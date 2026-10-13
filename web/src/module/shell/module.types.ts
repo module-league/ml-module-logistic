@@ -39,3 +39,10 @@ export interface IModuleConfig {
   homeKey?: string;
   groups: INavGroupConfig[];
 }
+
+/** A page's query state handed to a module part; the part shows the loader or the error with Try again. */
+export interface ModuleQueryState {
+  isLoading?: boolean;
+  error?: unknown;
+  onRetry?: () => void;
+}

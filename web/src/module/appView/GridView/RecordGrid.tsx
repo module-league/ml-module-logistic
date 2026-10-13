@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -13,6 +13,17 @@ import {
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import {
+  flexRender,
+  functionalUpdate,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+  type ColumnPinningState,
+  type ColumnSizingState,
+  type RowSelectionState,
+  type Updater,
+} from "@tanstack/react-table";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import {
   Maximize2,
@@ -40,11 +51,12 @@ import {
   TableRow,
 } from "@moduleleague/ui";
 import type {
-  ModuleListHeaderCellProps,
-  ModuleListViewProps,
+  ModuleColumnPin,
   ModuleSortableRowProps,
+  RecordGridHeaderCellProps,
+  RecordGridProps,
 } from "../moduleAppView.types";
-import { ModuleEmptyAppView } from "../ModuleEmptyAppView";
+import { RecordGridEmpty } from "./RecordGridEmpty";
 import {
   COLUMN_WIDTH,
   lockToDragAxis,
@@ -52,9 +64,9 @@ import {
   pinStyle,
   sameKindCollision,
   toRowId,
-} from "./ListView.utils";
+} from "./RecordGrid.utils";
 
-export function ListView<T>({
+export function RecordGrid<T>({
   records,
   pageSize = 0,
   onAdd,
@@ -74,34 +86,83 @@ export function ListView<T>({
   onRowPinToggle,
   onRowDelete,
   onRowExpand,
-}: ModuleListViewProps<T>) {
+}: RecordGridProps<T>) {
   const selectable = !!onSelectionChange;
-  const pageKeys = useMemo(
-    () => records?.map((record) => getKey(record)) ?? [],
-    [records, getKey],
+  const data = useMemo(() => records ?? [], [records]);
+  const columnByKey = useMemo(
+    () => new Map(columns?.map((column) => [column?.key, column])),
+    [columns],
   );
-  const pageSelection = useMemo<CheckedState>(() => {
-    const ticked = pageKeys.filter((key) => selectedKeys?.includes(key)).length;
-    if (!ticked) return false;
-    return ticked === pageKeys.length ? true : "indeterminate";
-  }, [pageKeys, selectedKeys]);
-  const togglePage = useCallback(
+  const columnDefs = useMemo<ColumnDef<T>[]>(
     () =>
-      onSelectionChange?.(
-        pageSelection === true
-          ? (selectedKeys ?? []).filter((key) => !pageKeys.includes(key))
-          : [...new Set([...(selectedKeys ?? []), ...pageKeys])],
-      ),
-    [onSelectionChange, pageSelection, selectedKeys, pageKeys],
+      columns?.map((column, index) => ({
+        id: column?.key,
+        header: () => column?.header,
+        cell: ({ row }) => column?.cell(row.original),
+        size: column?.width ?? COLUMN_WIDTH.default,
+        minSize: COLUMN_WIDTH.min,
+        enableResizing: index < columns.length - 1,
+      })) ?? [],
+    [columns],
   );
+  const rowSelection = useMemo<RowSelectionState>(
+    () => Object.fromEntries(selectedKeys?.map((key) => [key, true]) ?? []),
+    [selectedKeys],
+  );
+  const columnSizing = useMemo<ColumnSizingState>(
+    () => columnWidths ?? {},
+    [columnWidths],
+  );
+  const columnPinning = useMemo<ColumnPinningState>(
+    () => ({
+      left: pinnedColumns?.filter((key) => columnByKey.has(key)) ?? [],
+    }),
+    [pinnedColumns, columnByKey],
+  );
+  const changeRowSelection = useCallback(
+    (updater: Updater<RowSelectionState>) => {
+      const next = functionalUpdate(updater, rowSelection);
+      onSelectionChange?.(Object.keys(next).filter((key) => next[key]));
+    },
+    [rowSelection, onSelectionChange],
+  );
+  const changeColumnSizing = useCallback(
+    (updater: Updater<ColumnSizingState>) => {
+      const next = functionalUpdate(updater, columnSizing);
+      Object.entries(next).forEach(([key, width]) => {
+        if (columnSizing[key] === width) return;
+        onColumnResize?.(key, Math.max(COLUMN_WIDTH.min, Math.round(width)));
+      });
+    },
+    [columnSizing, onColumnResize],
+  );
+
+  const table = useReactTable({
+    data,
+    columns: columnDefs,
+    getRowId: (record) => getKey(record),
+    getCoreRowModel: getCoreRowModel(),
+    state: { rowSelection, columnSizing, columnPinning },
+    onRowSelectionChange: changeRowSelection,
+    onColumnSizingChange: changeColumnSizing,
+    enableRowSelection: selectable,
+    enableColumnResizing: !!onColumnResize,
+    columnResizeMode: "onChange",
+  });
+  const headerGroups = table.getHeaderGroups();
+  const headers = useMemo(() => headerGroups[0]?.headers ?? [], [headerGroups]);
+  const rows = table.getRowModel().rows;
+
+  const pageKeys = useMemo(() => rows.map((row) => row.id), [rows]);
+  const pageSelection: CheckedState = table.getIsAllPageRowsSelected()
+    ? true
+    : table.getIsSomePageRowsSelected()
+      ? "indeterminate"
+      : false;
+  const togglePage = useCallback(() => table.toggleAllPageRowsSelected(), [table]);
   const toggleRow = useCallback(
-    (key: string) =>
-      onSelectionChange?.(
-        selectedKeys?.includes(key)
-          ? selectedKeys.filter((selected) => selected !== key)
-          : [...(selectedKeys ?? []), key],
-      ),
-    [onSelectionChange, selectedKeys],
+    (key: string) => table.getRow(key)?.toggleSelected(),
+    [table],
   );
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -126,48 +187,33 @@ export function ListView<T>({
   const fillerStyle = useMemo(() => ({ height: rowHeight }), [rowHeight]);
   const fillerRows = useMemo(
     () =>
-      records?.length
+      rows.length
         ? Array.from(
-            {
-              length: Math.max(
-                0,
-                pageSize - (records.length - pinnedIndex.size),
-              ),
-            },
+            { length: Math.max(0, pageSize - (rows.length - pinnedIndex.size)) },
             (_, i) => i,
           )
         : [],
-    [records?.length, pageSize, pinnedIndex],
+    [rows.length, pageSize, pinnedIndex],
   );
-  const keys = useMemo(
-    () => columns?.map((column) => column?.key) ?? [],
-    [columns],
-  );
+  const keys = useMemo(() => headers.map((header) => header.id), [headers]);
   const widths = useMemo(
     () =>
-      columns?.map((column, index) =>
-        index === columns.length - 1
+      headers.map((header, index) =>
+        index === headers.length - 1
           ? undefined
-          : (columnWidths?.[column?.key] ??
-            column?.width ??
-            COLUMN_WIDTH.default),
-      ) ?? [],
-    [columns, columnWidths],
+          : (columnSizing[header.id] ?? header.getSize()),
+      ),
+    [headers, columnSizing],
   );
   const pins = useMemo(() => {
     let left = selectable ? COLUMN_WIDTH.select : 0;
-    const pinnedCount =
-      columns?.filter((column) => pinnedColumns?.includes(column?.key))
-        .length ?? 0;
-    return (
-      columns?.map((column, index) => {
-        if (!pinnedColumns?.includes(column?.key)) return undefined;
-        const pin = { left, last: index === pinnedCount - 1 };
-        left += widths[index] ?? COLUMN_WIDTH.last;
-        return pin;
-      }) ?? []
-    );
-  }, [columns, pinnedColumns, widths, selectable]);
+    return headers.map((header, index): ModuleColumnPin | undefined => {
+      if (!header.column.getIsPinned()) return undefined;
+      const pin = { left, last: header.column.getIsLastColumn("left") };
+      left += widths[index] ?? COLUMN_WIDTH.last;
+      return pin;
+    });
+  }, [headers, widths, selectable]);
   const tableStyle = useMemo(
     () => ({
       minWidth: widths.reduce<number>(
@@ -214,8 +260,8 @@ export function ListView<T>({
         >
           <colgroup>
             {selectable && <col style={{ width: COLUMN_WIDTH.select }} />}
-            {columns?.map((column, index) => (
-              <col key={column?.key} style={{ width: widths[index] }} />
+            {headers.map((header, index) => (
+              <col key={header.id} style={{ width: widths[index] }} />
             ))}
           </colgroup>
           <TableHeader
@@ -239,13 +285,12 @@ export function ListView<T>({
                     </span>
                   </TableHead>
                 )}
-                {columns?.map((column, index) => (
-                  <ListHeaderCell
-                    key={column?.key}
-                    column={column}
-                    resizable={!!onColumnResize && index < columns.length - 1}
+                {headers.map((header, index) => (
+                  <RecordGridHeaderCell
+                    key={header.id}
+                    header={header}
+                    column={columnByKey.get(header.id)}
                     sortable={!!onColumnReorder}
-                    onColumnResize={onColumnResize}
                     pin={pins[index]}
                     onColumnPinToggle={onColumnPinToggle}
                   />
@@ -254,12 +299,10 @@ export function ListView<T>({
             </SortableContext>
           </TableHeader>
           <TableBody>
-            {!records?.length && (
+            {!rows.length && (
               <TableRow className="hover:bg-transparent">
-                <TableCell
-                  colSpan={(columns?.length ?? 0) + (selectable ? 1 : 0)}
-                >
-                  <ModuleEmptyAppView {...empty} />
+                <TableCell colSpan={headers.length + (selectable ? 1 : 0)}>
+                  <RecordGridEmpty {...empty} />
                 </TableCell>
               </TableRow>
             )}
@@ -267,9 +310,9 @@ export function ListView<T>({
               items={rowIds}
               strategy={verticalListSortingStrategy}
             >
-              {records?.map((record, index) => {
-                const key = getKey(record);
-                const selected = !!selectedKeys?.includes(key);
+              {rows.map((row, index) => {
+                const key = row.id;
+                const selected = row.getIsSelected();
                 const pinnedAt = pinnedIndex.get(key);
                 const pinned = pinnedAt !== undefined;
                 return (
@@ -305,8 +348,7 @@ export function ListView<T>({
                           <Checkbox
                             aria-label="Select record"
                             checked={selected}
-                            onCheckedChange={() => toggleRow(key)}
-                            className="bg-white"
+                            onCheckedChange={() => row.toggleSelected()}
                           />
                           {onRowExpand && (
                             <Button
@@ -324,26 +366,29 @@ export function ListView<T>({
                         </div>
                       </TableCell>
                     )}
-                    {columns?.map((column, columnIndex) => (
+                    {row.getVisibleCells().map((cell, cellIndex) => (
                       <TableCell
-                        key={column.key}
-                        style={pinStyle(pins[columnIndex])}
+                        key={cell.id}
+                        style={pinStyle(pins[cellIndex])}
                         className={cn(
                           "overflow-hidden text-ellipsis border-r border-r-foreground/12 last:border-r-0 text-xs p-1",
-                          pins[columnIndex] && "sticky z-[1] bg-inherit",
-                          pinClass(pins[columnIndex]),
-                          column?.className,
+                          pins[cellIndex] && "sticky z-[1] bg-inherit",
+                          pinClass(pins[cellIndex]),
+                          columnByKey.get(cell.column.id)?.className,
                         )}
                       >
-                        {pinned && columnIndex === 0 ? (
+                        {pinned && cellIndex === 0 ? (
                           <span className="flex items-center gap-1">
                             <Pin className="size-3 shrink-0 fill-current text-primary" />
                             <span className="min-w-0 truncate">
-                              {column.cell(record)}
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
                             </span>
                           </span>
                         ) : (
-                          column.cell(record)
+                          flexRender(cell.column.columnDef.cell, cell.getContext())
                         )}
                       </TableCell>
                     ))}
@@ -360,9 +405,9 @@ export function ListView<T>({
                 {selectable && (
                   <TableCell className="sticky left-0 z-[2] p-0 bg-inherit" />
                 )}
-                {columns?.map((column, index) => (
+                {headers.map((header, index) => (
                   <TableCell
-                    key={column.key}
+                    key={header.id}
                     style={pinStyle(pins[index])}
                     className={cn(
                       "border-r border-r-foreground/12 p-1 last:border-r-0",
@@ -473,29 +518,19 @@ function SortableRow({
   );
 }
 
-function ListHeaderCell<T>({
+function RecordGridHeaderCell<T>({
+  header,
   column,
-  resizable,
   sortable,
-  onColumnResize,
   pin,
   onColumnPinToggle,
-}: ModuleListHeaderCellProps<T>) {
+}: RecordGridHeaderCellProps<T>) {
   const { setNodeRef, listeners, transform, transition, isDragging } =
     useSortable({
-      id: column?.key,
+      id: header.id,
       data: { type: "column" },
       disabled: !sortable,
     });
-  const cellRef = useRef<HTMLTableCellElement | null>(null);
-  const resizeStart = useRef<{ x: number; width: number } | null>(null);
-  const setRefs = useCallback(
-    (node: HTMLTableCellElement | null) => {
-      cellRef.current = node;
-      setNodeRef(node);
-    },
-    [setNodeRef],
-  );
   const style = useMemo(
     () => ({
       ...pinStyle(pin),
@@ -505,11 +540,12 @@ function ListHeaderCell<T>({
     [pin, transform, transition],
   );
   const label =
-    typeof column?.header === "string" ? column.header : column?.key;
+    typeof column?.header === "string" ? column.header : header.id;
+  const resizable = header.column.getCanResize();
 
   return (
     <TableHead
-      ref={setRefs}
+      ref={setNodeRef}
       style={style}
       {...(sortable ? listeners : {})}
       className={cn(
@@ -523,7 +559,9 @@ function ListHeaderCell<T>({
       )}
     >
       <span className="flex items-center gap-1">
-        <span className="min-w-0 flex-1 truncate">{column?.header}</span>
+        <span className="min-w-0 flex-1 truncate">
+          {flexRender(header.column.columnDef.header, header.getContext())}
+        </span>
         {onColumnPinToggle && (
           <button
             type="button"
@@ -531,7 +569,7 @@ function ListHeaderCell<T>({
             aria-pressed={!!pin}
             title={pin ? "Unpin column" : "Pin column"}
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => onColumnPinToggle(column?.key)}
+            onClick={() => onColumnPinToggle(header.id)}
             className={cn(
               "flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground hover:bg-foreground/10 hover:text-foreground",
               pin
@@ -548,28 +586,13 @@ function ListHeaderCell<T>({
           role="separator"
           aria-orientation="vertical"
           aria-label={`Resize ${label}`}
-          className="absolute top-0 -right-1 z-10 h-full w-2 cursor-col-resize after:absolute after:inset-y-1 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:rounded-full hover:after:bg-primary"
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            e.currentTarget.setPointerCapture(e.pointerId);
-            resizeStart.current = {
-              x: e.clientX,
-              width: cellRef.current?.getBoundingClientRect().width ?? 0,
-            };
-          }}
-          onPointerMove={(e) => {
-            const start = resizeStart.current;
-            if (!start) return;
-            onColumnResize?.(
-              column?.key,
-              Math.max(
-                COLUMN_WIDTH.min,
-                Math.round(start.width + e.clientX - start.x),
-              ),
-            );
-          }}
-          onPointerUp={() => (resizeStart.current = null)}
-          onPointerCancel={() => (resizeStart.current = null)}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={header.getResizeHandler()}
+          onTouchStart={header.getResizeHandler()}
+          className={cn(
+            "absolute top-0 -right-1 z-10 h-full w-2 cursor-col-resize touch-none after:absolute after:inset-y-1 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:rounded-full hover:after:bg-primary",
+            header.column.getIsResizing() && "after:bg-primary",
+          )}
         />
       )}
     </TableHead>

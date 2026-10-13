@@ -1,8 +1,5 @@
 import type { ReactNode } from "react";
-import type {
-  ModuleAppViewMode,
-  ModuleQueryState,
-} from "@/module/appView/moduleAppView.types";
+import type { ModuleQueryState } from "@/module/shell/module.types";
 
 /** The API functions a page hands to useModuleData; each page picks its own, all return the same shapes. */
 export interface ModuleDataApi {
@@ -44,8 +41,6 @@ export interface ModulePageFooterProps {
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
-  /** Grid view shows every record, so paging is hidden. @default "list" */
-  appView?: ModuleAppViewMode;
   /** How many records are ticked; shown with a Clear button when above 0. */
   selectedCount?: number;
   onClearSelection?: () => void;

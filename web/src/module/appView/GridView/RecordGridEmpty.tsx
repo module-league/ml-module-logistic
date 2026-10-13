@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Layers, Plus } from "lucide-react";
 import { cn, ModuleAddNewButton } from "@moduleleague/ui";
-import type { ModuleAppEmptyState } from "./moduleAppView.types";
+import type { ModuleAppEmptyState } from "../moduleAppView.types";
 
 const BLUEPRINT_CORNERS = [
   "top-2 left-2",
@@ -26,7 +26,7 @@ const BLUEPRINT = (
   </div>
 );
 
-export const ModuleEmptyAppView = memo(function ModuleEmptyAppView({
+export const RecordGridEmpty = memo(function RecordGridEmpty({
   title = "No records yet",
   description = "Records you create will show up here.",
   actionLabel,
