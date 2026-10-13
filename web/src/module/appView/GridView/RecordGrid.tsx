@@ -28,6 +28,7 @@ import type { CheckedState } from "@radix-ui/react-checkbox";
 import {
   Maximize2,
   Pin,
+  Plus,
   PinOff,
   Square,
   SquareCheck,
@@ -43,6 +44,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
   ModuleAddNewButton,
+  ModuleAddNewFieldDialog,
   Table,
   TableBody,
   TableCell,
@@ -86,8 +88,19 @@ export function RecordGrid<T>({
   onRowPinToggle,
   onRowDelete,
   onRowExpand,
+  onAddField,
 }: RecordGridProps<T>) {
   const selectable = !!onSelectionChange;
+  const hasAddField = !!onAddField;
+  const [addingField, setAddingField] = useState(false);
+  const openAddField = useCallback(() => setAddingField(true), []);
+  const fieldNames = useMemo(
+    () =>
+      columns?.map((column) =>
+        typeof column?.header === "string" ? column.header : column?.key,
+      ) ?? [],
+    [columns],
+  );
   const data = useMemo(() => records ?? [], [records]);
   const columnByKey = useMemo(
     () => new Map(columns?.map((column) => [column?.key, column])),
@@ -101,9 +114,9 @@ export function RecordGrid<T>({
         cell: ({ row }) => column?.cell(row.original),
         size: column?.width ?? COLUMN_WIDTH.default,
         minSize: COLUMN_WIDTH.min,
-        enableResizing: index < columns.length - 1,
+        enableResizing: hasAddField || index < columns.length - 1,
       })) ?? [],
-    [columns],
+    [columns, hasAddField],
   );
   const rowSelection = useMemo<RowSelectionState>(
     () => Object.fromEntries(selectedKeys?.map((key) => [key, true]) ?? []),
@@ -159,7 +172,10 @@ export function RecordGrid<T>({
     : table.getIsSomePageRowsSelected()
       ? "indeterminate"
       : false;
-  const togglePage = useCallback(() => table.toggleAllPageRowsSelected(), [table]);
+  const togglePage = useCallback(
+    () => table.toggleAllPageRowsSelected(),
+    [table],
+  );
   const toggleRow = useCallback(
     (key: string) => table.getRow(key)?.toggleSelected(),
     [table],
@@ -189,7 +205,9 @@ export function RecordGrid<T>({
     () =>
       rows.length
         ? Array.from(
-            { length: Math.max(0, pageSize - (rows.length - pinnedIndex.size)) },
+            {
+              length: Math.max(0, pageSize - (rows.length - pinnedIndex.size)),
+            },
             (_, i) => i,
           )
         : [],
@@ -199,11 +217,11 @@ export function RecordGrid<T>({
   const widths = useMemo(
     () =>
       headers.map((header, index) =>
-        index === headers.length - 1
+        !hasAddField && index === headers.length - 1
           ? undefined
           : (columnSizing[header.id] ?? header.getSize()),
       ),
-    [headers, columnSizing],
+    [headers, columnSizing, hasAddField],
   );
   const pins = useMemo(() => {
     let left = selectable ? COLUMN_WIDTH.select : 0;
@@ -218,10 +236,11 @@ export function RecordGrid<T>({
     () => ({
       minWidth: widths.reduce<number>(
         (sum, width) => sum + (width ?? COLUMN_WIDTH.last),
-        selectable ? COLUMN_WIDTH.select : 0,
+        (selectable ? COLUMN_WIDTH.select : 0) +
+          (hasAddField ? COLUMN_WIDTH.addField : 0),
       ),
     }),
-    [widths, selectable],
+    [widths, selectable, hasAddField],
   );
   const rowIds = useMemo(
     () => pageKeys.filter((key) => !pinnedIndex.has(key)).map(toRowId),
@@ -263,6 +282,7 @@ export function RecordGrid<T>({
             {headers.map((header, index) => (
               <col key={header.id} style={{ width: widths[index] }} />
             ))}
+            {hasAddField && <col />}
           </colgroup>
           <TableHeader
             ref={measureHeader}
@@ -295,13 +315,32 @@ export function RecordGrid<T>({
                     onColumnPinToggle={onColumnPinToggle}
                   />
                 ))}
+                {hasAddField && (
+                  <TableHead className="h-4 bg-table-head px-1 w-28">
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label="Add field"
+                      title="Add field"
+                      onClick={openAddField}
+                      startIcon={<Plus size={13} />}
+                      className="text-muted-foreground w-full hover:bg-primary-10 hover:text-primary"
+                    />
+                  </TableHead>
+                )}
               </TableRow>
             </SortableContext>
           </TableHeader>
           <TableBody>
             {!rows.length && (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={headers.length + (selectable ? 1 : 0)}>
+                <TableCell
+                  colSpan={
+                    headers.length +
+                    (selectable ? 1 : 0) +
+                    (hasAddField ? 1 : 0)
+                  }
+                >
                   <RecordGridEmpty {...empty} />
                 </TableCell>
               </TableRow>
@@ -388,10 +427,14 @@ export function RecordGrid<T>({
                             </span>
                           </span>
                         ) : (
-                          flexRender(cell.column.columnDef.cell, cell.getContext())
+                          flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )
                         )}
                       </TableCell>
                     ))}
+                    {hasAddField && <TableCell className="p-0" />}
                   </SortableRow>
                 );
               })}
@@ -422,11 +465,20 @@ export function RecordGrid<T>({
                     )}
                   </TableCell>
                 ))}
+                {hasAddField && <TableCell className="p-0" />}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </DndContext>
+      {onAddField && (
+        <ModuleAddNewFieldDialog
+          open={addingField}
+          onOpenChange={setAddingField}
+          onAdd={onAddField}
+          takenNames={fieldNames}
+        />
+      )}
     </div>
   );
 }
@@ -539,8 +591,7 @@ function RecordGridHeaderCell<T>({
     }),
     [pin, transform, transition],
   );
-  const label =
-    typeof column?.header === "string" ? column.header : header.id;
+  const label = typeof column?.header === "string" ? column.header : header.id;
   const resizable = header.column.getCanResize();
 
   return (

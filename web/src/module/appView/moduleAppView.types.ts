@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Header } from "@tanstack/react-table";
 import type { ModuleQueryState } from "@/module/shell/module.types";
+import type { ModuleAddFieldHandler } from "@/components/ml/moduleAddNewField.types";
 
 /** The ways ModuleAppView can show records; only the grid for now. */
 export type ModuleAppViewMode = "grid";
@@ -78,6 +79,8 @@ export interface RecordGridProps<T>
   /** Empty rows fill the page up to this many, so the grid keeps its shape. */
   pageSize?: number;
   empty?: ModuleAppEmptyState;
+  /** Adds a last header column with a + that opens the Add field dialog; it fills the width left over. */
+  onAddField?: ModuleAddFieldHandler;
 }
 
 export interface ModuleAppViewProps<T>

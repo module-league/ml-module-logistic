@@ -261,6 +261,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           pinnedRows={shownPinnedRows}
           onRowPinToggle={togglePinnedRow}
           onRowExpand={openRecord}
+          onAddField={data.onAddField}
           onAdd={openNewRecord}
           addLabel={ADD_LABEL}
           pageSize={pageSize}

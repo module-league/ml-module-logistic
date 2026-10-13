@@ -5,7 +5,13 @@ import {
 } from "@dnd-kit/core";
 import type { ModuleColumnPin } from "../moduleAppView.types";
 
-export const COLUMN_WIDTH = { default: 160, min: 64, last: 120, select: 66 };
+export const COLUMN_WIDTH = {
+  default: 160,
+  min: 64,
+  last: 120,
+  select: 66,
+  addField: 44,
+};
 
 export const toRowId = (key: string) => `row:${key}`;
 
