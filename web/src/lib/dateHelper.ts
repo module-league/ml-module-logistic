@@ -8,6 +8,8 @@ import {
   isSameMonth,
   isSameWeek,
   isThisYear,
+  isValid,
+  parseISO,
 } from "date-fns";
 
 /**
@@ -112,4 +114,30 @@ export function formatDateDistance(
   } else {
     return `${yearsAgo} year(s) ago`;
   }
+}
+
+type FieldDateSettings = Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat">>;
+
+/** The date-fns pattern a date field shows its values in, e.g. "dd/MM/yyyy hh:mm a". */
+export function fieldDateFormat(field?: FieldDateSettings) {
+  const date = field?.dateFormat ?? "dd/MM/yyyy";
+  return field?.displayTime ? `${date} ${field?.timeFormat ?? "hh:mm a"}` : date;
+}
+
+/** A stored date value ("yyyy-MM-dd" or an ISO date-time) as a local Date. */
+export function parseFieldDate(value?: string | null) {
+  if (!value) return undefined;
+  const date = parseISO(value);
+  return isValid(date) ? date : undefined;
+}
+
+/** What a date field stores: "yyyy-MM-dd", or a UTC ISO string when it shows time. */
+export function toFieldDateValue(field: FieldDateSettings | undefined, date?: Date) {
+  if (!date) return "";
+  return field?.displayTime ? date.toISOString() : fnsFormat(date, "yyyy-MM-dd");
+}
+
+export function formatFieldDate(field: FieldDateSettings | undefined, value?: string | null) {
+  const date = parseFieldDate(value);
+  return date ? fnsFormat(date, fieldDateFormat(field)) : "";
 }

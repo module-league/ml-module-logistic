@@ -105,6 +105,17 @@ namespace LogisticApi.Services
                         throw ApiProblemException.BadRequest("Invalid checkbox value.", $"'{field.sidebarName}' needs true or false.");
                     return ticked ? "true" : null;
 
+                case "date":
+                    if (FieldSettings.Read(field.settings).displayTime)
+                    {
+                        if (!DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at))
+                            throw ApiProblemException.BadRequest("Invalid date.", $"'{field.sidebarName}' needs a date and time.");
+                        return at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+                    }
+                    if (!DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day))
+                        throw ApiProblemException.BadRequest("Invalid date.", $"'{field.sidebarName}' needs a date like 2026-10-13.");
+                    return day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
                 case "single_select":
                     if (!Guid.TryParse(text, out var optionId) || field.options.All(o => o.ObjId != optionId))
                         throw ApiProblemException.BadRequest("Invalid option.", $"'{field.sidebarName}' has no such option.");

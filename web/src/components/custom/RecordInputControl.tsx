@@ -14,6 +14,8 @@ import {
 import type { CSSProperties } from "react";
 import { XIcon } from "@/components/custom/XIcon";
 import { SelectionNode } from "./RecordValueNode";
+import { DateTimePicker } from "../ui/date-time-picker";
+import { parseFieldDate, toFieldDateValue } from "@/lib/dateHelper";
 
 export type RecordInputControlProps = {
   /** Set by FormControl so a label points at the input. */
@@ -85,6 +87,44 @@ export function RecordInputControl(props: RecordInputControlProps) {
     );
   }
 
+  if (field.isDateField) {
+    return (
+      <div className={cn("relative", props.className)}>
+        <DateTimePicker
+          defaultOpen={defaultOpen}
+          value={parseFieldDate(value)}
+          onChange={(date) => onChange?.(toFieldDateValue(field, date))}
+          granularity={field.displayTime ? "minute" : "day"}
+          hourCycle={field.timeFormat === "HH:mm" ? 24 : 12}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={cn(
+            clearable === true && "**:aria-[label=date-picker-button]:right-9",
+            props.className,
+          )}
+          inputClassName={props.className}
+          style={props.style}
+          clearable={clearable === "inline"}
+        />
+
+        {clearable === true && (
+          <Button
+            size="xs"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              props.onChange?.("");
+            }}
+            className="absolute top-1/2 -translate-y-1/2 right-2 text-black"
+            disabled={disabled}
+          >
+            <XIcon size={14} />
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   if (field.type === "checkbox") {
     return (
       <div
@@ -97,7 +137,9 @@ export function RecordInputControl(props: RecordInputControlProps) {
           checked={value === "true"}
           disabled={disabled}
           autoFocus={autoFocus}
-          onCheckedChange={(checked) => onChange?.(checked === true ? "true" : "")}
+          onCheckedChange={(checked) =>
+            onChange?.(checked === true ? "true" : "")
+          }
           onBlur={onBlur}
         />
       </div>

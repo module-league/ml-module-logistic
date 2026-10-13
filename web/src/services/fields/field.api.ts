@@ -38,6 +38,11 @@ export function toFieldCreate(field: IField): ISidebarFieldCreate {
     type: field?.type,
     description: field?.description,
     dropDownValues: toOptionInputs(field),
+    ...(field?.isDateField && {
+      dateFormat: field.dateFormat,
+      displayTime: field.displayTime,
+      timeFormat: field.timeFormat,
+    }),
   };
 }
 

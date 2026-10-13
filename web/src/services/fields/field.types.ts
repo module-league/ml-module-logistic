@@ -142,7 +142,8 @@ declare global {
     id?: string;
   };
 
-  type ISidebarFieldCreate = Pick<IField, "name" | "type" | "description"> & {
+  type ISidebarFieldCreate = Pick<IField, "name" | "type" | "description"> &
+    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat">> & {
     isPrimaryField?: boolean;
     dropDownValues?: ISidebarFieldOptionInput[];
   };

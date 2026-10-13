@@ -1,7 +1,10 @@
 import type { Modifier } from "@dnd-kit/core";
 import { FIELD_TYPE_ICONS } from "./fieldTypeIcon.utils";
 import { presetColors } from "@/lib/colorUtils";
-import type { ModuleFieldTypeOption } from "./moduleAddNewField.types";
+import type {
+  ModuleFieldDateSettings,
+  ModuleFieldTypeOption,
+} from "./moduleAddNewField.types";
 
 export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
   {
@@ -28,7 +31,31 @@ export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
     description: "A tick for yes or no.",
     icon: FIELD_TYPE_ICONS.checkbox,
   },
+  {
+    fieldType: "date",
+    label: "Date",
+    description: "Pickups, deadlines, deliveries.",
+    icon: FIELD_TYPE_ICONS.date,
+  },
 ];
+
+export const FIELD_DATE_FORMATS: IField["dateFormat"][] = [
+  "dd/MM/yyyy",
+  "MM/dd/yyyy",
+  "dd MMM yyyy",
+  "yyyy-MM-dd",
+];
+
+export const FIELD_TIME_FORMATS: { value: IField["timeFormat"]; label: string }[] = [
+  { value: "hh:mm a", label: "12-hour" },
+  { value: "HH:mm", label: "24-hour" },
+];
+
+export const DEFAULT_DATE_SETTINGS: ModuleFieldDateSettings = {
+  dateFormat: "dd/MM/yyyy",
+  displayTime: false,
+  timeFormat: "hh:mm a",
+};
 
 /** Moves a dragged item up and down only, and never past the list that holds it, so the list can't grow while dragging. */
 export const lockToVerticalAxis: Modifier = ({
@@ -100,7 +127,11 @@ export function toField({
   type,
   name,
   dropDownValues,
-}: Pick<IField, "type" | "name" | "dropDownValues">): IField {
+  dateFormat = DEFAULT_DATE_SETTINGS.dateFormat,
+  displayTime = DEFAULT_DATE_SETTINGS.displayTime,
+  timeFormat = DEFAULT_DATE_SETTINGS.timeFormat,
+}: Pick<IField, "type" | "name" | "dropDownValues"> &
+  Partial<ModuleFieldDateSettings>): IField {
   return {
     name,
     type,
@@ -109,18 +140,18 @@ export function toField({
     isSystemField: false,
     isSelectionField: type === "single_select",
     isMultiSelectField: false,
-    isDateField: false,
+    isDateField: type === "date",
     isUserField: false,
     isNumeric: type === "number",
     isVirtualField: false,
     isForeignField: false,
     isPlainField: true,
-    dateFormat: "dd/MM/yyyy",
+    dateFormat,
     categoryId: "",
     displayOrder: 0,
     dropDownValues:
       type === "single_select" ? cleanDropDownValues(dropDownValues, name) : [],
-    displayTime: false,
-    timeFormat: "hh:mm a",
+    displayTime: type === "date" && displayTime,
+    timeFormat,
   };
 }

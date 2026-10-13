@@ -30,6 +30,16 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { fieldDateFormat } from "@/lib/dateHelper";
+import { format } from "date-fns";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -38,6 +48,8 @@ import { toast } from "@/components/ui/sonner";
 import { errorParser } from "@/hooks/useErrorParser";
 import type {
   ModuleAddFieldStepsProps,
+  ModuleFieldDateSettings,
+  ModuleFieldDateSettingsProps,
   ModuleAddNewFieldDialogProps,
   ModuleFieldOptionColorPickerProps,
   ModuleFieldOptionRowProps,
@@ -51,6 +63,9 @@ import {
   MODULE_FIELD_TYPES,
   nextOptionValue,
   toField,
+  DEFAULT_DATE_SETTINGS,
+  FIELD_DATE_FORMATS,
+  FIELD_TIME_FORMATS,
 } from "./moduleAddNewField.utils";
 
 /**
@@ -118,6 +133,9 @@ function AddFieldSteps({
     createDropDownValue(0),
     createDropDownValue(1),
   ]);
+  const [dateSettings, setDateSettings] = useState<ModuleFieldDateSettings>(
+    DEFAULT_DATE_SETTINGS,
+  );
   const option = useMemo(
     () => (type ? fieldTypeOption(type) : undefined),
     [type],
@@ -128,8 +146,9 @@ function AddFieldSteps({
       type,
       name: name.trim(),
       dropDownValues: options,
+      ...dateSettings,
     });
-  }, [type, name, options]);
+  }, [type, name, options, dateSettings]);
   const nameTaken = useMemo(
     () => isFieldNameTaken(name, takenNames),
     [name, takenNames],
@@ -233,6 +252,9 @@ function AddFieldSteps({
               <FieldOptionsEditor options={options} onChange={setOptions} />
             </Field>
           )}
+          {type === "date" && (
+            <FieldDateSettings value={dateSettings} onChange={setDateSettings} />
+          )}
         </div>
       </div>
 
@@ -255,6 +277,75 @@ function AddFieldSteps({
         </div>
       </DialogFooter>
     </form>
+  );
+}
+
+function FieldDateSettings({ value, onChange }: ModuleFieldDateSettingsProps) {
+  const sample = useMemo(() => new Date(), []);
+  const preview = useMemo(
+    () => format(sample, fieldDateFormat(value)),
+    [sample, value],
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Field>
+        <FieldLabel htmlFor="field-date-format">Date format</FieldLabel>
+        <Select
+          value={value.dateFormat}
+          onValueChange={(dateFormat) =>
+            onChange({ ...value, dateFormat: dateFormat as IField["dateFormat"] })
+          }
+        >
+          <SelectTrigger id="field-date-format" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            {FIELD_DATE_FORMATS.map((dateFormat) => (
+              <SelectItem key={dateFormat} value={dateFormat}>
+                {format(sample, dateFormat)}
+                <span className="text-muted-foreground">{dateFormat}</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+      <label className="flex items-center justify-between gap-3 text-sm font-medium">
+        Include time
+        <Switch
+          checked={value.displayTime}
+          onCheckedChange={(displayTime) => onChange({ ...value, displayTime })}
+        />
+      </label>
+      {value.displayTime && (
+        <Field>
+          <FieldLabel htmlFor="field-time-format">Time format</FieldLabel>
+          <Select
+            value={value.timeFormat}
+            onValueChange={(timeFormat) =>
+              onChange({ ...value, timeFormat: timeFormat as IField["timeFormat"] })
+            }
+          >
+            <SelectTrigger id="field-time-format" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {FIELD_TIME_FORMATS.map((timeFormat) => (
+                <SelectItem key={timeFormat.value} value={timeFormat.value}>
+                  {timeFormat.label}
+                  <span className="text-muted-foreground">
+                    {format(sample, timeFormat.value)}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Shows as <span className="font-medium text-foreground">{preview}</span>
+      </p>
+    </div>
   );
 }
 

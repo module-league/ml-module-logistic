@@ -19,6 +19,17 @@ export interface ModuleAddNewFieldDialogProps {
   takenNames?: string[];
 }
 
+/** The date field settings picked in the Add field dialog. */
+export type ModuleFieldDateSettings = Pick<
+  IField,
+  "dateFormat" | "displayTime" | "timeFormat"
+>;
+
+export interface ModuleFieldDateSettingsProps {
+  value: ModuleFieldDateSettings;
+  onChange: (value: ModuleFieldDateSettings) => void;
+}
+
 export interface ModuleAddFieldStepsProps
   extends Pick<ModuleAddNewFieldDialogProps, "takenNames"> {
   onAdd: (field: IField) => void;

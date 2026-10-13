@@ -1,6 +1,7 @@
 import { cn } from "@/ui-kit";
 import { Square, SquareCheck } from "lucide-react";
 import type { ReactNode } from "react";
+import { formatFieldDate } from "@/lib/dateHelper";
 
 type SpanProps = Omit<
   React.DetailedHTMLProps<
@@ -48,6 +49,9 @@ export function RecordValueNode({
     );
   }
   if (!value) return <span className="text-muted-foreground">—</span>;
+  if (field?.type === "date") {
+    return <span className="tabular-nums">{formatFieldDate(field, value)}</span>;
+  }
   if (field?.type === "single_select") {
     const option = field?.dropDownValues?.find((o) => o?.id === value);
     return (
