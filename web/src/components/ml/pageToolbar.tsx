@@ -23,6 +23,7 @@ import {
   Search,
   Trash2,
   X,
+  PlusIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -62,8 +63,8 @@ import {
 import { ModuleAddNewButton } from "./moduleAddNewButton";
 import { Switch } from "@/components/ui/switch";
 import type {
-  ColumnsDropdownItemProps,
-  ColumnsDropdownProps,
+  FieldsDropdownItemProps,
+  FieldsDropdownProps,
   FilterDropdownProps,
   PageToolbarProps,
   ToolbarTooltipProps,
@@ -157,8 +158,8 @@ export function ModulePageToolbar({
     >
       {onAdd && <ModuleAddNewButton label={addLabel} onClick={onAdd} />}
       {columnOptions?.length && onHiddenColumnsChange ? (
-        <ColumnsDropdown
-          columns={columnOptions}
+        <FieldsDropdown
+          fields={columnOptions}
           hidden={hiddenColumns ?? []}
           onChange={onHiddenColumnsChange}
           onReorder={onColumnOrderChange}
@@ -418,20 +419,20 @@ const lockToVerticalAxis: Modifier = ({ transform }) => ({
   x: 0,
 });
 
-function ColumnsDropdown({
-  columns,
+function FieldsDropdown({
+  fields,
   hidden,
   onChange,
   onReorder,
   compact = false,
-}: ColumnsDropdownProps) {
+}: FieldsDropdownProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
-  const keys = useMemo(() => columns?.map((column) => column?.key), [columns]);
+  const keys = useMemo(() => fields?.map((field) => field?.key), [fields]);
   const visibleCount = useMemo(
-    () => columns?.filter((column) => !hidden?.includes(column?.key)).length,
-    [columns, hidden],
+    () => fields?.filter((field) => !hidden?.includes(field?.key)).length,
+    [fields, hidden],
   );
   const toggle = useCallback(
     (key: string) =>
@@ -458,20 +459,28 @@ function ColumnsDropdown({
 
   return (
     <DropdownMenu>
-      <ToolbarTooltip label="Columns" enabled={compact}>
+      <ToolbarTooltip label="Fields" enabled={compact}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
             size={compact ? "icon-xs" : "xs"}
-            aria-label="Columns"
+            aria-label="Fields"
             startIcon={<Columns3 size={13} />}
           >
-            {!compact && "Columns"}
+            {!compact && "Fields"}
           </Button>
         </DropdownMenuTrigger>
       </ToolbarTooltip>
       <DropdownMenuContent align="start" className="w-60">
-        <DropdownMenuLabel>Show columns</DropdownMenuLabel>
+        <DropdownMenuLabel>Show Fields</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem>
+            <PlusIcon size={13} />
+            Add Field
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -479,12 +488,12 @@ function ColumnsDropdown({
           onDragEnd={handleDragEnd}
         >
           <SortableContext items={keys} strategy={verticalListSortingStrategy}>
-            {columns?.map((column) => {
-              const shown = !hidden?.includes(column?.key);
+            {fields?.map((field) => {
+              const shown = !hidden?.includes(field?.key);
               return (
-                <ColumnsDropdownItem
-                  key={column?.key}
-                  column={column}
+                <FieldsDropdownItem
+                  key={field?.key}
+                  field={field}
                   shown={shown}
                   locked={shown && visibleCount <= 1}
                   sortable={!!onReorder}
@@ -503,7 +512,7 @@ function ColumnsDropdown({
                 onChange([]);
               }}
             >
-              Show all columns
+              Show all fields
             </DropdownMenuItem>
           </>
         )}
@@ -512,13 +521,13 @@ function ColumnsDropdown({
   );
 }
 
-function ColumnsDropdownItem({
-  column,
+function FieldsDropdownItem({
+  field,
   shown,
   locked,
   sortable,
   onToggle,
-}: ColumnsDropdownItemProps) {
+}: FieldsDropdownItemProps) {
   const {
     setNodeRef,
     setActivatorNodeRef,
@@ -526,7 +535,7 @@ function ColumnsDropdownItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: column?.key, disabled: !sortable });
+  } = useSortable({ id: field?.key, disabled: !sortable });
   const style = useMemo(
     () => ({
       transform: transform ? `translate3d(0, ${transform.y}px, 0)` : undefined,
@@ -545,7 +554,7 @@ function ColumnsDropdownItem({
       )}
       onSelect={(e) => {
         e.preventDefault();
-        if (!locked) onToggle(column?.key);
+        if (!locked) onToggle(field?.key);
       }}
     >
       {sortable && (
@@ -554,14 +563,14 @@ function ColumnsDropdownItem({
           ref={setActivatorNodeRef}
           {...listeners}
           tabIndex={-1}
-          aria-label={`Drag to reorder ${column?.label}`}
+          aria-label={`Drag to reorder ${field?.label}`}
           onClick={(e) => e.stopPropagation()}
           className="flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-foreground/10 active:cursor-grabbing"
         >
           <GripVertical className="size-3.5" />
         </button>
       )}
-      <span className="flex-1 truncate">{column?.label}</span>
+      <span className="flex-1 truncate">{field?.label}</span>
       <Switch
         size="sm"
         checked={shown}

@@ -69,8 +69,8 @@ export interface FilterDropdownProps {
   compact?: boolean;
 }
 
-export interface ColumnsDropdownProps {
-  columns: PageToolbarColumnOption[];
+export interface FieldsDropdownProps {
+  fields: PageToolbarColumnOption[];
   hidden: string[];
   onChange: (hidden: string[]) => void;
   onReorder?: (keys: string[]) => void;
@@ -78,8 +78,8 @@ export interface ColumnsDropdownProps {
   compact?: boolean;
 }
 
-export interface ColumnsDropdownItemProps {
-  column: PageToolbarColumnOption;
+export interface FieldsDropdownItemProps {
+  field: PageToolbarColumnOption;
   shown: boolean;
   /** The last visible column can't be hidden. */
   locked: boolean;
