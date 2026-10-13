@@ -13,31 +13,12 @@ namespace LogisticApi.Context.Configurations
         protected override void ConfigureEntity(EntityTypeBuilder<Logistic> b)
         {
             // Columns
-            b.Property(e => e.TrackingNo)
-             .HasColumnName("tracking_no")
-             .HasMaxLength(50)
+            b.Property(e => e.sidebarId)
+             .HasColumnName("sidebar_id")
+             .HasMaxLength(100)
              .IsRequired();
 
-            b.Property(e => e.Origin)
-             .HasColumnName("origin")
-             .HasMaxLength(200)
-             .IsRequired();
-
-            b.Property(e => e.Destination)
-             .HasColumnName("destination")
-             .HasMaxLength(200)
-             .IsRequired();
-
-            b.Property(e => e.Status)
-             .HasColumnName("status")
-             .HasMaxLength(30)
-             .IsRequired()
-             .HasDefaultValue("Pending");
-
-            b.HasIndex(e => e.Status)
-             .HasDatabaseName(Ix("status"));
-
-           
+            b.HasIndex(e => e.sidebarId).HasDatabaseName(Ix("sidebar_id"));
         }
     }
 }

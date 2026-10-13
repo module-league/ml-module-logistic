@@ -13,6 +13,8 @@ namespace LogisticApi.Context
 
         // Define your database tables here
         public virtual DbSet<Logistic> Logistics { get; set; } = null!;
+        public virtual DbSet<SidebarField> SidebarFields { get; set; } = null!;
+        public virtual DbSet<SidebarFieldOption> SidebarFieldOptions { get; set; } = null!;
         //public virtual DbSet<JobOrder> JobOrders { get; set; } = null!;
     }
 }
