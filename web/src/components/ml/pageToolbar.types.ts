@@ -22,6 +22,12 @@ export interface PageToolbarViewOption {
 /** Selected values per filter key; an empty or missing list means no filter. */
 export type PageToolbarFilterValue = Record<string, string[]>;
 
+/** A table column the user can show or hide. */
+export interface PageToolbarColumnOption {
+  key: string;
+  label: string;
+}
+
 export interface PageToolbarProps {
   onAdd?: () => void;
   /** @default "Add record" */
@@ -33,6 +39,18 @@ export interface PageToolbarProps {
   inputOptions?: PageToolbarInputOption[];
   filterValue?: PageToolbarFilterValue;
   onFilterChange?: (value: PageToolbarFilterValue) => void;
+  /** Shows the Columns button when set together with onHiddenColumnsChange. */
+  columnOptions?: PageToolbarColumnOption[];
+  hiddenColumns?: string[];
+  onHiddenColumnsChange?: (hidden: string[]) => void;
+  /** Column keys in their new order, after a drag in the Columns menu. */
+  onColumnOrderChange?: (keys: string[]) => void;
+  /** Deletes the ticked records; shown as the toolbar's only action while records are ticked. */
+  onDelete?: (keys: string[]) => void;
+  /** Set by ModulePage: how many records are ticked. Above 0 the toolbar switches to selection mode. */
+  selectedCount?: number;
+  onDeleteSelected?: () => void;
+  onCancelSelection?: () => void;
   onExport?: () => void;
   /** @default "Export" */
   exportLabel?: string;
@@ -49,6 +67,24 @@ export interface FilterDropdownProps {
   onChange?: (value: PageToolbarFilterValue) => void;
   /** Icon-only button with a tooltip. */
   compact?: boolean;
+}
+
+export interface ColumnsDropdownProps {
+  columns: PageToolbarColumnOption[];
+  hidden: string[];
+  onChange: (hidden: string[]) => void;
+  onReorder?: (keys: string[]) => void;
+  /** Icon-only button with a tooltip. */
+  compact?: boolean;
+}
+
+export interface ColumnsDropdownItemProps {
+  column: PageToolbarColumnOption;
+  shown: boolean;
+  /** The last visible column can't be hidden. */
+  locked: boolean;
+  sortable: boolean;
+  onToggle: (key: string) => void;
 }
 
 export interface ModuleAppViewDropdownProps {

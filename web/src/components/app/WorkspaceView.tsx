@@ -32,6 +32,7 @@ import {
   focusedKey,
   listPanes,
   moveTab,
+  reorderTab,
   snapTab,
   useWorkspace,
   workspaceKey,
@@ -77,7 +78,9 @@ const collisionDetection: CollisionDetection = (args) => {
   );
   if (snapCells.length > 0) return snapCells;
   const panel = hits.filter((hit) => hit.id === SNAP_PANEL_ID);
-  return panel.length > 0 ? panel : hits;
+  if (panel.length > 0) return panel;
+  const tabs = hits.filter((hit) => "key" in (hit.data?.droppableContainer?.data?.current ?? {}));
+  return tabs.length > 0 ? tabs : hits;
 };
 
 export function WorkspaceView({ config }: { config: IModuleConfig }) {
@@ -119,8 +122,22 @@ export function WorkspaceView({ config }: { config: IModuleConfig }) {
     const target = event.over?.data.current as
       | DropTarget
       | SnapTarget
+      | DraggedTab
       | undefined;
     if (!tab || !target) return;
+    if ("key" in target) {
+      if (target.key === tab.key && target.fromPaneId === tab.fromPaneId) return;
+      if (target.fromPaneId !== tab.fromPaneId) {
+        moveTab(storageKey, tab.key, tab.fromPaneId, {
+          paneId: target.fromPaneId,
+          zone: "center",
+        });
+      }
+      context.goTo(
+        focusedKey(reorderTab(storageKey, target.fromPaneId, tab.key, target.key)),
+      );
+      return;
+    }
     const next =
       "snap" in target
         ? snapTab(storageKey, tab.key, tab.fromPaneId, target.snap)

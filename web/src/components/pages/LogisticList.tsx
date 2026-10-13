@@ -47,8 +47,10 @@ export default function LogisticList() {
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return logistics.filter((l) => {
-      if (filter?.status?.length && !filter.status.includes(l?.status)) return false;
-      if (filter?.origin?.length && !filter.origin.includes(l?.origin)) return false;
+      if (filter?.status?.length && !filter.status.includes(l?.status))
+        return false;
+      if (filter?.origin?.length && !filter.origin.includes(l?.origin))
+        return false;
       if (!term) return true;
       return [l.trackingNo, l.origin, l.destination, formatDocNo(l.docId)].some(
         (v) => v.toLowerCase().includes(term),
@@ -62,6 +64,13 @@ export default function LogisticList() {
     [],
   );
   const columns = useLogisticColumns(notYet);
+  const deleteRecords = useCallback(
+    (keys: string[]) =>
+      toast.info(
+        `Deleting ${keys.length} ${keys.length === 1 ? "record" : "records"} comes with the API step.`,
+      ),
+    [],
+  );
 
   const toolbar = useMemo(
     () => ({
@@ -71,15 +80,18 @@ export default function LogisticList() {
       filterValue: filter,
       onFilterChange: setFilter,
       onExport: notYet,
+      onDelete: deleteRecords,
       search,
       onSearchChange: setSearch,
       searchPlaceholder: "Tracking no., origin, destination",
     }),
-    [notYet, inputOptions, filter, search],
+    [notYet, deleteRecords, inputOptions, filter, search],
   );
 
   const renderCard = useCallback(
-    (logistic: Logistic) => <LogisticCard logistic={logistic} onEdit={notYet} />,
+    (logistic: Logistic) => (
+      <LogisticCard logistic={logistic} onEdit={notYet} />
+    ),
     [notYet],
   );
 

@@ -41,6 +41,13 @@ export default function RecordTest() {
     [],
   );
   const columns = useLogisticColumns(notYet);
+  const deleteRecords = useCallback(
+    (keys: string[]) =>
+      toast.info(
+        `Deleting ${keys.length} ${keys.length === 1 ? "record" : "records"} comes with the API step.`,
+      ),
+    [],
+  );
 
   const toolbar = useMemo(
     () => ({
@@ -50,15 +57,18 @@ export default function RecordTest() {
       filterValue: filter,
       onFilterChange: setFilter,
       onExport: notYet,
+      onDelete: deleteRecords,
       search,
       onSearchChange: setSearch,
       searchPlaceholder: "Tracking no., origin, destination",
     }),
-    [notYet, inputOptions, filter, search],
+    [notYet, deleteRecords, inputOptions, filter, search],
   );
 
   const renderCard = useCallback(
-    (logistic: Logistic) => <LogisticCard logistic={logistic} onEdit={notYet} />,
+    (logistic: Logistic) => (
+      <LogisticCard logistic={logistic} onEdit={notYet} />
+    ),
     [notYet],
   );
 

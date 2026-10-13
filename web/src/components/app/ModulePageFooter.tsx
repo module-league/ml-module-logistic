@@ -9,6 +9,8 @@ export function ModulePageFooter({
   pageSize,
   appView,
   onPageChange,
+  selectedCount = 0,
+  onClearSelection,
 }: ModulePageFooterProps) {
   const paginated = appView !== "grid";
   const pageCount = useMemo(
@@ -32,6 +34,19 @@ export function ModulePageFooter({
         &nbsp;
         {total === 1 ? "record" : "records"}
         {range && <span className="ml-2 tabular-nums">· Showing {range}</span>}
+        {selectedCount > 0 && (
+          <span className="ml-2 flex items-center gap-1.5 text-primary">
+            ·
+            <span className="font-medium tabular-nums">
+              {selectedCount} selected
+            </span>
+            {onClearSelection && (
+              <Button variant="outline" size="xs" onClick={onClearSelection}>
+                Clear
+              </Button>
+            )}
+          </span>
+        )}
       </span>
 
       {paginated && (

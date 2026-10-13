@@ -1,5 +1,29 @@
 import { useCallback, useMemo, useState } from "react";
-import { ChevronsUpDown, Download, ListFilter, Search } from "lucide-react";
+import {
+  closestCenter,
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type Modifier,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
+  ChevronsUpDown,
+  Columns3,
+  GripVertical,
+  Download,
+  ListFilter,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +60,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ModuleAddNewButton } from "./moduleAddNewButton";
+import { Switch } from "@/components/ui/switch";
 import type {
+  ColumnsDropdownItemProps,
+  ColumnsDropdownProps,
   FilterDropdownProps,
   PageToolbarProps,
   ToolbarTooltipProps,
@@ -65,12 +92,19 @@ export function ModulePageToolbar({
   inputOptions,
   filterValue,
   onFilterChange,
+  columnOptions,
+  hiddenColumns,
+  onHiddenColumnsChange,
+  onColumnOrderChange,
   onExport,
   exportLabel = "Export",
   search,
   onSearchChange,
   searchPlaceholder = "Search",
   className,
+  selectedCount = 0,
+  onDeleteSelected,
+  onCancelSelection,
 }: PageToolbarProps) {
   const [compact, setCompact] = useState(false);
   const measureRef = useCallback((node: HTMLDivElement | null) => {
@@ -82,12 +116,55 @@ export function ModulePageToolbar({
     return () => observer.disconnect();
   }, []);
 
+  if (selectedCount > 0) {
+    return (
+      <div
+        ref={measureRef}
+        className={cn(
+          "flex min-h-[41px] items-center gap-2 border-b bg-primary-10 p-4 py-1",
+          className,
+        )}
+      >
+        <Button
+          variant="destructive"
+          size="xs"
+          onClick={onDeleteSelected}
+          disabled={!onDeleteSelected}
+          startIcon={<Trash2 size={13} />}
+        >
+          Delete ({selectedCount})
+        </Button>
+        <Button
+          variant="outline"
+          size="xs"
+          className="ml-auto"
+          onClick={onCancelSelection}
+          startIcon={<X size={13} />}
+        >
+          Cancel selection
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={measureRef}
-      className={cn("flex items-center gap-2 border-b p-4 py-1", className)}
+      className={cn(
+        "flex min-h-10 items-center gap-2 border-b p-4 py-1",
+        className,
+      )}
     >
       {onAdd && <ModuleAddNewButton label={addLabel} onClick={onAdd} />}
+      {columnOptions?.length && onHiddenColumnsChange ? (
+        <ColumnsDropdown
+          columns={columnOptions}
+          hidden={hiddenColumns ?? []}
+          onChange={onHiddenColumnsChange}
+          onReorder={onColumnOrderChange}
+          compact={compact}
+        />
+      ) : null}
       {onViewChange && views?.length ? (
         <ModuleAppViewDropdown
           views={views}
@@ -104,7 +181,7 @@ export function ModulePageToolbar({
           compact={compact}
         />
       ) : null}
-      {onExport && (
+      {/* {onExport && (
         <ToolbarTooltip label={exportLabel} enabled={compact}>
           <Button
             variant="outline"
@@ -116,7 +193,7 @@ export function ModulePageToolbar({
             {!compact && exportLabel}
           </Button>
         </ToolbarTooltip>
-      )}
+      )} */}
       {onSearchChange && (
         <InputGroup className="ml-auto w-48 min-w-28 shrink bg-background">
           <InputGroupAddon>
@@ -333,6 +410,167 @@ function FilterDropdown({
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+const lockToVerticalAxis: Modifier = ({ transform }) => ({
+  ...transform,
+  x: 0,
+});
+
+function ColumnsDropdown({
+  columns,
+  hidden,
+  onChange,
+  onReorder,
+  compact = false,
+}: ColumnsDropdownProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+  );
+  const keys = useMemo(() => columns?.map((column) => column?.key), [columns]);
+  const visibleCount = useMemo(
+    () => columns?.filter((column) => !hidden?.includes(column?.key)).length,
+    [columns, hidden],
+  );
+  const toggle = useCallback(
+    (key: string) =>
+      onChange(
+        hidden?.includes(key)
+          ? hidden.filter((hiddenKey) => hiddenKey !== key)
+          : [...(hidden ?? []), key],
+      ),
+    [hidden, onChange],
+  );
+  const handleDragEnd = useCallback(
+    ({ active, over }: DragEndEvent) => {
+      if (!over || active?.id === over?.id) return;
+      onReorder?.(
+        arrayMove(
+          keys,
+          keys.indexOf(String(active.id)),
+          keys.indexOf(String(over.id)),
+        ),
+      );
+    },
+    [keys, onReorder],
+  );
+
+  return (
+    <DropdownMenu>
+      <ToolbarTooltip label="Columns" enabled={compact}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size={compact ? "icon-xs" : "xs"}
+            aria-label="Columns"
+            startIcon={<Columns3 size={13} />}
+          >
+            {!compact && "Columns"}
+          </Button>
+        </DropdownMenuTrigger>
+      </ToolbarTooltip>
+      <DropdownMenuContent align="start" className="w-60">
+        <DropdownMenuLabel>Show columns</DropdownMenuLabel>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={[lockToVerticalAxis]}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={keys} strategy={verticalListSortingStrategy}>
+            {columns?.map((column) => {
+              const shown = !hidden?.includes(column?.key);
+              return (
+                <ColumnsDropdownItem
+                  key={column?.key}
+                  column={column}
+                  shown={shown}
+                  locked={shown && visibleCount <= 1}
+                  sortable={!!onReorder}
+                  onToggle={toggle}
+                />
+              );
+            })}
+          </SortableContext>
+        </DndContext>
+        {hidden?.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                onChange([]);
+              }}
+            >
+              Show all columns
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function ColumnsDropdownItem({
+  column,
+  shown,
+  locked,
+  sortable,
+  onToggle,
+}: ColumnsDropdownItemProps) {
+  const {
+    setNodeRef,
+    setActivatorNodeRef,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: column?.key, disabled: !sortable });
+  const style = useMemo(
+    () => ({
+      transform: transform ? `translate3d(0, ${transform.y}px, 0)` : undefined,
+      transition,
+    }),
+    [transform, transition],
+  );
+
+  return (
+    <DropdownMenuItem
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "gap-2 pl-1",
+        isDragging && "relative z-10 bg-muted shadow-sm",
+      )}
+      onSelect={(e) => {
+        e.preventDefault();
+        if (!locked) onToggle(column?.key);
+      }}
+    >
+      {sortable && (
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...listeners}
+          tabIndex={-1}
+          aria-label={`Drag to reorder ${column?.label}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-foreground/10 active:cursor-grabbing"
+        >
+          <GripVertical className="size-3.5" />
+        </button>
+      )}
+      <span className="flex-1 truncate">{column?.label}</span>
+      <Switch
+        size="sm"
+        checked={shown}
+        disabled={locked}
+        tabIndex={-1}
+        aria-hidden
+        className="pointer-events-none"
+      />
+    </DropdownMenuItem>
   );
 }
 

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { UserPlus } from "lucide-react";
+import { HouseCogIcon, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -38,9 +38,18 @@ export function PageHeader({
         )}
       >
         <div className="flex flex-col w-full">
-          <h1 className="text-2xl font-semibold tracking-tight truncate">
-            {title}
-          </h1>
+          <div className="flex flex-row gap-4 items-center">
+            <h1 className="text-2xl font-semibold tracking-tight truncate">
+              {title}
+            </h1>
+            <Button
+              variant="ghost"
+              size="xs"
+              startIcon={<HouseCogIcon size={13} />}
+              className="text-black"
+            ></Button>
+          </div>
+
           {description && (
             <p className="mt-1 text-sm text-muted-foreground truncate">
               {description}

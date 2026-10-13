@@ -1,6 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { NavLink, useNavigation } from "react-router";
-import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useDroppable } from "@dnd-kit/core";
+import {
+  horizontalListSortingStrategy,
+  SortableContext,
+  useSortable,
+} from "@dnd-kit/sortable";
 import { Columns2, GripVertical, Rows2 } from "lucide-react";
 import {
   cn,
@@ -55,6 +60,11 @@ export function ModuleViewerTab({
     [workspace.root],
   );
 
+  const tabIds = useMemo(
+    () => tabs.map((tab) => `${pane.id}:${tab.keyValue}`),
+    [tabs, pane.id],
+  );
+
   const strip: DropTarget = { paneId: pane.id, zone: "center" };
   const { setNodeRef, isOver } = useDroppable({
     id: `${pane.id}:strip`,
@@ -71,17 +81,19 @@ export function ModuleViewerTab({
         isOver && "bg-primary-10",
       )}
     >
-      {tabs.map((tab) => (
-        <WorkspaceViewerTab
-          key={tab.keyValue}
-          pane={pane}
-          item={tab}
-          active={tab.keyValue === pane.activeKey}
-          focused={focused}
-          closable={totalTabs > 1}
-          movable={totalTabs > 1}
-        />
-      ))}
+      <SortableContext items={tabIds} strategy={horizontalListSortingStrategy}>
+        {tabs.map((tab) => (
+          <WorkspaceViewerTab
+            key={tab.keyValue}
+            pane={pane}
+            item={tab}
+            active={tab.keyValue === pane.activeKey}
+            focused={focused}
+            closable={totalTabs > 1}
+            movable={totalTabs > 1}
+          />
+        ))}
+      </SortableContext>
     </nav>
   );
 }
@@ -105,14 +117,27 @@ function WorkspaceViewerTab({
   const { workspace, storageKey, canSplit, goTo } = useWorkspaceContext();
   const draggable = canSplit && movable;
   const tab: DraggedTab = { key: item.keyValue, fromPaneId: pane.id };
-  // setNodeRef: the whole tab (what moves; the drag preview takes its size).
+  // setNodeRef: the whole tab (what moves and what other tabs are dropped on).
   // setActivatorNodeRef + listeners: the grip (the only place a drag can start).
-  const { setNodeRef, setActivatorNodeRef, listeners, isDragging } =
-    useDraggable({
-      id: `${pane.id}:${item.keyValue}`,
-      data: tab,
-      disabled: !draggable,
-    });
+  const {
+    setNodeRef,
+    setActivatorNodeRef,
+    listeners,
+    isDragging,
+    transform,
+    transition,
+  } = useSortable({
+    id: `${pane.id}:${item.keyValue}`,
+    data: tab,
+    disabled: !draggable,
+  });
+  const sortStyle = useMemo(
+    () => ({
+      transform: transform ? `translate3d(${transform.x}px, 0, 0)` : undefined,
+      transition,
+    }),
+    [transform, transition],
+  );
   const Icon = item.icon;
   const path = `/${item.keyValue}`;
   // The router is still navigating to this tab's page (what NavLink calls isPending)
@@ -147,6 +172,7 @@ function WorkspaceViewerTab({
       <ContextMenuTrigger asChild>
         <div
           ref={setNodeRef}
+          style={sortStyle}
           className={cn(
             "group flex h-7 shrink-0 items-center rounded-md pl-1.5 text-sm transition-colors",
             active

@@ -196,6 +196,24 @@ export function canDrop(workspace: IWorkspace, fromPaneId: string, target: DropT
   return !(target.paneId === fromPaneId && from.tabs.length === 1);
 }
 
+/** Moves a tab to where overKey sits in the same pane, and makes it the active tab. */
+export function reorderTab(storageKey: string, paneId: string, key: string, overKey: string): IWorkspace {
+  const workspace = read(storageKey);
+  const pane = findPane(workspace?.root, paneId);
+  const from = pane?.tabs?.indexOf(key) ?? -1;
+  const to = pane?.tabs?.indexOf(overKey) ?? -1;
+  if (!pane || from < 0 || to < 0) return workspace;
+
+  const tabs = [...pane.tabs];
+  tabs.splice(to, 0, ...tabs.splice(from, 1));
+  const next = {
+    root: replacePane(workspace.root, paneId, { ...pane, tabs, activeKey: key }),
+    currentViewerId: paneId,
+  };
+  write(storageKey, next);
+  return next;
+}
+
 export function moveTab(storageKey: string, key: string, fromPaneId: string, target: DropTarget): IWorkspace {
   const workspace = read(storageKey);
   if (!canDrop(workspace, fromPaneId, target)) return workspace;
