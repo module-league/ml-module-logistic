@@ -14,8 +14,16 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import type { CheckedState } from "@radix-ui/react-checkbox";
-import { Pin, PinOff, Square, SquareCheck, Trash2 } from "lucide-react";
 import {
+  Maximize2,
+  Pin,
+  PinOff,
+  Square,
+  SquareCheck,
+  Trash2,
+} from "lucide-react";
+import {
+  Button,
   Checkbox,
   cn,
   ContextMenu,
@@ -23,6 +31,9 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   ModuleAddNewButton,
   Table,
   TableBody,
@@ -97,6 +108,10 @@ export function ListView<T>({
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
+  const [expandedKey, setExpandedKey] = useState<string>();
+  const changeExpanded = useCallback((open: boolean) => {
+    if (!open) setExpandedKey(undefined);
+  }, []);
   const [rowHeight, setRowHeight] = useState<number>();
   const measureRow = useCallback((node: HTMLTableRowElement | null) => {
     if (node) setRowHeight(node.getBoundingClientRect().height);
@@ -219,8 +234,8 @@ export function ListView<T>({
             >
               <TableRow className="border-b-foreground/20 hover:bg-transparent">
                 {selectable && (
-                  <TableHead className="sticky left-0 z-20 h-4 px-0 bg-table-head sticky-line">
-                    <span className="flex items-center justify-center">
+                  <TableHead className="sticky left-0 z-20 h-4 px-0 bg-table-head">
+                    <span className="flex items-center pl-2">
                       <Checkbox
                         aria-label="Select all on this page"
                         checked={pageSelection}
@@ -291,14 +306,25 @@ export function ListView<T>({
                     )}
                   >
                     {selectable && (
-                      <TableCell className="sticky left-0 z-[2] p-0 bg-inherit sticky-line">
-                        <span className="flex items-center justify-center">
+                      <TableCell className="sticky left-0 z-[2] p-0 bg-inherit">
+                        <div className="flex items-center gap-2 pl-2">
                           <Checkbox
                             aria-label="Select record"
                             checked={selected}
                             onCheckedChange={() => toggleRow(key)}
                           />
-                        </span>
+                          <Button
+                            type="button"
+                            aria-label="Expand record"
+                            title="Expand"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={() => setExpandedKey(key)}
+                            startIcon={<Maximize2 className="size-2" />}
+                            variant={"outline"}
+                            size="xs"
+                            className="shadow-md opacity-0 group-hover/row:opacity-100 hover:bg-foreground/10 hover:text-foreground focus-visible:opacity-100"
+                          ></Button>
+                        </div>
                       </TableCell>
                     )}
                     {columns?.map((column, columnIndex) => (
@@ -335,7 +361,7 @@ export function ListView<T>({
                 className="group/filler bg-background even:bg-table-stripe hover:bg-primary-10"
               >
                 {selectable && (
-                  <TableCell className="sticky left-0 z-[2] p-0 bg-inherit sticky-line" />
+                  <TableCell className="sticky left-0 z-[2] p-0 bg-inherit" />
                 )}
                 {columns?.map((column, index) => (
                   <TableCell
@@ -359,6 +385,15 @@ export function ListView<T>({
           </TableBody>
         </Table>
       </DndContext>
+
+      <Dialog open={!!expandedKey} onOpenChange={changeExpanded}>
+        <DialogContent
+          aria-describedby={undefined}
+          className="h-72 w-72 sm:max-w-72"
+        >
+          <DialogTitle className="sr-only">Record</DialogTitle>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
