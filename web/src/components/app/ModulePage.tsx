@@ -16,6 +16,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { ModuleAppView } from "./ModuleAppView";
 import { ModuleNewRecordForm } from "./ModuleNewRecordForm";
 import { ModulePageFooter } from "./ModulePageFooter";
+import { RecordValueNode } from "../custom/RecordValueNode";
 
 interface ModulePageProps<T> {
   /** Buttons shown on the right of the page header. */
@@ -57,6 +58,7 @@ interface ModulePageProps<T> {
   fields?: ISidebarField[];
   /** Saves a record from ModuleOpenRecord. With it, "New record" opens that dialog instead of calling toolbar.onAdd. */
   onSaveRecord?: ModuleOpenRecordProps["onSave"];
+  getRecordValues?: (record: T) => Record<string, string | null | undefined>;
 }
 
 export function ModulePage<T>({
@@ -65,6 +67,7 @@ export function ModulePage<T>({
   appView,
   fields,
   onSaveRecord,
+  getRecordValues,
 }: ModulePageProps<T>) {
   const item = useCurrentNavItem();
   const [view, setView] = useState<ModuleAppViewMode>("list");
@@ -172,12 +175,17 @@ export function ModulePage<T>({
     const fieldColumns = recordFields.map(({ key, field }) => ({
       key,
       header: field.name,
-      cell: () => <span className="text-muted-foreground">—</span>,
+      cell: (record: T) => (
+        <RecordValueNode
+          field={field}
+          value={getRecordValues?.(record)?.[key]}
+        />
+      ),
     }));
     return [...(appView?.columns ?? []), ...fieldColumns].sort(
       (a, b) => position(a?.key) - position(b?.key),
     );
-  }, [appView?.columns, recordFields, columnOrder]);
+  }, [appView?.columns, recordFields, columnOrder, getRecordValues]);
   const columnOptions = useMemo(
     () =>
       orderedColumns?.map((column) => ({

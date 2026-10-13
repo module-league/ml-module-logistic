@@ -78,6 +78,12 @@ export interface ModuleAppViewProps<T>
   /** 1-based page to show; set by ModulePage. @default 1 */
   page?: number;
   empty?: ModuleAppEmptyState;
+  /** Records are being fetched for the first time; the table area shows the loader. */
+isLoading?: boolean;
+/** Loading the records failed; the table area shows the error with Try again. */
+error?: unknown;
+onRetry?: () => void;
+
 }
 
 export interface ModuleListViewProps<T>

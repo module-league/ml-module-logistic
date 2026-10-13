@@ -3,6 +3,7 @@ import type { ModuleAppViewProps } from "../../services/modules/moduleAppView.ty
 import { ModuleEmptyAppView } from "./ModuleEmptyAppView";
 import { GridView } from "./view/GridView";
 import { ListView } from "./view/ListView";
+import QueryWrapper from "../custom/QueryWrapper";
 
 export function ModuleAppView<T>({
   records,
@@ -27,6 +28,9 @@ export function ModuleAppView<T>({
   onRowPinToggle,
   onRowDelete,
   onRowExpand,
+  isLoading = false,
+  error,
+  onRetry,
 }: ModuleAppViewProps<T>) {
   const total = records?.length ?? 0;
   const visible = useMemo(() => {
@@ -46,37 +50,43 @@ export function ModuleAppView<T>({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-background">
-      {appView === "grid" && renderCard ? (
-        total === 0 ? (
-          <div className="min-h-0 flex-1 overflow-auto">
-            <ModuleEmptyAppView {...empty} />
-          </div>
+      <QueryWrapper isLoading={isLoading} error={error}>
+        {appView === "grid" && renderCard ? (
+          total === 0 ? (
+            <div className="min-h-0 flex-1 overflow-auto">
+              <ModuleEmptyAppView {...empty} />
+            </div>
+          ) : (
+            <GridView
+              records={records}
+              getKey={getKey}
+              renderCard={renderCard}
+            />
+          )
         ) : (
-          <GridView records={records} getKey={getKey} renderCard={renderCard} />
-        )
-      ) : (
-        <ListView
-          records={visible}
-          pageSize={pageSize}
-          onAdd={onAdd}
-          addLabel={addLabel}
-          getKey={getKey}
-          columns={columns}
-          empty={empty}
-          columnWidths={columnWidths}
-          onColumnResize={onColumnResize}
-          onColumnReorder={onColumnReorder}
-          pinnedColumns={pinnedColumns}
-          onColumnPinToggle={onColumnPinToggle}
-          selectedKeys={selectedKeys}
-          onSelectionChange={onSelectionChange}
-          onRowReorder={onRowReorder}
-          pinnedRows={pinnedRows}
-          onRowPinToggle={onRowPinToggle}
-          onRowDelete={onRowDelete}
-          onRowExpand={onRowExpand}
-        />
-      )}
+          <ListView
+            records={visible}
+            pageSize={pageSize}
+            onAdd={onAdd}
+            addLabel={addLabel}
+            getKey={getKey}
+            columns={columns}
+            empty={empty}
+            columnWidths={columnWidths}
+            onColumnResize={onColumnResize}
+            onColumnReorder={onColumnReorder}
+            pinnedColumns={pinnedColumns}
+            onColumnPinToggle={onColumnPinToggle}
+            selectedKeys={selectedKeys}
+            onSelectionChange={onSelectionChange}
+            onRowReorder={onRowReorder}
+            pinnedRows={pinnedRows}
+            onRowPinToggle={onRowPinToggle}
+            onRowDelete={onRowDelete}
+            onRowExpand={onRowExpand}
+          />
+        )}
+      </QueryWrapper>
     </div>
   );
 }

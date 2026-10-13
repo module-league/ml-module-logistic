@@ -31,3 +31,26 @@ export function SelectionNode(props: SelectionNodeProps) {
     />
   );
 }
+
+export function RecordValueNode({
+  field,
+  value,
+}: {
+  field: IField;
+  value?: string | null;
+}) {
+  if (!value) return <span className="text-muted-foreground">—</span>;
+  if (field?.type === "single_select") {
+    const option = field?.dropDownValues?.find((o) => o?.id === value);
+    return (
+      <SelectionNode dropDownValue={option}>
+        {option?.value ?? "Unknown"}
+      </SelectionNode>
+    );
+  }
+  return (
+    <span className={field?.isNumeric ? "tabular-nums" : undefined}>
+      {value}
+    </span>
+  );
+}
