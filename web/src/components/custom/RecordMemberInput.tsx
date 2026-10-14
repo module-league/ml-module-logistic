@@ -100,7 +100,16 @@ export function RecordMemberInput({
               const member = findMember(members, memberId);
               return (
                 <ComboboxItem key={memberId} value={memberId}>
-                  <MemberChip member={member} className="bg-transparent" />
+                  <UserAvatar
+                    userInfo={member}
+                    className="size-6 shrink-0 text-xs"
+                  />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate">{member?.displayName}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {member?.email}
+                    </span>
+                  </span>
                 </ComboboxItem>
               );
             }}
