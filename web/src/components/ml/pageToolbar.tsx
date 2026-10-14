@@ -21,6 +21,7 @@ import {
   Trash2,
   X,
   PlusIcon,
+  SquarePenIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModuleAddNewFieldDialog } from "./moduleAddNewFieldDialog";
@@ -69,6 +70,7 @@ export function ModulePageToolbar({
   onHiddenColumnsChange,
   onColumnOrderChange,
   onAddField,
+  onEditField,
   onExport,
   exportLabel = "Export",
   search,
@@ -136,6 +138,7 @@ export function ModulePageToolbar({
           onHiddenColumnsChange={onHiddenColumnsChange}
           onColumnOrderChange={onColumnOrderChange}
           onAddField={onAddField}
+          onEditField={onEditField}
           compact={compact}
         />
       ) : null}
@@ -176,9 +179,11 @@ function FieldsDropdown({
   onHiddenColumnsChange: onChange,
   onColumnOrderChange: onReorder,
   onAddField,
+  onEditField,
   compact = false,
 }: FieldsDropdownProps) {
   const [addingField, setAddingField] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const fieldNames = useMemo(
     () =>
       fields?.filter((field) => !field?.system).map((field) => field?.label) ??
@@ -215,10 +220,17 @@ function FieldsDropdown({
     },
     [keys, onReorder],
   );
+  const editField = useCallback(
+    (key: string) => {
+      setMenuOpen(false);
+      onEditField?.(key);
+    },
+    [onEditField],
+  );
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <ToolbarTooltip label="Fields" enabled={compact}>
           <DropdownMenuTrigger asChild>
             <Button
@@ -227,11 +239,11 @@ function FieldsDropdown({
               aria-label="Fields"
               startIcon={<Columns3 size={13} />}
             >
-              {!compact && "Table Fields"}
+              {!compact && "Edit Fields"}
             </Button>
           </DropdownMenuTrigger>
         </ToolbarTooltip>
-        <DropdownMenuContent align="start" className="w-60">
+        <DropdownMenuContent align="start" className="w-72">
           <DropdownMenuLabel>Show Fields</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {onAddField && (
@@ -266,6 +278,9 @@ function FieldsDropdown({
                       locked={shown && visibleCount <= 1}
                       sortable={!!onReorder}
                       onToggle={toggle}
+                      onEdit={
+                        field?.system || !onEditField ? undefined : editField
+                      }
                     />
                   );
                 })}
@@ -297,6 +312,7 @@ function FieldsDropdownItem({
   locked,
   sortable,
   onToggle,
+  onEdit,
 }: FieldsDropdownItemProps) {
   const {
     setNodeRef,
@@ -319,7 +335,7 @@ function FieldsDropdownItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "gap-2 pl-1",
+        "group/field gap-2 pl-1",
         isDragging && "relative z-10 bg-muted shadow-sm",
       )}
       onSelect={(e) => {
@@ -327,16 +343,6 @@ function FieldsDropdownItem({
         if (!locked) onToggle(field?.key);
       }}
     >
-      <Switch
-        size="sm"
-        checked={shown}
-        disabled={locked}
-        tabIndex={-1}
-        aria-hidden
-        className="pointer-events-none"
-      />
-      <FieldTypeIcon type={field?.type} size={11} />
-      <span className="flex-1 truncate">{field?.label}</span>
       {sortable && (
         <button
           type="button"
@@ -350,6 +356,34 @@ function FieldsDropdownItem({
           <GripVertical className="size-3.5" />
         </button>
       )}
+
+      <FieldTypeIcon type={field?.type} size={11} />
+      <span className="flex-1 truncate">{field?.label}</span>
+      {onEdit && (
+        <Button
+          type="button"
+          variant="ghost"
+          // size="xs"
+          tabIndex={-1}
+          aria-label={`Edit ${field?.label}`}
+          title="Edit field"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(field?.key);
+          }}
+          startIcon={<SquarePenIcon className="size-4" />}
+          className="hidden size-5 p-2 text-muted-foreground group-hover/field:inline-flex group-data-highlighted/field:inline-flex"
+        />
+      )}
+      <Switch
+        size="sm"
+        checked={shown}
+        disabled={locked}
+        tabIndex={-1}
+        aria-hidden
+        className="pointer-events-none"
+      />
     </DropdownMenuItem>
   );
 }

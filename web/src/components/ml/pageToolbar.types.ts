@@ -23,6 +23,8 @@ export interface PageToolbarProps {
   onColumnOrderChange?: (keys: string[]) => void;
   /** Shows "Add field" in the Fields menu; called with the field the dialog built. */
   onAddField?: ModuleAddFieldHandler;
+  /** Shows a pen on hover beside each non-system field in the Fields menu; called with its column key. */
+  onEditField?: (key: string) => void;
   /** Set by ModulePage: how many records are ticked. Above 0 the toolbar switches to selection mode. */
   selectedCount?: number;
   onDeleteSelected?: () => void;
@@ -50,7 +52,10 @@ export interface FieldsDropdownProps
         "columnOptions" | "hiddenColumns" | "onHiddenColumnsChange"
       >
     >,
-    Pick<PageToolbarProps, "onColumnOrderChange" | "onAddField"> {}
+    Pick<
+      PageToolbarProps,
+      "onColumnOrderChange" | "onAddField" | "onEditField"
+    > {}
 
 export interface FieldsDropdownItemProps {
   field: PageToolbarColumnOption;
@@ -59,6 +64,8 @@ export interface FieldsDropdownItemProps {
   locked: boolean;
   sortable: boolean;
   onToggle: (key: string) => void;
+  /** Shows the hover pen that opens the Edit field dialog. */
+  onEdit?: (key: string) => void;
 }
 
 export interface ToolbarTooltipProps {
