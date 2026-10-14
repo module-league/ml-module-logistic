@@ -43,3 +43,11 @@ export async function updateRecord(
   );
   return data;
 }
+
+/** Deletes the records, all or none; the API also takes them out of every link field that links to them. */
+export async function deleteRecords(sidebarId: string, ids: string[]) {
+  await apiClient.post(
+    `/sidebars/${encodeURIComponent(sidebarId)}/records/delete`,
+    { ids },
+  );
+}

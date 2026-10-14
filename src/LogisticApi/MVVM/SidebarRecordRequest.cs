@@ -1,8 +1,17 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace LogisticApi.MVVM
 {
     public class SidebarRecordCreateRequest 
     {
         public Dictionary<Guid, string?> values { get; set; } = [];
+    }
+
+    public class SidebarRecordDeleteRequest
+    {
+        /// <summary>ObjIds of the records to delete; each must belong to the sidebar.</summary>
+        [Required, MinLength(1), MaxLength(500)]
+        public List<Guid> ids { get; set; } = [];
     }
 
     public class SidebarRecordUpdateRequest

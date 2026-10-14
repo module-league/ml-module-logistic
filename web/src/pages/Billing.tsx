@@ -13,6 +13,7 @@ import {
   getRecord,
   getRecords,
   updateRecord,
+  deleteRecords,
 } from "@/services/records/record.api";
 import { getMembers } from "@/services/user/user.api";
 import { uploadAttachment } from "@/services/attachments/attachment.api";
@@ -23,6 +24,7 @@ const pageApi: ModuleDataApi = {
   getRecord,
   createRecord,
   updateRecord,
+  deleteRecords,
   createField,
   updateField,
   deleteField,

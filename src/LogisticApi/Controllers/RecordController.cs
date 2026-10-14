@@ -52,5 +52,31 @@ namespace LogisticApi.Controllers
             CancellationToken ct) =>
             records.UpdateAsync(sidebarId, objId, request, ct);
 
+        /// <summary>Deletes the record and takes it out of every link field that links to it.</summary>
+        [HttpDelete("{objId:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteRecord(
+            [FromRoute, MaxLength(100), RegularExpression(SidebarIdPattern)] string sidebarId,
+            Guid objId,
+            CancellationToken ct)
+        {
+            await records.DeleteAsync(sidebarId, [objId], ct);
+            return NoContent();
+        }
+
+        /// <summary>Deletes several records at once; none is deleted when one of them isn't found.</summary>
+        [HttpPost("delete")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteRecords(
+            [FromRoute, MaxLength(100), RegularExpression(SidebarIdPattern)] string sidebarId,
+            [FromBody] SidebarRecordDeleteRequest request,
+            CancellationToken ct)
+        {
+            await records.DeleteAsync(sidebarId, request.ids, ct);
+            return NoContent();
+        }
     }
 }

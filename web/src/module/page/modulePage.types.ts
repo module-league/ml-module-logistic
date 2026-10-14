@@ -16,6 +16,7 @@ export interface ModuleDataApi {
     objId: string,
     body: ISidebarRecordUpdate,
   ) => Promise<ISidebarRecord>;
+  deleteRecords: (sidebarId: string, ids: string[]) => Promise<unknown>;
   createField: (
     sidebarId: string,
     body: ISidebarFieldCreate,
@@ -50,6 +51,8 @@ export interface ModuleData {
   onCloseRecord: () => void;
   /** Saves the open record with its latest versionNo, so back-to-back auto-saves don't conflict. */
   onUpdateRecord: (values: ISidebarRecordValues) => Promise<unknown>;
+  /** Deletes the records by objId; links to them are removed and every record list is fetched again. */
+  onDeleteRecords: (ids: string[]) => Promise<unknown>;
   onAddField: (field: IField) => Promise<unknown>;
   /** Saves a field edited in ModuleEditFieldDialog with its latest versionNo. */
   onUpdateField: (objId: string, field: IField) => Promise<unknown>;
@@ -66,6 +69,12 @@ export interface ModuleData {
 export interface ModuleFieldAction {
   kind: "edit" | "delete";
   fieldId: string;
+  open: boolean;
+}
+
+/** The records the Delete dialog asks about; kept after open turns false so the dialog can animate out. */
+export interface ModuleRecordDeletion {
+  keys: string[];
   open: boolean;
 }
 

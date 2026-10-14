@@ -160,6 +160,25 @@ export function useModuleData(
   );
   const onCloseRecord = useCallback(() => setOpenedRecordId(undefined), []);
 
+  const { mutateAsync: onDeleteRecords } = useMutation({
+    mutationFn: (ids: string[]) => api.deleteRecords(id, ids),
+    onSuccess: (_, ids) => {
+      const deleted = new Set(ids);
+      queryClient.setQueryData<ISidebarRecord[]>(
+        recordKeys.list(id),
+        (current) => current?.filter((record) => !deleted.has(record?.objId)),
+      );
+      ids.forEach((objId) =>
+        queryClient.removeQueries({ queryKey: recordKeys.detail(id, objId) }),
+      );
+      setOpenedRecordId((current) =>
+        current && deleted.has(current) ? undefined : current,
+      );
+      // Records that linked to them were changed too, in this sidebar or another
+      queryClient.invalidateQueries({ queryKey: recordKeys.all });
+    },
+  });
+
   const { mutateAsync: onAddField } = useMutation({
     mutationFn: (field: IField) => api.createField(id, toFieldCreate(field)),
     onSuccess: (created) =>
@@ -271,6 +290,7 @@ export function useModuleData(
       onOpenRecord: setOpenedRecordId,
       onCloseRecord,
       onUpdateRecord,
+      onDeleteRecords,
       onAddField,
       onUpdateField,
       onDeleteField,
@@ -286,6 +306,7 @@ export function useModuleData(
       openedRecordState,
       onCloseRecord,
       onUpdateRecord,
+      onDeleteRecords,
       fieldsQuery.data,
       fieldsState,
       recordsQuery.data,

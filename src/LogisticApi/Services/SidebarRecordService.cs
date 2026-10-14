@@ -63,6 +63,62 @@ namespace LogisticApi.Services
             return ToResponse(record);
         }
 
+        /// <summary>Soft-deletes the records, all or none, and takes them out of every link field that links to them.</summary>
+        public async Task DeleteAsync(string sidebarId, IEnumerable<Guid> ids, CancellationToken ct)
+        {
+            var wanted = ids.Distinct().ToList();
+            var records = await db.SidebarRecords
+                .Where(r => r.sidebarId == sidebarId && wanted.Contains(r.ObjId))
+                .ToListAsync(ct);
+            if (records.Count != wanted.Count)
+                throw ApiProblemException.NotFound("Record not found.");
+
+            // MLAuditFieldsInterceptor turns the removes into soft deletes
+            db.SidebarRecords.RemoveRange(records);
+            await UnlinkAsync(sidebarId, wanted.ToHashSet(), ct);
+            try
+            {
+                await db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw StaleVersion();
+            }
+        }
+
+        /// <summary>Removes deleted records from the link fields, of any sidebar, that link to their sidebar.</summary>
+        private async Task UnlinkAsync(string sidebarId, HashSet<Guid> deleted, CancellationToken ct)
+        {
+            var linkFields = (await db.SidebarFields
+                    .AsNoTracking()
+                    .Where(f => f.type == "link_table")
+                    .ToListAsync(ct))
+                .Where(f => FieldSettings.Read(f.settings).lookupSidebarId == sidebarId)
+                .ToList();
+            if (linkFields.Count == 0) return;
+            var fieldIds = linkFields.Select(f => f.ObjId).ToHashSet();
+            var sidebars = linkFields.Select(f => f.sidebarId).Distinct().ToList();
+
+            var linking = await db.SidebarRecords
+                .Where(r => sidebars.Contains(r.sidebarId) && !deleted.Contains(r.ObjId))
+                .ToListAsync(ct);
+            foreach (var record in linking)
+            {
+                if (string.IsNullOrWhiteSpace(record.Metadata)) continue;
+                var values = JsonSerializer.Deserialize<List<SidebarRecordValue>>(record.Metadata, Json) ?? [];
+                var changed = false;
+                foreach (var entry in values.Where(v => fieldIds.Contains(v.fieldId) && !string.IsNullOrEmpty(v.value)))
+                {
+                    var linked = ParseIdList(entry.value!) ?? [];
+                    var kept = linked.Where(id => !(Guid.TryParse(id, out var linkedId) && deleted.Contains(linkedId))).ToList();
+                    if (kept.Count == linked.Count) continue;
+                    entry.value = kept.Count == 0 ? null : JsonSerializer.Serialize(kept, Json);
+                    changed = true;
+                }
+                if (changed) record.Metadata = JsonSerializer.Serialize(values, Json);
+            }
+        }
+
         private async Task<List<SidebarRecordValue>> BuildMetadataAsync(string sidebarId, Dictionary<Guid, string?> values, CancellationToken ct)
         {
             var fields = await db.SidebarFields

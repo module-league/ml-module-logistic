@@ -15,12 +15,17 @@ import type { ModuleAppColumn } from "@/module/appView/moduleAppView.types";
 import { ModuleAppView } from "@/module/appView/ModuleAppView";
 import { ModuleNewRecordForm } from "@/module/record/ModuleNewRecordForm";
 import { ModuleOpenRecord } from "@/module/record/ModuleOpenRecord";
+import { ModuleDeleteRecordsDialog } from "@/module/record/ModuleDeleteRecordsDialog";
 import { RecordValueNode } from "@/components/custom/RecordValueNode";
 import { RecordLookupContext } from "@/components/custom/RecordLookup.context";
 import { toRecordText } from "@/module/record/moduleRecord.utils";
 import { ModulePageFooter } from "./ModulePageFooter";
 import { recordFieldValue, SYSTEM_FIELDS } from "./modulePage.utils";
-import type { ModuleFieldAction, ModulePageProps } from "./modulePage.types";
+import type {
+  ModuleFieldAction,
+  ModulePageProps,
+  ModuleRecordDeletion,
+} from "./modulePage.types";
 
 const ADD_LABEL = "New record";
 const getRecordKey = (record: ISidebarRecord) => record?.objId;
@@ -41,6 +46,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
   const [rowOrder, setRowOrder] = useState<string[]>([]);
   const [pinnedRows, setPinnedRows] = useState<string[]>([]);
   const [fieldAction, setFieldAction] = useState<ModuleFieldAction>();
+  const [recordDeletion, setRecordDeletion] = useState<ModuleRecordDeletion>();
 
   const onRefreshFields = data.onRefreshFields;
   const openNewRecord = useCallback(() => {
@@ -189,6 +195,35 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     return selectedKeys.filter((key) => keys.has(key)).length;
   }, [records, selectedKeys]);
   const clearSelection = useCallback(() => setSelectedKeys([]), []);
+  const deleteSelected = useCallback(() => {
+    const keys = new Set(records?.map(getRecordKey));
+    setRecordDeletion({
+      keys: selectedKeys.filter((key) => keys.has(key)),
+      open: true,
+    });
+  }, [records, selectedKeys]);
+  const deleteRow = useCallback(
+    (key: string) => setRecordDeletion({ keys: [key], open: true }),
+    [],
+  );
+  const changeRecordDeletionOpen = useCallback(
+    (open: boolean) =>
+      setRecordDeletion((current) =>
+        current ? { ...current, open } : current,
+      ),
+    [],
+  );
+  const onDeleteRecords = data.onDeleteRecords;
+  const confirmDeleteRecords = useCallback(async () => {
+    const keys = recordDeletion?.keys ?? [];
+    await onDeleteRecords(keys);
+    const deleted = new Set(keys);
+    const keep = (current: string[]) =>
+      current.filter((key) => !deleted.has(key));
+    setSelectedKeys(keep);
+    setPinnedRows(keep);
+    setRowOrder(keep);
+  }, [recordDeletion?.keys, onDeleteRecords]);
   const togglePinnedColumn = useCallback(
     (key: string) =>
       setPinnedColumns((current) =>
@@ -306,6 +341,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
       onAddField: data.onAddField,
       onEditField: editColumn,
       selectedCount,
+      onDeleteSelected: deleteSelected,
       onCancelSelection: clearSelection,
     }),
     [
@@ -316,6 +352,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
       data.onAddField,
       editColumn,
       selectedCount,
+      deleteSelected,
       clearSelection,
     ],
   );
@@ -354,6 +391,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
             onRowReorder={reorderRow}
             pinnedRows={shownPinnedRows}
             onRowPinToggle={togglePinnedRow}
+            onRowDelete={deleteRow}
             onRowExpand={openRecord}
             onAddField={data.onAddField}
             onAdd={openNewRecord}
@@ -407,6 +445,12 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           open={fieldAction?.kind === "delete" && fieldAction.open}
           onOpenChange={changeFieldActionOpen}
           onDelete={deleteField}
+        />
+        <ModuleDeleteRecordsDialog
+          count={recordDeletion?.keys?.length ?? 0}
+          open={!!recordDeletion?.open}
+          onOpenChange={changeRecordDeletionOpen}
+          onDelete={confirmDeleteRecords}
         />
       </div>
     </RecordLookupContext.Provider>

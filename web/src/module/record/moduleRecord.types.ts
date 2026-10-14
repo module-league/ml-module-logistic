@@ -100,3 +100,12 @@ export interface ModuleLinkedRecordCardProps {
 export interface ModuleAutoSaveStatusProps {
   status: AutoSaveStatus;
 }
+
+export interface ModuleDeleteRecordsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** How many records will be deleted; nothing renders at 0. */
+  count: number;
+  /** A rejection shows its message and keeps the dialog open. */
+  onDelete: () => Promise<unknown>;
+}

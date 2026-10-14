@@ -90,7 +90,6 @@ export function ModulePageToolbar({
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-
   if (selectedCount > 0) {
     return (
       <div
