@@ -22,7 +22,7 @@ import {
   type RowSelectionState,
   type Updater,
 } from "@tanstack/react-table";
-import { Maximize2, Pin, Plus } from "lucide-react";
+import { FilePenIcon, Maximize2, Pin, Plus, SquarePenIcon } from "lucide-react";
 import {
   Button,
   Checkbox,
@@ -340,14 +340,14 @@ export function RecordGrid<T>({
                           {onRowExpand && (
                             <Button
                               type="button"
-                              aria-label="Expand record"
-                              title="Expand"
+                              aria-label="Edit record"
+                              title="Edit"
                               onPointerDown={(e) => e.stopPropagation()}
                               onClick={() => onRowExpand(key)}
-                              startIcon={<Maximize2 className="size-2" />}
+                              startIcon={<SquarePenIcon size={13} />}
                               variant={"outline"}
                               size="xs"
-                              className="shadow-md opacity-0 group-hover/row:opacity-100 hover:bg-white hover:text-foreground focus-visible:opacity-100"
+                              className="shadow-md opacity-0 group-hover/row:opacity-100 hover:bg-white focus-visible:opacity-100"
                             ></Button>
                           )}
                         </div>
