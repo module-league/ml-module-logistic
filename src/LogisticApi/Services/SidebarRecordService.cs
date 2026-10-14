@@ -89,7 +89,7 @@ namespace LogisticApi.Services
                     .ToDictionaryAsync(a => a.ObjId, ct);
 
             var linkedIds = fields
-                .Where(f => FieldTypes.IsLookup(f.type))
+                .Where(f => FieldTypes.IsLink(f.type))
                 .ToDictionary(f => f.ObjId, f => ReadRecordIds(f, values.GetValueOrDefault(f.ObjId)));
             var wantedRecords = linkedIds.Values.SelectMany(ids => ids).Distinct().ToList();
             var linkedSidebars = wantedRecords.Count == 0
@@ -103,15 +103,17 @@ namespace LogisticApi.Services
             {
                 fieldId = f.ObjId,
                 type = f.type,
-                value = attachmentIds.TryGetValue(f.ObjId, out var ids)
-                    ? AttachmentsValue(f, ids, attachments)
-                    : linkedIds.TryGetValue(f.ObjId, out var recordIds)
-                        ? LinkedRecordsValue(f, recordIds, linkedSidebars)
-                        : CleanValue(f, values.GetValueOrDefault(f.ObjId)),
+                value = FieldTypes.IsLookup(f.type)
+                    ? null
+                    : attachmentIds.TryGetValue(f.ObjId, out var ids)
+                        ? AttachmentsValue(f, ids, attachments)
+                        : linkedIds.TryGetValue(f.ObjId, out var recordIds)
+                            ? LinkedRecordsValue(f, recordIds, linkedSidebars)
+                            : CleanValue(f, values.GetValueOrDefault(f.ObjId)),
             }).ToList();
         }
 
-        /// <summary>The record ids in a lookup value: a JSON array of ids, or one id, in order, without repeats.</summary>
+        /// <summary>The record ids in a link value: a JSON array of ids, or one id, in order, without repeats.</summary>
         private static List<Guid> ReadRecordIds(SidebarField field, string? value)
         {
             var text = value?.Trim();
@@ -128,11 +130,14 @@ namespace LogisticApi.Services
             return ids;
         }
 
-        /// <summary>Every linked record must exist in the sidebar the lookup field looks up.</summary>
+        /// <summary>Every linked record must exist in the sidebar the link field links to; a single link field takes one.</summary>
         private static string? LinkedRecordsValue(SidebarField field, List<Guid> ids, Dictionary<Guid, string> recordSidebars)
         {
             if (ids.Count == 0) return null;
-            var sidebarId = FieldSettings.Read(field.settings).lookupSidebarId;
+            var settings = FieldSettings.Read(field.settings);
+            if (!settings.linkMultiple && ids.Count > 1)
+                throw ApiProblemException.BadRequest("Too many linked records.", $"'{field.sidebarName}' links to one record.");
+            var sidebarId = settings.lookupSidebarId;
             var missing = ids.Where(id => recordSidebars.GetValueOrDefault(id) != sidebarId).Select(id => (Guid?)id).FirstOrDefault();
             if (missing is not null)
                 throw ApiProblemException.BadRequest("Unknown linked record.", $"'{field.sidebarName}' can't link to record '{missing}'.");

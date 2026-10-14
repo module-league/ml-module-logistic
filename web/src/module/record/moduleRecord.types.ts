@@ -1,4 +1,6 @@
+import type { Control } from "react-hook-form";
 import type { ModuleQueryState } from "@/module/shell/module.types";
+import type { RecordInputControlProps } from "@/components/custom/RecordInputControl";
 import type { AttachmentUploadHandler } from "@/components/custom/RecordAttachmentInput.types";
 
 /** react-hook-form values: one entry per field, in field order. */
@@ -28,10 +30,20 @@ export interface ModuleRecordFormProps {
   onSave?: (values: ISidebarRecordValues) => void;
   /** Called with every value after each edit; used for auto-save. */
   onValuesChange?: (values: ISidebarRecordValues) => void;
-  /** Shows a preview button next to each lookup field. */
+  /** Shows a preview button next to each lookup field whose preview is on. */
   onPreviewLookup?: (field: ISidebarField) => void;
   /** objId of the lookup field whose preview is showing. */
   previewFieldId?: string;
+}
+
+export interface ModuleLookupFormInputProps
+  extends Pick<
+    RecordInputControlProps,
+    "field" | "members" | "onPreview" | "previewActive" | "className"
+  > {
+  control: Control<ModuleRecordFormValues>;
+  /** Form index of the lookup's link field; undefined when it isn't in the form. */
+  linkIndex?: number;
 }
 
 export interface ModuleNewRecordFormProps
@@ -65,7 +77,7 @@ export interface ModuleOpenRecordProps
 
 export interface ModuleLookupPreviewProps {
   field: IField;
-  /** The lookup's current value, unsaved edits included: a JSON array of linked record ids. */
+  /** Its link field's current value, unsaved edits included: a JSON array of linked record ids. */
   value?: string | null;
   members?: IUserInfo[];
   onClose: () => void;

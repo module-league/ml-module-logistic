@@ -286,7 +286,7 @@ const SelectItem = React.forwardRef<
       ref={ref}
       className={cn(
         "max-w-full max-h-(--radix-popover-available-height) overflow-hidden",
-        "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 *:flex-1",
+        "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-primary-10 focus:bg-primary-10 data-highlighted:bg-primary-10 focus:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 *:flex-1",
         className,
         "*:data-[role='item-text']:truncate",
       )}

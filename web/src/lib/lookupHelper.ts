@@ -1,19 +1,19 @@
 import { parseOptionIds, toOptionsValue } from "./selectHelper";
 
-/** A sidebar a lookup field can link to: one that has at least one field to show. */
+/** A sidebar a link field can link to; every sidebar of the module, the field's own included. */
 export interface LookupSource {
   sidebarId: string;
   sidebarText: string;
   fields: ISidebarField[];
 }
 
-/** The fields and records of each looked-up sidebar, by sidebarId; a sidebar still loading is left out. */
+/** The fields and records of each linked sidebar, by sidebarId; a sidebar still loading is left out. */
 export type RecordLookups = Record<
   string,
   { fields: ISidebarField[]; records: ISidebarRecord[] }
 >;
 
-/** A lookup value is a JSON array of record ids, stored like a multi select's option ids. */
+/** A link value is a JSON array of record ids, stored like a multi select's option ids. */
 export const parseRecordIds = parseOptionIds;
 export const toRecordIdsValue = toOptionsValue;
 
@@ -43,14 +43,19 @@ export function shownLookupFields(source?: LookupSource) {
 /** objId of the Create time system column, which a lookup preview can show too. */
 export const LOOKUP_CREATE_TIME_ID = "ds_create_time";
 
-/** The fields of a looked-up sidebar a preview can show, in display order; lookup fields are left out. */
+/** Link and lookup fields hold links, which the preview and a lookup can't show for a linked record. */
+export function isLinkingField(field?: Pick<IField, "type">) {
+  return field?.type === "link_table" || field?.type === "lookup";
+}
+
+/** The fields of a linked sidebar a preview can show, in display order; link and lookup fields are left out. */
 export function previewableLookupFields(fields?: ISidebarField[]) {
   return (fields ?? [])
-    .filter((field) => field?.type !== "lookup")
+    .filter((field) => !isLinkingField(field))
     .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0));
 }
 
-/** The field a lookup shows; when it was deleted, the source's primary or first showable field instead. */
+/** The field a lookup shows, or what labels a link's records: the primary or first showable field when none was picked or it was deleted. */
 export function lookupDisplayField(field: IField, lookups?: RecordLookups) {
   const fields = lookups?.[field?.lookupSettings?.categoryId ?? ""]?.fields;
   return (
@@ -60,7 +65,7 @@ export function lookupDisplayField(field: IField, lookups?: RecordLookups) {
   );
 }
 
-/** Undefined while the looked-up sidebar's records are still loading. */
+/** Undefined while the linked sidebar's records are still loading. */
 export function lookupRecordsOf(field: IField, lookups?: RecordLookups) {
   return lookups?.[field?.lookupSettings?.categoryId ?? ""]?.records;
 }

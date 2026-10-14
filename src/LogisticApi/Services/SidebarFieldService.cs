@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LogisticApi.Context;
 using LogisticApi.Models;
 using LogisticApi.MVVM;
@@ -11,6 +12,8 @@ namespace LogisticApi.Services
     /// </summary>
     public class SidebarFieldService(ContextDb db)
     {
+        private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
         public async Task<List<SidebarFieldResponse>> ListAsync(string sidebarId, CancellationToken ct)
         {
             var fields = await db.SidebarFields
@@ -57,6 +60,7 @@ namespace LogisticApi.Services
                 displayOrder = (lastOrder ?? -1) + 1,
             };
             var settings = ApplySettings(new FieldSettings(), request);
+            if (FieldTypes.IsLink(type)) ApplyLink(settings, request.lookupSettings);
             if (FieldTypes.IsLookup(type)) await ApplyLookupAsync(sidebarId, settings, request.lookupSettings, ct);
             field.settings = settings.Write();
             foreach (var (option, index) in options.Select((option, index) => (option, index)))
@@ -89,9 +93,14 @@ namespace LogisticApi.Services
             }
             field.sidebarDescription = CleanDescription(request.description);
             var settings = ApplySettings(FieldSettings.Read(field.settings), request);
+            var wasMultiple = settings.linkMultiple;
+            if (FieldTypes.IsLink(field.type) && request.lookupSettings is not null)
+                ApplyLink(settings, request.lookupSettings);
             if (FieldTypes.IsLookup(field.type) && request.lookupSettings is not null)
                 await ApplyLookupAsync(field.sidebarId, settings, request.lookupSettings, ct);
             field.settings = settings.Write();
+            if (FieldTypes.IsLink(field.type) && wasMultiple && !settings.linkMultiple)
+                await KeepFirstLinkAsync(field, ct);
 
             if (request.isPrimaryField == true && !field.isPrimaryField)
                 await MakePrimaryAsync(field, ct);
@@ -113,6 +122,18 @@ namespace LogisticApi.Services
                 ?? throw ApiProblemException.NotFound("Field not found.");
             if (field.isSystemField)
                 throw ApiProblemException.Conflict("System fields can't be deleted.");
+            if (FieldTypes.IsLink(field.type))
+            {
+                var lookupNames = (await db.SidebarFields
+                        .AsNoTracking()
+                        .Where(f => f.sidebarId == field.sidebarId && f.type == "lookup")
+                        .ToListAsync(ct))
+                    .Where(f => FieldSettings.Read(f.settings).lookupLinkFieldId == field.ObjId)
+                    .Select(f => $"'{f.sidebarName}'")
+                    .ToList();
+                if (lookupNames.Count > 0)
+                    throw ApiProblemException.Conflict("Lookup fields use this link.", $"Delete {string.Join(", ", lookupNames)} or look up through another link field first.");
+            }
 
             // MLAuditFieldsInterceptor turns both removes into soft deletes
             db.SidebarFieldOptions.RemoveRange(field.options);
@@ -200,16 +221,32 @@ namespace LogisticApi.Services
             return settings;
         }
 
-        /// <summary>Checks the lookup's sidebar and shown field. The sidebar is another one than the field's own, and fixed once set: linked record ids belong to it.</summary>
-        private async Task ApplyLookupAsync(string ownSidebarId, FieldSettings settings, SidebarLookupSettingsRequest? request, CancellationToken ct)
+        /// <summary>The linked sidebar can be any one, the field's own included, and is fixed once set: linked record ids belong to it.</summary>
+        private static void ApplyLink(FieldSettings settings, SidebarLookupSettingsRequest? request)
         {
             var sidebarId = request?.categoryId ?? settings.lookupSidebarId;
             if (string.IsNullOrEmpty(sidebarId))
-                throw ApiProblemException.BadRequest("Pick the sidebar to look up.", "lookupSettings.categoryId is required for a lookup field.");
-            if (sidebarId == ownSidebarId)
-                throw ApiProblemException.BadRequest("A lookup can't look up its own sidebar.", "Pick another sidebar to look up.");
+                throw ApiProblemException.BadRequest("Pick the sidebar to link to.", "lookupSettings.categoryId is required for a link field.");
             if (settings.lookupSidebarId is not null && settings.lookupSidebarId != sidebarId)
-                throw ApiProblemException.BadRequest("The looked-up sidebar can't change.", "Delete the field and add a new one to look up another sidebar.");
+                throw ApiProblemException.BadRequest("The linked sidebar can't change.", "Delete the field and add a new one to link to another sidebar.");
+
+            settings.lookupSidebarId = sidebarId;
+            if (request?.multiple is { } multiple) settings.linkMultiple = multiple;
+        }
+
+        /// <summary>A lookup reads through a link field of its own sidebar, and shows a field of the sidebar that link points to.</summary>
+        private async Task ApplyLookupAsync(string ownSidebarId, FieldSettings settings, SidebarLookupSettingsRequest? request, CancellationToken ct)
+        {
+            var linkFieldId = request?.linkFieldId ?? settings.lookupLinkFieldId
+                ?? throw ApiProblemException.BadRequest("Pick the link field to look up through.", "lookupSettings.linkFieldId is required for a lookup field.");
+            var link = await db.SidebarFields
+                .AsNoTracking()
+                .FirstOrDefaultAsync(f => f.ObjId == linkFieldId && f.sidebarId == ownSidebarId, ct)
+                ?? throw ApiProblemException.BadRequest("Unknown link field.", $"'{ownSidebarId}' has no field '{linkFieldId}'.");
+            if (!FieldTypes.IsLink(link.type))
+                throw ApiProblemException.BadRequest("Pick a link field.", $"'{link.sidebarName}' is a {link.type} field, not a link to another record.");
+            var sidebarId = FieldSettings.Read(link.settings).lookupSidebarId
+                ?? throw ApiProblemException.BadRequest("This link field links nowhere.", $"'{link.sidebarName}' has no linked sidebar.");
 
             var fieldId = request?.lookupFieldId ?? settings.lookupFieldId
                 ?? throw ApiProblemException.BadRequest("Pick the field to show.", "lookupSettings.lookupFieldId is required for a lookup field.");
@@ -220,11 +257,31 @@ namespace LogisticApi.Services
             if (!FieldTypes.CanShowInLookup(shown.type))
                 throw ApiProblemException.BadRequest("This field can't be shown in a lookup.", $"'{shown.sidebarName}' is a {shown.type} field; pick a text, number, select, date or member field.");
 
+            settings.lookupLinkFieldId = linkFieldId;
             settings.lookupSidebarId = sidebarId;
             settings.lookupFieldId = fieldId;
             if (request?.previewEnabled is { } previewEnabled) settings.lookupPreview = previewEnabled;
             if (request?.previewFieldIds is { } previewFieldIds)
                 settings.lookupPreviewFieldIds = await CleanPreviewFieldIdsAsync(sidebarId, previewFieldIds, ct);
+        }
+
+        /// <summary>Once a link field takes one record, each record keeps only its first link so every saved value fits again.</summary>
+        private async Task KeepFirstLinkAsync(SidebarField field, CancellationToken ct)
+        {
+            var records = await db.SidebarRecords
+                .Where(r => r.sidebarId == field.sidebarId)
+                .ToListAsync(ct);
+            foreach (var record in records)
+            {
+                if (string.IsNullOrWhiteSpace(record.Metadata)) continue;
+                var values = JsonSerializer.Deserialize<List<SidebarRecordValue>>(record.Metadata, Json) ?? [];
+                var entry = values.FirstOrDefault(v => v.fieldId == field.ObjId);
+                if (entry?.value is not { } text || !text.StartsWith('[')) continue;
+                var ids = JsonSerializer.Deserialize<List<string>>(text, Json);
+                if (ids is not { Count: > 1 }) continue;
+                entry.value = JsonSerializer.Serialize(ids.Take(1), Json);
+                record.Metadata = JsonSerializer.Serialize(values, Json);
+            }
         }
 
         private const string CreateTimeFieldId = "ds_create_time";

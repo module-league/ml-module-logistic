@@ -12,7 +12,7 @@ import { recordKeys } from "@/services/records/record.api";
 import { memberKeys } from "@/services/user/user.api";
 import { useWorkspaceContext } from "@/module/workspace/workspace.context";
 import {
-  shownLookupFields,
+  isLinkingField,
   type LookupSource,
   type RecordLookups,
 } from "@/lib/lookupHelper";
@@ -50,7 +50,7 @@ export function useModuleData(
     queryFn: () => api.getMembers(),
   });
 
-  // Every page's fields, shared with that page's own query: they list the other sidebars a lookup can link to
+  // Every page's fields, shared with that page's own query: they list the sidebars a link field can link to
   const { items: pages } = useWorkspaceContext();
   const pageFields = useQueries({
     queries: pages.map((page) => ({
@@ -61,17 +61,12 @@ export function useModuleData(
   });
   const lookupSources = useMemo<LookupSource[]>(
     () =>
-      pages
-        .map((page, index) => ({
-          sidebarId: page.sidebarId,
-          sidebarText: page.sidebarText,
-          fields: pageFields[index] ?? NO_FIELDS,
-        }))
-        .filter(
-          (source) =>
-            source.sidebarId !== id && shownLookupFields(source).length > 0,
-        ),
-    [pages, pageFields, id],
+      pages.map((page, index) => ({
+        sidebarId: page.sidebarId,
+        sidebarText: page.sidebarText,
+        fields: pageFields[index] ?? NO_FIELDS,
+      })),
+    [pages, pageFields],
   );
   const fieldsBySidebar = useMemo(
     () =>
@@ -79,12 +74,12 @@ export function useModuleData(
     [pages, pageFields],
   );
 
-  // Records of the sidebars this sidebar's lookup fields link to, shared with those pages' own queries
+  // Records of the sidebars this sidebar's link and lookup fields point at, shared with those pages' own queries
   const lookupSidebarIds = useMemo(
     () => [
       ...new Set(
         (fieldsQuery.data ?? NO_FIELDS)
-          .filter((field) => field?.type === "lookup")
+          .filter(isLinkingField)
           .map((field) => field?.lookupSettings?.categoryId)
           .filter((categoryId): categoryId is string => !!categoryId),
       ),
@@ -179,12 +174,17 @@ export function useModuleData(
       objId: string;
       body: ISidebarFieldUpdate;
     }) => api.updateField(objId, body),
-    onSuccess: (updated) =>
+    onSuccess: (updated) => {
       putInLists(queryClient, id, (fields) =>
         fields.map((field) =>
           field?.objId === updated.objId ? updated : field,
         ),
-      ),
+      );
+      // Turning off several links trims the saved records, so they are fetched again
+      if (updated?.type === "link_table") {
+        queryClient.invalidateQueries({ queryKey: recordKeys.list(id) });
+      }
+    },
   });
   const onUpdateField = useCallback(
     (objId: string, edited: IField) => {

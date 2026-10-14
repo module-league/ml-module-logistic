@@ -8,7 +8,7 @@ namespace LogisticApi.Models
         public static readonly string[] All =
         [
             "text", "long_text", "number", "single_select", "multi_select", "checkbox",
-            "date", "member", "lookup", "mirror", "templating", "currency", "associate", "attachment",
+            "date", "member", "link_table", "lookup", "mirror", "templating", "currency", "associate", "attachment",
             "record_attachment", "sys_creator_id", "sys_create_time", "sys_updater_id",
             "sys_update_time", "sys_running_number",
         ];
@@ -21,6 +21,10 @@ namespace LogisticApi.Models
 
         public static bool IsMultiSelect(string type) => type == "multi_select";
 
+        /// <summary>Stores links to records of one sidebar, its own included.</summary>
+        public static bool IsLink(string type) => type == "link_table";
+
+        /// <summary>Stores nothing: shows a field of the records a link field of the same sidebar links to.</summary>
         public static bool IsLookup(string type) => type == "lookup";
 
         /// <summary>The field types a lookup can show for each linked record: plain values that read as text.</summary>
@@ -34,7 +38,7 @@ namespace LogisticApi.Models
 
         public static bool IsVirtual(string type) => type is "lookup" or "mirror" or "templating";
 
-        public static bool IsForeign(string type) => type is "lookup" or "mirror";
+        public static bool IsForeign(string type) => type is "link_table" or "lookup" or "mirror";
 
         public static bool IsPlain(string type) =>
             type is "text" or "long_text" or "number" or "single_select" or "multi_select" or "checkbox" or "date" or "member" or "currency" or "attachment";

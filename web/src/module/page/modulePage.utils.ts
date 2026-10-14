@@ -31,11 +31,14 @@ const SYSTEM_FIELD_VALUES: Partial<
   ds_create_time: (record) => record?.createTime,
 };
 
-/** A record's value for a field: from the record itself for system fields, from its values otherwise. */
+/** A record's value for a field: from the record itself for system fields, its link field's linked record ids for a lookup, from its values otherwise. */
 export function recordFieldValue(
   field: ISidebarField,
   record?: ISidebarRecord,
 ) {
   if (field?.isSystemField) return SYSTEM_FIELD_VALUES[field.type]?.(record);
+  if (field?.type === "lookup") {
+    return record?.values?.[field?.lookupSettings?.linkFieldId ?? ""];
+  }
   return record?.values?.[field?.objId];
 }

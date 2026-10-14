@@ -7,7 +7,7 @@ import type {
   LinkedRecordChipProps,
 } from "./RecordLookupInput.types";
 
-/** One linked record of a lookup field, labelled by the field the lookup shows. */
+/** One linked record of a link or lookup field, labelled by the field shown for it. */
 export const LinkedRecordChip = memo(function LinkedRecordChip({
   label,
   className,
@@ -15,7 +15,7 @@ export const LinkedRecordChip = memo(function LinkedRecordChip({
   return (
     <span
       className={cn(
-        "max-w-48 shrink-0 truncate rounded-md bg-primary px-2 py-1 text-[0.8em] text-primary-foreground",
+        "max-w-48 shrink-0 truncate rounded-md bg-secondary px-2 py-1 text-[0.8em] text-black",
         className,
       )}
       title={label}
@@ -25,7 +25,7 @@ export const LinkedRecordChip = memo(function LinkedRecordChip({
   );
 });
 
-/** The linked records of a lookup value, on one line. */
+/** The linked records of a link value, on one line; a lookup passes its link field's value. */
 export function LinkedRecordChipList({
   field,
   value,
@@ -40,7 +40,15 @@ export function LinkedRecordChipList({
   return (
     <span className="flex min-w-0 items-center gap-1 overflow-hidden">
       {linked.map((record) => (
-        <LinkedRecordChip key={record.id} label={record.label} />
+        <LinkedRecordChip
+          key={record.id}
+          label={record.label}
+          className={
+            field?.type === "link_table"
+              ? "bg-secondary text-black"
+              : undefined
+          }
+        />
       ))}
     </span>
   );

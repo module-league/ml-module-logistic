@@ -40,8 +40,12 @@ namespace LogisticApi.MVVM
 
     public class SidebarLookupSettingsResponse
     {
-        /// <summary>The sidebarId whose records are linked.</summary>
+        /// <summary>The sidebarId whose records are linked; for a lookup, the sidebar of its link field.</summary>
         public string? categoryId { get; set; }
+        /// <summary>Link fields only.</summary>
+        public bool? multiple { get; set; }
+        /// <summary>Lookup fields only: the link field it looks up through.</summary>
+        public Guid? linkFieldId { get; set; }
         public Guid? lookupFieldId { get; set; }
         public bool previewEnabled { get; set; } = true;
         /// <summary>Null when never picked: the preview shows every field.</summary>
@@ -77,7 +81,7 @@ namespace LogisticApi.MVVM
         public SidebarMemberSettingsResponse? memberSettings { get; set; }
         /// <summary>Only set for number and currency fields.</summary>
         public SidebarNumberSettingsResponse? numberSettings { get; set; }
-        /// <summary>Only set for lookup fields.</summary>
+        /// <summary>Only set for link and lookup fields.</summary>
         public SidebarLookupSettingsResponse? lookupSettings { get; set; }
 
         public List<SidebarFieldOptionResponse> dropDownValues { get; set; } = [];
@@ -121,15 +125,22 @@ namespace LogisticApi.MVVM
                         abbreviation = settings.abbreviation,
                     }
                     : null,
-                lookupSettings = FieldTypes.IsLookup(field.type)
+                lookupSettings = FieldTypes.IsLink(field.type)
                     ? new()
                     {
                         categoryId = settings.lookupSidebarId,
-                        lookupFieldId = settings.lookupFieldId,
-                        previewEnabled = settings.lookupPreview,
-                        previewFieldIds = settings.lookupPreviewFieldIds,
+                        multiple = settings.linkMultiple,
                     }
-                    : null,
+                    : FieldTypes.IsLookup(field.type)
+                        ? new()
+                        {
+                            categoryId = settings.lookupSidebarId,
+                            linkFieldId = settings.lookupLinkFieldId,
+                            lookupFieldId = settings.lookupFieldId,
+                            previewEnabled = settings.lookupPreview,
+                            previewFieldIds = settings.lookupPreviewFieldIds,
+                        }
+                        : null,
                 dropDownValues = field.options
                     .Where(option => !option.IsDeleted)
                     .OrderBy(option => option.displayOrder)

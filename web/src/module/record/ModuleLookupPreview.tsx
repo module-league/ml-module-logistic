@@ -25,8 +25,8 @@ import type {
 } from "./moduleRecord.types";
 
 /**
- * The records a lookup field links to, shown beside the open record as cards that open to show all their fields.
- * Lookup fields of the linked record are left out, since their own linked records aren't loaded here.
+ * The records a lookup's link field links to, shown beside the open record as cards that open to show all their fields.
+ * Link and lookup fields of the linked record are left out, since their own linked records aren't loaded here.
  */
 export function ModuleLookupPreview({
   field,
@@ -34,12 +34,20 @@ export function ModuleLookupPreview({
   members,
   onClose,
 }: ModuleLookupPreviewProps) {
-  const { lookups, sources } = useRecordLookups();
+  const { lookups, sources, linkFields } = useRecordLookups();
   const categoryId = field?.lookupSettings?.categoryId ?? "";
+  // Cards are titled like the link field's chips, by the linked record's primary field, not by what the lookup shows
+  const linkField = useMemo(
+    () =>
+      linkFields?.find(
+        (entry) => entry?.objId === field?.lookupSettings?.linkFieldId,
+      ) ?? field,
+    [linkFields, field],
+  );
 
   const linked = useMemo(
-    () => lookupLabels(field, value, members, lookups),
-    [field, value, members, lookups],
+    () => lookupLabels(linkField, value, members, lookups),
+    [linkField, value, members, lookups],
   );
   const recordById = useMemo(
     () =>
@@ -146,7 +154,7 @@ export function ModuleLookupPreview({
 
       {!linked.length ? (
         <p className="m-auto max-w-56 px-4 text-center text-sm text-muted-foreground">
-          Nothing linked yet. Pick records in {field?.name} to preview them
+          Nothing linked yet. Pick records in the link field to preview them
           here.
         </p>
       ) : (

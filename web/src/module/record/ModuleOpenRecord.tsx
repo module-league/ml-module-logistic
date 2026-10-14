@@ -167,7 +167,11 @@ export function ModuleOpenRecord({
               {previewField && (
                 <ModuleLookupPreview
                   field={previewField}
-                  value={liveValues?.[previewField.objId]}
+                  value={
+                    liveValues?.[
+                      previewField?.lookupSettings?.linkFieldId ?? ""
+                    ]
+                  }
                   members={members}
                   onClose={closePreview}
                 />

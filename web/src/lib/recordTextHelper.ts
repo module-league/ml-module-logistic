@@ -4,13 +4,14 @@ import { attachmentNames } from "./attachmentHelper";
 import { formatFieldNumber } from "./numberHelper";
 import { optionNames } from "./selectHelper";
 import {
+  isLinkingField,
   lookupDisplayField,
   lookupRecordsOf,
   parseRecordIds,
   type RecordLookups,
 } from "./lookupHelper";
 
-/** The text a value shows in a cell: a select shows its option's label, a member field the people's names, a lookup its records' labels. */
+/** The text a value shows in a cell: a select shows its option's label, a member field the people's names, a link or lookup its records' labels. */
 export function toRecordText(
   field: IField,
   value?: string | null,
@@ -28,7 +29,7 @@ export function toRecordText(
     return field?.dropDownValues?.find((option) => option?.id === value)?.value ?? "";
   }
   if (field?.type === "multi_select") return optionNames(field, value);
-  if (field?.type === "lookup") {
+  if (isLinkingField(field)) {
     return lookupLabels(field, value, members, lookups)
       .map((linked) => linked.label)
       .join(", ");
@@ -36,7 +37,7 @@ export function toRecordText(
   return value;
 }
 
-/** Each linked record of a lookup value with the text of the field the lookup shows, in order. */
+/** Each linked record of a link value with the text of the field shown for it, in order. A lookup's value is its link field's value. */
 export function lookupLabels(
   field: IField,
   value?: string | null,

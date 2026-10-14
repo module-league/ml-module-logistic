@@ -56,9 +56,9 @@ export interface ModuleData {
   onDeleteField: (objId: string) => Promise<unknown>;
   /** Uploads one file for an attachment field of this sidebar. */
   onUploadAttachment: (file: File) => Promise<IAttachment>;
-  /** The module's sidebars that have a field a lookup can show; a new lookup field links to one of them. */
+  /** Every sidebar of the module, this one included; a new link field links to one of them. */
   lookupSources: LookupSource[];
-  /** Fields and records of the sidebars this sidebar's lookup fields link to. */
+  /** Fields and records of the sidebars this sidebar's link and lookup fields point at. */
   lookups: RecordLookups;
 }
 

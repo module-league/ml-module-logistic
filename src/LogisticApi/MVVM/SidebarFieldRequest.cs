@@ -38,17 +38,23 @@ namespace LogisticApi.MVVM
 
     public class SidebarLookupSettingsRequest
     {
-        /// <summary>The sidebarId whose records are linked. Can't change once the field exists.</summary>
+        /// <summary>Link fields only: the sidebarId whose records are linked, the field's own allowed. Can't change once the field exists.</summary>
         [MaxLength(100), RegularExpression("^[a-z0-9]+(-[a-z0-9]+)*$")]
         public string? categoryId { get; set; }
 
-        /// <summary>The field of that sidebar shown for each linked record.</summary>
+        /// <summary>Link fields only: each record can link to several records. Turning it off keeps only the first link of each record.</summary>
+        public bool? multiple { get; set; }
+
+        /// <summary>Lookup fields only: the link field of the same sidebar whose linked records are looked up.</summary>
+        public Guid? linkFieldId { get; set; }
+
+        /// <summary>Lookup fields only: the field of the linked sidebar shown for each linked record.</summary>
         public Guid? lookupFieldId { get; set; }
 
-        /// <summary>Linked records can be previewed from an open record.</summary>
+        /// <summary>Lookup fields only: linked records can be previewed from an open record.</summary>
         public bool? previewEnabled { get; set; }
 
-        /// <summary>The looked-up fields shown in the preview: field ObjIds of that sidebar, or "ds_create_time".</summary>
+        /// <summary>Lookup fields only: the fields shown in the preview: field ObjIds of the linked sidebar, or "ds_create_time".</summary>
         [MaxLength(200)]
         public List<string>? previewFieldIds { get; set; }
     }
@@ -75,7 +81,7 @@ namespace LogisticApi.MVVM
         /// <summary>Only for number and currency fields.</summary>
         public SidebarNumberSettingsRequest? numberSettings { get; set; }
 
-        /// <summary>Only for lookup fields; required when one is created.</summary>
+        /// <summary>Only for link and lookup fields; required when one is created.</summary>
         public SidebarLookupSettingsRequest? lookupSettings { get; set; }
 
         /// <summary>Only for select fields. On update, the full list: options left out are deleted.</summary>

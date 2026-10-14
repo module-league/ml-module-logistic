@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   Button,
   DialogFooter,
@@ -9,6 +9,7 @@ import {
 } from "@moduleleague/ui";
 import { RecordInputControl } from "@/components/custom/RecordInputControl";
 import type {
+  ModuleLookupFormInputProps,
   ModuleRecordFormProps,
   ModuleRecordFormValues,
 } from "./moduleRecord.types";
@@ -35,11 +36,19 @@ export function ModuleRecordForm({
     [fields, values],
   );
   const form = useForm<ModuleRecordFormValues>({ defaultValues });
+  const indexById = useMemo(
+    () => new Map(fields?.map((field, index) => [field?.objId, index])),
+    [fields],
+  );
+  // Lookups store nothing; the API fills them from their link field
   const toRecordValues = useCallback(
     (data: ModuleRecordFormValues): ISidebarRecordValues =>
       Object.fromEntries(
-        fields?.map((field, i) => [field?.objId, data?.values?.[i] ?? ""]) ??
-          [],
+        fields?.flatMap((field, i) =>
+          field?.type === "lookup"
+            ? []
+            : [[field?.objId, data?.values?.[i] ?? ""]],
+        ) ?? [],
       ),
     [fields],
   );
@@ -84,30 +93,41 @@ export function ModuleRecordForm({
               }
               labelProps={{ size: "sm" }}
               className="grid grid-cols-[minmax(0,12rem)_1fr] items-start gap-x-4"
-              render={({ field: input }) => (
-                <RecordInputControl
-                  field={field}
-                  members={members}
-                  onUploadAttachment={onUploadAttachment}
-                  onPreview={
-                    onPreviewLookup &&
-                    field?.type === "lookup" &&
-                    field?.lookupSettings?.previewEnabled !== false
-                      ? () => onPreviewLookup(field)
-                      : undefined
-                  }
-                  previewActive={previewFieldId === field?.objId}
-                  name={input.name}
-                  value={input.value ?? ""}
-                  disabled={saving || readOnly}
-                  onChange={(next) => {
-                    input.onChange(next);
-                    emitChange();
-                  }}
-                  onBlur={input.onBlur}
-                  className="w-full"
-                />
-              )}
+              render={({ field: input }) =>
+                field?.type === "lookup" ? (
+                  <LookupFormInput
+                    control={form.control}
+                    linkIndex={indexById.get(
+                      field?.lookupSettings?.linkFieldId ?? "",
+                    )}
+                    field={field}
+                    members={members}
+                    onPreview={
+                      onPreviewLookup &&
+                      field?.lookupSettings?.previewEnabled !== false
+                        ? () => onPreviewLookup(field)
+                        : undefined
+                    }
+                    previewActive={previewFieldId === field?.objId}
+                    className="w-full"
+                  />
+                ) : (
+                  <RecordInputControl
+                    field={field}
+                    members={members}
+                    onUploadAttachment={onUploadAttachment}
+                    name={input.name}
+                    value={input.value ?? ""}
+                    disabled={saving || readOnly}
+                    onChange={(next) => {
+                      input.onChange(next);
+                      emitChange();
+                    }}
+                    onBlur={input.onBlur}
+                    className="w-full"
+                  />
+                )
+              }
             />
           ))}
         </div>
@@ -123,5 +143,20 @@ export function ModuleRecordForm({
         )}
       </form>
     </Form>
+  );
+}
+
+/** A lookup follows its link field's input, so picking records there updates it before saving. */
+function LookupFormInput({
+  control,
+  linkIndex,
+  ...props
+}: ModuleLookupFormInputProps) {
+  const linked = useWatch({ control, name: `values.${linkIndex ?? -1}` });
+  return (
+    <RecordInputControl
+      {...props}
+      value={linkIndex === undefined ? "" : (linked ?? "")}
+    />
   );
 }

@@ -26,6 +26,8 @@ type MultiSelectOption = {
   icon?: React.ReactNode;
   /** Background color of the option's tag in the list; slate when left out. */
   color?: string;
+  /** Extra classes for the option's tag, e.g. "text-black" over the default white text. */
+  className?: string;
 };
 
 /**
@@ -90,6 +92,9 @@ type MultiSelectProps<TOption extends MultiSelectOption = MultiSelectOption> =
     renderValue?(values: TOption[]): React.ReactNode;
 
     disableAllSelection?: boolean;
+
+    /** Closes the list after an option is picked, for a picker that keeps one value. */
+    closeOnSelect?: boolean;
   };
 
 type MultiSelectPropsWithForwardRef = React.FC<
@@ -117,6 +122,7 @@ export const MultiSelect: MultiSelectPropsWithForwardRef = React.forwardRef<
       renderSearchEmpty = "No results found.",
       renderOptionEmpty = "No option available.",
       disableAllSelection = false,
+      closeOnSelect = false,
       className,
       ...props
     },
@@ -143,6 +149,7 @@ export const MultiSelect: MultiSelectPropsWithForwardRef = React.forwardRef<
         ? value.filter((v) => v !== nextVal)
         : [...value, nextVal];
       onValueChange(newSelectedValues);
+      if (closeOnSelect) setIsPopoverOpen(false);
     };
 
     const handleTogglePopover = () => {
@@ -250,7 +257,7 @@ export const MultiSelect: MultiSelectPropsWithForwardRef = React.forwardRef<
                       <CommandItem
                         key="all"
                         onSelect={toggleAll}
-                        className="cursor-pointer"
+                        className="cursor-pointer data-[selected=true]:bg-primary-10"
                       >
                         <div
                           className={cn(
@@ -271,7 +278,7 @@ export const MultiSelect: MultiSelectPropsWithForwardRef = React.forwardRef<
                         <CommandItem
                           key={option.value}
                           onSelect={() => toggleOption(option.value)}
-                          className="cursor-pointer flex items-center gap-2"
+                          className="cursor-pointer flex items-center gap-2 data-[selected=true]:bg-primary-10"
                         >
                           <div
                             className={cn(
@@ -283,11 +290,11 @@ export const MultiSelect: MultiSelectPropsWithForwardRef = React.forwardRef<
                             <CheckIcon className="h-4 w-4" />
                           </div>
                           <span
-                            className="rounded-md overflow-hidden py-1 px-2 text-[0.8em] bg-slate-600 truncate"
-                            style={{
-                              backgroundColor: option.color,
-                              color: "white",
-                            }}
+                            className={cn(
+                              "rounded-md overflow-hidden py-1 px-2 text-[0.8em] bg-slate-600 text-white truncate",
+                              option.className,
+                            )}
+                            style={{ backgroundColor: option.color }}
                             title={option.label}
                           >
                             {option.label}

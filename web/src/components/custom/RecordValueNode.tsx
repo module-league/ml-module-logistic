@@ -8,6 +8,7 @@ import { MemberChip } from "./MemberChip";
 import { AttachmentChipList } from "./AttachmentChip";
 import { parseAttachments } from "@/lib/attachmentHelper";
 import { selectedOptions } from "@/lib/selectHelper";
+import { isLinkingField } from "@/lib/lookupHelper";
 import { LinkedRecordChipList } from "./LinkedRecordChip";
 
 type SpanProps = Omit<
@@ -95,7 +96,7 @@ export function RecordValueNode({
       </SelectionNode>
     );
   }
-  if (field?.type === "lookup") {
+  if (isLinkingField(field)) {
     return (
       <LinkedRecordChipList field={field} value={value} members={members} />
     );

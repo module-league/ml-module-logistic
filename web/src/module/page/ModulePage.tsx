@@ -278,9 +278,18 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [records?.length, openNewRecord],
   );
 
+  const linkFields = useMemo(
+    () => fields?.filter((field) => field?.type === "link_table") ?? [],
+    [fields],
+  );
   const lookupContext = useMemo(
-    () => ({ sources: lookupSources, lookups }),
-    [lookupSources, lookups],
+    () => ({
+      sidebarId: item?.sidebarId,
+      sources: lookupSources,
+      linkFields,
+      lookups,
+    }),
+    [item?.sidebarId, lookupSources, linkFields, lookups],
   );
 
   const pageToolbar = useMemo<PageToolbarProps>(

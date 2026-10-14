@@ -72,6 +72,7 @@ import type {
   ModuleFieldNumberSettingsProps,
   ModuleFieldDateSettings,
   ModuleFieldDateSettingsProps,
+  ModuleFieldLinkSettingsProps,
   ModuleFieldLookupSettings,
   ModuleFieldLookupSettingsProps,
   ModuleAddNewFieldDialogProps,
@@ -270,10 +271,12 @@ function AddFieldSteps({
   const [numberSettings, setNumberSettings] = useState<NumberSettings>(() =>
     fieldNumberDraft(field),
   );
-  const { sources } = useRecordLookups();
+  const { sources, linkFields, sidebarId } = useRecordLookups();
   const [lookupSettings, setLookupSettings] =
     useState<ModuleFieldLookupSettings>(() => ({
       categoryId: field?.lookupSettings?.categoryId,
+      multiple: field?.lookupSettings?.multiple ?? true,
+      linkFieldId: field?.lookupSettings?.linkFieldId,
       lookupFieldId: field?.lookupSettings?.lookupFieldId,
       previewEnabled: field?.lookupSettings?.previewEnabled ?? true,
       previewFieldIds: field?.lookupSettings?.previewFieldIds,
@@ -310,8 +313,9 @@ function AddFieldSteps({
     !!draft?.name &&
     !nameTaken &&
     (!draft.isSelectionField || draft.dropDownValues.length > 0) &&
+    (type !== "link_table" || !!lookupSettings.categoryId) &&
     (type !== "lookup" ||
-      (!!lookupSettings.categoryId && !!lookupSettings.lookupFieldId));
+      (!!lookupSettings.linkFieldId && !!lookupSettings.lookupFieldId));
   const submit = useCallback(
     (event: SyntheticEvent) => {
       event.preventDefault();
@@ -422,12 +426,24 @@ function AddFieldSteps({
               withSymbol={type === "currency"}
             />
           )}
+          {type === "link_table" && (
+            <FieldLinkSettings
+              value={lookupSettings}
+              onChange={setLookupSettings}
+              sources={sources}
+              sidebarId={sidebarId}
+              sourceLocked={editing}
+              savedMultiple={
+                editing ? (field?.lookupSettings?.multiple ?? true) : undefined
+              }
+            />
+          )}
           {type === "lookup" && (
             <FieldLookupSettings
               value={lookupSettings}
               onChange={setLookupSettings}
               sources={sources}
-              sourceLocked={editing}
+              linkFields={linkFields}
             />
           )}
           {type === "member" && (
@@ -484,16 +500,99 @@ function AddFieldSteps({
   );
 }
 
-function FieldLookupSettings({
+function FieldLinkSettings({
   value,
   onChange,
   sources,
+  sidebarId,
   sourceLocked = false,
-}: ModuleFieldLookupSettingsProps) {
+  savedMultiple,
+}: ModuleFieldLinkSettingsProps) {
   const source = useMemo(
     () => sources?.find((entry) => entry?.sidebarId === value.categoryId),
     [sources, value.categoryId],
   );
+  const multiple = value.multiple ?? true;
+  const sourceText = source?.sidebarText ?? "that sidebar";
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Field>
+        <FieldLabel htmlFor="field-link-source">Link to records in</FieldLabel>
+        <Select
+          value={value.categoryId ?? ""}
+          onValueChange={(categoryId) => onChange({ ...value, categoryId })}
+          disabled={sourceLocked}
+        >
+          <SelectTrigger id="field-link-source" className="w-full">
+            <SelectValue placeholder="Choose a sidebar">
+              {source?.sidebarText ?? value.categoryId}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent position="popper" searchable>
+            {sources?.map((entry) => (
+              <SelectItem
+                key={entry.sidebarId}
+                value={entry.sidebarId}
+                textValue={entry.sidebarText}
+              >
+                {entry.sidebarText}
+                {entry.sidebarId === sidebarId && (
+                  <span className="text-muted-foreground">This sidebar</span>
+                )}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {sourceLocked && (
+          <p className="text-xs text-muted-foreground">
+            The sidebar can't change once the field exists.
+          </p>
+        )}
+      </Field>
+      <label className="flex items-start justify-between gap-3 text-sm">
+        <span className="flex flex-col gap-0.5">
+          <span className="font-medium">Allow linking to multiple records</span>
+          <span className="text-xs text-muted-foreground">
+            {multiple
+              ? `Each record can link to several records in ${sourceText}.`
+              : `Each record links to one record in ${sourceText}.`}
+          </span>
+          {savedMultiple && !multiple && (
+            <span className="text-xs text-amber-700">
+              Records linked to several keep only their first link once you
+              save.
+            </span>
+          )}
+        </span>
+        <Switch
+          checked={multiple}
+          onCheckedChange={(next) => onChange({ ...value, multiple: next })}
+        />
+      </label>
+    </div>
+  );
+}
+
+function FieldLookupSettings({
+  value,
+  onChange,
+  sources,
+  linkFields,
+}: ModuleFieldLookupSettingsProps) {
+  const linkField = useMemo(
+    () => linkFields?.find((entry) => entry?.objId === value.linkFieldId),
+    [linkFields, value.linkFieldId],
+  );
+  const sourceOf = useCallback(
+    (link?: IField) =>
+      sources?.find(
+        (entry) => entry?.sidebarId === link?.lookupSettings?.categoryId,
+      ),
+    [sources],
+  );
+  const source = useMemo(() => sourceOf(linkField), [sourceOf, linkField]);
+  const ready = !!linkField && !!source;
   const shownFields = useMemo(() => shownLookupFields(source), [source]);
   const previewFields = useMemo(
     () => previewableLookupFields(source?.fields),
@@ -509,13 +608,16 @@ function FieldLookupSettings({
     [value.previewFieldIds, previewFields],
   );
   const previewEnabled = value.previewEnabled ?? true;
-  const pickSource = useCallback(
-    (categoryId: string) => {
-      const picked = sources?.find((entry) => entry?.sidebarId === categoryId);
+  const pickLink = useCallback(
+    (linkFieldId: string) => {
+      const picked = sourceOf(
+        linkFields?.find((entry) => entry?.objId === linkFieldId),
+      );
       onChange({
-        categoryId,
+        linkFieldId,
+        categoryId: picked?.sidebarId,
         lookupFieldId: shownLookupFields(picked)[0]?.objId,
-        previewEnabled: true,
+        previewEnabled: value.previewEnabled ?? true,
         previewFieldIds: [
           ...previewableLookupFields(picked?.fields).map(
             (previewField) => previewField.objId,
@@ -524,7 +626,7 @@ function FieldLookupSettings({
         ],
       });
     },
-    [sources, onChange],
+    [sourceOf, linkFields, value.previewEnabled, onChange],
   );
   const togglePreviewField = useCallback(
     (id: string, checked: boolean) =>
@@ -552,7 +654,7 @@ function FieldLookupSettings({
     [previewFields],
   );
 
-  if (!sources?.length && !sourceLocked) {
+  if (!linkFields?.length) {
     return (
       <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center">
         <Link2 className="size-5 text-muted-foreground" />
@@ -567,36 +669,34 @@ function FieldLookupSettings({
   return (
     <div className="flex flex-col gap-4">
       <Field>
-        <FieldLabel htmlFor="field-lookup-source">Look up records in</FieldLabel>
-        <Select
-          value={value.categoryId ?? ""}
-          onValueChange={pickSource}
-          disabled={sourceLocked}
-        >
-          <SelectTrigger id="field-lookup-source" className="w-full">
-            <SelectValue placeholder="Choose a sidebar">
-              {source?.sidebarText ?? value.categoryId}
+        <FieldLabel htmlFor="field-lookup-link">Look up records in</FieldLabel>
+        <Select value={value.linkFieldId ?? ""} onValueChange={pickLink}>
+          <SelectTrigger id="field-lookup-link" className="w-full">
+            <SelectValue placeholder="Choose a link record">
+              {linkField?.name}
             </SelectValue>
           </SelectTrigger>
           <SelectContent position="popper" searchable>
-            {sources?.map((entry) => (
+            {linkFields?.map((entry) => (
               <SelectItem
-                key={entry.sidebarId}
-                value={entry.sidebarId}
-                textValue={entry.sidebarText}
+                key={entry.objId}
+                value={entry.objId}
+                textValue={entry.name}
               >
-                {entry.sidebarText}
+                <FieldTypeIcon type={entry.type} />
+                {entry.name}
+                <span className="text-muted-foreground">
+                  {sourceOf(entry)?.sidebarText}
+                </span>
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        {sourceLocked && (
-          <p className="text-xs text-muted-foreground">
-            The sidebar can't change once the field exists.
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground">
+          Only link to another record fields of this sidebar are listed.
+        </p>
       </Field>
-      {!!value.categoryId && (
+      {ready && (
         <Field>
           <FieldLabel htmlFor="field-lookup-shown">Field to show</FieldLabel>
           <Select
@@ -622,12 +722,13 @@ function FieldLookupSettings({
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            Each record can link to several records in{" "}
-            {source?.sidebarText ?? "this sidebar"}, shown by this field.
+            {shownFields.length
+              ? `Shown for each ${source?.sidebarText} record linked in ${linkField?.name}.`
+              : `${source?.sidebarText} has no text, number, select, date or member field to show yet.`}
           </p>
         </Field>
       )}
-      {!!value.categoryId && (
+      {ready && (
         <div className="flex flex-col gap-2">
           <label className="flex cursor-pointer items-start gap-2 text-sm">
             <Checkbox

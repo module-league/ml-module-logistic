@@ -14,6 +14,7 @@ declare global {
         | "checkbox"
         | "date"
         | "member"
+        | "link_table"
         | "lookup"
         | "mirror"
         | "templating"
@@ -80,8 +81,12 @@ declare global {
         leadingZeros?: number;
       };
       lookupSettings?: {
-        /** The sidebarId whose records a lookup field links to. Fixed once the field exists. */
+        /** link_table: the sidebarId whose records it links to, its own included; fixed once the field exists. lookup: the sidebar of its link field. */
         categoryId?: string;
+        /** For link_table field only. Each record can link to several records. @default true */
+        multiple?: boolean;
+        /** For lookup field only. The link_table field of the same sidebar whose linked records it looks up */
+        linkFieldId?: string;
         /** Optional view to adopt the filter and sort settings */
         viewId?: string;
         // /** Color of the lookup+mirror group */

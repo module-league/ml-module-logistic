@@ -1,105 +1,72 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { PanelRightOpen } from "lucide-react";
-import { Button, cn, MultiSelect } from "@/ui-kit";
-import {
-  lookupDisplayField,
-  lookupRecordsOf,
-  parseRecordIds,
-  toRecordIdsValue,
-} from "@/lib/lookupHelper";
-import { linkedRecordLabel, lookupLabels } from "@/lib/recordTextHelper";
+import { Button, cn } from "@/ui-kit";
+import { lookupLabels } from "@/lib/recordTextHelper";
 import { useRecordLookups } from "./RecordLookup.context";
 import { LinkedRecordChip } from "./LinkedRecordChip";
 import type { RecordLookupInputProps } from "./RecordLookupInput.types";
 
-/** Picks any number of records from the sidebar a lookup field looks up; searchable by the shown field. */
+/** A lookup can't be edited: it shows the records its link field links to, which change from that field. */
 export function RecordLookupInput({
   id,
   field,
   value,
   members,
-  disabled,
-  placeholder,
   className,
   style,
-  onChange,
-  onBlur,
   onPreview,
   previewActive = false,
 }: RecordLookupInputProps) {
-  const { lookups, sources } = useRecordLookups();
-  const records = useMemo(
-    () => lookupRecordsOf(field, lookups),
-    [field, lookups],
-  );
-  const options = useMemo(() => {
-    const shown = lookupDisplayField(field, lookups);
-    return (
-      records?.map((record) => ({
-        value: record?.objId,
-        label: linkedRecordLabel(shown, record, members),
-        color: "var(--primary)",
-      })) ?? []
-    );
-  }, [field, lookups, records, members]);
+  const { lookups, linkFields } = useRecordLookups();
   const linked = useMemo(
     () => lookupLabels(field, value, members, lookups),
     [field, value, members, lookups],
   );
-  const selectedIds = useMemo(() => parseRecordIds(value), [value]);
-  const sourceText = useMemo(
+  const linkName = useMemo(
     () =>
-      sources?.find(
-        (source) => source?.sidebarId === field?.lookupSettings?.categoryId,
-      )?.sidebarText ?? "the looked-up sidebar",
-    [sources, field?.lookupSettings?.categoryId],
+      linkFields?.find(
+        (linkField) => linkField?.objId === field?.lookupSettings?.linkFieldId,
+      )?.name,
+    [linkFields, field?.lookupSettings?.linkFieldId],
   );
 
-  const change = useCallback(
-    (ids: string[]) => onChange?.(toRecordIdsValue(ids)),
-    [onChange],
-  );
-  const renderValue = useCallback(
-    () => (
-      <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1 px-1">
-        {linked.map((record) => (
-          <LinkedRecordChip key={record.id} label={record.label} />
-        ))}
-      </span>
-    ),
-    [linked],
-  );
-
-  const picker = (
-    <MultiSelect
+  const shown = (
+    <div
       id={id}
-      options={options}
-      value={selectedIds}
-      onValueChange={change}
-      renderValue={renderValue}
-      disabled={disabled}
-      placeholder={placeholder ?? "Link records"}
-      renderOptionEmpty={
-        records ? `No records in ${sourceText} yet.` : "Loading records…"
-      }
-      disableAllSelection
-      onBlur={onBlur}
-      className={onPreview ? "min-w-0 flex-1" : className}
+      role="group"
+      aria-label={field?.name}
+      title={linkName ? `Change the links in ${linkName}` : undefined}
+      className={cn(
+        "flex min-h-10 min-w-0 flex-1 flex-wrap items-center gap-1 rounded-md border px-2 py-1",
+        !onPreview && className,
+      )}
       style={onPreview ? undefined : style}
-    />
+    >
+      {linked.length ? (
+        linked.map((record) => (
+          <LinkedRecordChip key={record.id} label={record.label} />
+        ))
+      ) : (
+        <span className="text-sm text-muted-foreground">
+          {linkName
+            ? `Nothing linked in ${linkName} yet.`
+            : "Its link field isn't available."}
+        </span>
+      )}
+    </div>
   );
-  if (!onPreview) return picker;
+  if (!onPreview) return shown;
 
   return (
     <div className={cn("flex items-start gap-2", className)} style={style}>
-      {picker}
+      {shown}
       <Button
         variant="outline"
         size="icon"
         aria-label="Preview linked records"
         aria-pressed={previewActive}
         title="Preview linked records"
-        disabled={!selectedIds.length}
+        disabled={!linked.length}
         className={cn("h-10 w-10 shrink-0", previewActive && "bg-primary-10")}
         startIcon={<PanelRightOpen size={16} />}
         onClick={onPreview}

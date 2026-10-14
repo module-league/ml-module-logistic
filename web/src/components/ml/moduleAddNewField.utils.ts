@@ -60,9 +60,15 @@ export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
     icon: FIELD_TYPE_ICONS.member,
   },
   {
+    fieldType: "link_table",
+    label: "Link to another record",
+    description: "Link to records of any sidebar, this one too.",
+    icon: FIELD_TYPE_ICONS.link_table,
+  },
+  {
     fieldType: "lookup",
     label: "Lookup",
-    description: "Link to records of another sidebar.",
+    description: "Show a field of the records a link field links to.",
     icon: FIELD_TYPE_ICONS.lookup,
   },
   {
@@ -206,6 +212,28 @@ function toNumberSettings(type: IField["type"], settings: NumberSettings) {
   return undefined;
 }
 
+function toLookupSettings(
+  type: IField["type"],
+  settings: IField["lookupSettings"],
+): IField["lookupSettings"] {
+  if (type === "link_table") {
+    return {
+      categoryId: settings?.categoryId,
+      multiple: settings?.multiple ?? true,
+    };
+  }
+  if (type === "lookup") {
+    return {
+      linkFieldId: settings?.linkFieldId,
+      categoryId: settings?.categoryId,
+      lookupFieldId: settings?.lookupFieldId,
+      previewEnabled: settings?.previewEnabled ?? true,
+      previewFieldIds: settings?.previewFieldIds,
+    };
+  }
+  return undefined;
+}
+
 export function toField({
   type,
   name,
@@ -231,8 +259,8 @@ export function toField({
     isUserField: type === "member",
     isNumeric: type === "number" || type === "currency",
     isVirtualField: type === "lookup",
-    isForeignField: type === "lookup",
-    isPlainField: type !== "lookup",
+    isForeignField: type === "lookup" || type === "link_table",
+    isPlainField: type !== "lookup" && type !== "link_table",
     dateFormat,
     categoryId: "",
     displayOrder: 0,
@@ -244,14 +272,6 @@ export function toField({
     memberSettings:
       type === "member" ? { multiple: !!memberSettings?.multiple } : undefined,
     numberSettings: toNumberSettings(type, numberSettings),
-    lookupSettings:
-      type === "lookup"
-        ? {
-            categoryId: lookupSettings?.categoryId,
-            lookupFieldId: lookupSettings?.lookupFieldId,
-            previewEnabled: lookupSettings?.previewEnabled ?? true,
-            previewFieldIds: lookupSettings?.previewFieldIds,
-          }
-        : undefined,
+    lookupSettings: toLookupSettings(type, lookupSettings),
   };
 }

@@ -21,6 +21,7 @@ import { SelectionNode } from "./RecordValueNode";
 import { RecordMemberInput } from "./RecordMemberInput";
 import { RecordAttachmentInput } from "./RecordAttachmentInput";
 import { RecordMultiSelectInput } from "./RecordMultiSelectInput";
+import { RecordLinkInput } from "./RecordLinkInput";
 import { RecordLookupInput } from "./RecordLookupInput";
 import type { AttachmentUploadHandler } from "./RecordAttachmentInput.types";
 import { DateTimePicker } from "../ui/date-time-picker";
@@ -32,7 +33,7 @@ export type RecordInputControlProps = {
   members?: IUserInfo[];
   /** Uploads files for attachment fields; without it attachments can only be opened or removed. */
   onUploadAttachment?: AttachmentUploadHandler;
-  /** Lookup fields only: shows a preview button right of the picker. */
+  /** Lookup fields only: shows a preview button right of the linked records. */
   onPreview?: () => void;
   /** Lookup fields only: the preview of this field is showing. */
   previewActive?: boolean;
@@ -176,13 +177,11 @@ export function RecordInputControl(props: RecordInputControlProps) {
     );
   }
 
-  if (field.type === "lookup") {
+  if (field.type === "link_table") {
     return (
-      <RecordLookupInput
+      <RecordLinkInput
         id={id}
         field={field}
-        onPreview={onPreview}
-        previewActive={previewActive}
         value={value}
         members={members}
         disabled={disabled}
@@ -191,6 +190,21 @@ export function RecordInputControl(props: RecordInputControlProps) {
         style={props.style}
         onChange={onChange}
         onBlur={onBlur}
+      />
+    );
+  }
+
+  if (field.type === "lookup") {
+    return (
+      <RecordLookupInput
+        id={id}
+        field={field}
+        value={value}
+        members={members}
+        onPreview={onPreview}
+        previewActive={previewActive}
+        className={props.className}
+        style={props.style}
       />
     );
   }

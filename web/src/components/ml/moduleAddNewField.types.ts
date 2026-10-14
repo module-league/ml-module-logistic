@@ -47,18 +47,35 @@ export interface ModuleFieldNumberSettingsProps {
   withSymbol?: boolean;
 }
 
-/** The sidebar a lookup field links to and the field it shows for each record. */
+/** A link field's sidebar and whether it takes several records; a lookup's link field, its sidebar and the field it shows. */
 export type ModuleFieldLookupSettings = Pick<
   NonNullable<IField["lookupSettings"]>,
-  "categoryId" | "lookupFieldId" | "previewEnabled" | "previewFieldIds"
+  | "categoryId"
+  | "multiple"
+  | "linkFieldId"
+  | "lookupFieldId"
+  | "previewEnabled"
+  | "previewFieldIds"
 >;
+
+export interface ModuleFieldLinkSettingsProps {
+  value: ModuleFieldLookupSettings;
+  onChange: (value: ModuleFieldLookupSettings) => void;
+  sources: LookupSource[];
+  /** The page's own sidebar, marked in the list. */
+  sidebarId?: string;
+  /** An existing link field keeps its sidebar: its linked record ids belong to it. */
+  sourceLocked?: boolean;
+  /** The saved field's setting; turning it off then warns that extra links are dropped. */
+  savedMultiple?: boolean;
+}
 
 export interface ModuleFieldLookupSettingsProps {
   value: ModuleFieldLookupSettings;
   onChange: (value: ModuleFieldLookupSettings) => void;
   sources: LookupSource[];
-  /** An existing lookup field keeps its sidebar: its linked record ids belong to it. */
-  sourceLocked?: boolean;
+  /** This sidebar's link fields; the lookup reads through one of them. */
+  linkFields: ISidebarField[];
 }
 
 export interface ModuleDeleteFieldDialogProps

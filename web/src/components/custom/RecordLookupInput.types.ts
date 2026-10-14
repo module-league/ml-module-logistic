@@ -13,8 +13,9 @@ export interface LinkedRecordChipListProps {
   members?: IUserInfo[];
 }
 
-export interface RecordLookupInputProps {
+export interface RecordLinkInputProps {
   id?: string;
+  /** A link_table field. */
   field: IField;
   /** A JSON array of the linked record ids. */
   value?: string;
@@ -25,7 +26,15 @@ export interface RecordLookupInputProps {
   style?: CSSProperties;
   onChange?: (value: string) => void;
   onBlur?: () => void;
-  /** Shows a preview button right of the picker; off while nothing is linked. */
+}
+
+export interface RecordLookupInputProps
+  extends Pick<RecordLinkInputProps, "id" | "members" | "className" | "style"> {
+  /** A lookup field. */
+  field: IField;
+  /** Its link field's value: a JSON array of the linked record ids. */
+  value?: string;
+  /** Shows a preview button on the right; off while nothing is linked. */
   onPreview?: () => void;
   /** The preview of this field is showing. */
   previewActive?: boolean;

@@ -25,8 +25,12 @@ namespace LogisticApi.Models
         public int? decimalPlaces { get; set; }
         /// <summary>Number and currency fields: one of <see cref="Abbreviations"/>.</summary>
         public string abbreviation { get; set; } = "none";
-        /// <summary>Lookup fields only: the sidebar whose records are linked. Can't change once set.</summary>
+        /// <summary>Link fields: the sidebar whose records are linked, fixed once set. Lookup fields: the sidebar of their link field.</summary>
         public string? lookupSidebarId { get; set; }
+        /// <summary>Link fields only: each record can link to several records.</summary>
+        public bool linkMultiple { get; set; } = true;
+        /// <summary>Lookup fields only: the link field of the same sidebar whose linked records are looked up.</summary>
+        public Guid? lookupLinkFieldId { get; set; }
         /// <summary>Lookup fields only: the field of that sidebar shown for each linked record.</summary>
         public Guid? lookupFieldId { get; set; }
         /// <summary>Lookup fields only: linked records can be previewed from an open record.</summary>

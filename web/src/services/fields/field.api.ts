@@ -50,7 +50,9 @@ function toFieldSettings(field: IField) {
   return {
     ...(field?.isUserField && { memberSettings: field.memberSettings }),
     ...(field?.numberSettings && { numberSettings: field.numberSettings }),
-    ...(field?.type === "lookup" && { lookupSettings: field.lookupSettings }),
+    ...((field?.type === "lookup" || field?.type === "link_table") && {
+      lookupSettings: field.lookupSettings,
+    }),
     ...(field?.isDateField && {
       dateFormat: field.dateFormat,
       displayTime: field.displayTime,
