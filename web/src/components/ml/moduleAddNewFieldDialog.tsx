@@ -514,6 +514,18 @@ function FieldLinkSettings({
   );
   const multiple = value.multiple ?? true;
   const sourceText = source?.sidebarText ?? "that sidebar";
+  const shownFields = useMemo(() => shownLookupFields(source), [source]);
+  const pickSource = useCallback(
+    (categoryId: string) =>
+      onChange({
+        ...value,
+        categoryId,
+        lookupFieldId: shownLookupFields(
+          sources?.find((entry) => entry?.sidebarId === categoryId),
+        )[0]?.objId,
+      }),
+    [value, sources, onChange],
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -521,7 +533,7 @@ function FieldLinkSettings({
         <FieldLabel htmlFor="field-link-source">Link to records in</FieldLabel>
         <Select
           value={value.categoryId ?? ""}
-          onValueChange={(categoryId) => onChange({ ...value, categoryId })}
+          onValueChange={pickSource}
           disabled={sourceLocked}
         >
           <SelectTrigger id="field-link-source" className="w-full">
@@ -550,6 +562,39 @@ function FieldLinkSettings({
           </p>
         )}
       </Field>
+      {!!source && (
+        <Field>
+          <FieldLabel htmlFor="field-link-shown">Field to show</FieldLabel>
+          <Select
+            value={value.lookupFieldId ?? ""}
+            onValueChange={(lookupFieldId) =>
+              onChange({ ...value, lookupFieldId })
+            }
+            disabled={!shownFields.length}
+          >
+            <SelectTrigger id="field-link-shown" className="w-full">
+              <SelectValue placeholder="Primary field" />
+            </SelectTrigger>
+            <SelectContent position="popper" searchable>
+              {shownFields.map((shown) => (
+                <SelectItem
+                  key={shown.objId}
+                  value={shown.objId}
+                  textValue={shown.name}
+                >
+                  <FieldTypeIcon type={shown.type} />
+                  {shown.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {shownFields.length
+              ? `Each linked ${sourceText} record shows as this field.`
+              : `${sourceText} has no text, number, select, date or member field to show yet, so records show as “Untitled record”.`}
+          </p>
+        </Field>
+      )}
       <label className="flex items-start justify-between gap-3 text-sm">
         <span className="flex flex-col gap-0.5">
           <span className="font-medium">Allow linking to multiple records</span>

@@ -219,6 +219,7 @@ function toLookupSettings(
   if (type === "link_table") {
     return {
       categoryId: settings?.categoryId,
+      lookupFieldId: settings?.lookupFieldId,
       multiple: settings?.multiple ?? true,
     };
   }

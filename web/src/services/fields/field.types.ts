@@ -91,7 +91,7 @@ declare global {
         viewId?: string;
         // /** Color of the lookup+mirror group */
         // color?: string;
-        /** For lookup field only. The field of that sidebar shown for each linked record */
+        /** For link_table and lookup fields. The field of the linked sidebar shown for each linked record; a link left without one shows the primary or first field */
         lookupFieldId?: string;
         /** For lookup field only. Linked records can be previewed from an open record. @default true */
         previewEnabled?: boolean;

@@ -48,7 +48,7 @@ namespace LogisticApi.MVVM
         /// <summary>Lookup fields only: the link field of the same sidebar whose linked records are looked up.</summary>
         public Guid? linkFieldId { get; set; }
 
-        /// <summary>Lookup fields only: the field of the linked sidebar shown for each linked record.</summary>
+        /// <summary>The field of the linked sidebar shown for each linked record. Required for a lookup; optional for a link, where the primary or first field shows when left out.</summary>
         public Guid? lookupFieldId { get; set; }
 
         /// <summary>Lookup fields only: linked records can be previewed from an open record.</summary>

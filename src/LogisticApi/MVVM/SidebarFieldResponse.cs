@@ -130,6 +130,7 @@ namespace LogisticApi.MVVM
                     {
                         categoryId = settings.lookupSidebarId,
                         multiple = settings.linkMultiple,
+                        lookupFieldId = settings.lookupFieldId,
                     }
                     : FieldTypes.IsLookup(field.type)
                         ? new()

@@ -60,7 +60,7 @@ namespace LogisticApi.Services
                 displayOrder = (lastOrder ?? -1) + 1,
             };
             var settings = ApplySettings(new FieldSettings(), request);
-            if (FieldTypes.IsLink(type)) ApplyLink(settings, request.lookupSettings);
+            if (FieldTypes.IsLink(type)) await ApplyLinkAsync(settings, request.lookupSettings, ct);
             if (FieldTypes.IsLookup(type)) await ApplyLookupAsync(sidebarId, settings, request.lookupSettings, ct);
             field.settings = settings.Write();
             foreach (var (option, index) in options.Select((option, index) => (option, index)))
@@ -95,7 +95,7 @@ namespace LogisticApi.Services
             var settings = ApplySettings(FieldSettings.Read(field.settings), request);
             var wasMultiple = settings.linkMultiple;
             if (FieldTypes.IsLink(field.type) && request.lookupSettings is not null)
-                ApplyLink(settings, request.lookupSettings);
+                await ApplyLinkAsync(settings, request.lookupSettings, ct);
             if (FieldTypes.IsLookup(field.type) && request.lookupSettings is not null)
                 await ApplyLookupAsync(field.sidebarId, settings, request.lookupSettings, ct);
             field.settings = settings.Write();
@@ -221,8 +221,8 @@ namespace LogisticApi.Services
             return settings;
         }
 
-        /// <summary>The linked sidebar can be any one, the field's own included, and is fixed once set: linked record ids belong to it.</summary>
-        private static void ApplyLink(FieldSettings settings, SidebarLookupSettingsRequest? request)
+        /// <summary>The linked sidebar can be any one, the field's own included, and is fixed once set: linked record ids belong to it. The field to show labels each linked record; left out, the primary or first field does.</summary>
+        private async Task ApplyLinkAsync(FieldSettings settings, SidebarLookupSettingsRequest? request, CancellationToken ct)
         {
             var sidebarId = request?.categoryId ?? settings.lookupSidebarId;
             if (string.IsNullOrEmpty(sidebarId))
@@ -230,8 +230,24 @@ namespace LogisticApi.Services
             if (settings.lookupSidebarId is not null && settings.lookupSidebarId != sidebarId)
                 throw ApiProblemException.BadRequest("The linked sidebar can't change.", "Delete the field and add a new one to link to another sidebar.");
 
+            if (request?.lookupFieldId is { } fieldId)
+            {
+                await EnsureShowableAsync(sidebarId, fieldId, ct);
+                settings.lookupFieldId = fieldId;
+            }
             settings.lookupSidebarId = sidebarId;
             if (request?.multiple is { } multiple) settings.linkMultiple = multiple;
+        }
+
+        /// <summary>The field shown for each linked record must belong to the linked sidebar and read as text.</summary>
+        private async Task EnsureShowableAsync(string sidebarId, Guid fieldId, CancellationToken ct)
+        {
+            var shown = await db.SidebarFields
+                .AsNoTracking()
+                .FirstOrDefaultAsync(f => f.ObjId == fieldId && f.sidebarId == sidebarId, ct)
+                ?? throw ApiProblemException.BadRequest("Unknown field to show.", $"'{sidebarId}' has no field '{fieldId}'.");
+            if (!FieldTypes.CanShowInLookup(shown.type))
+                throw ApiProblemException.BadRequest("This field can't be shown for a linked record.", $"'{shown.sidebarName}' is a {shown.type} field; pick a text, number, select, date or member field.");
         }
 
         /// <summary>A lookup reads through a link field of its own sidebar, and shows a field of the sidebar that link points to.</summary>
@@ -250,12 +266,7 @@ namespace LogisticApi.Services
 
             var fieldId = request?.lookupFieldId ?? settings.lookupFieldId
                 ?? throw ApiProblemException.BadRequest("Pick the field to show.", "lookupSettings.lookupFieldId is required for a lookup field.");
-            var shown = await db.SidebarFields
-                .AsNoTracking()
-                .FirstOrDefaultAsync(f => f.ObjId == fieldId && f.sidebarId == sidebarId, ct)
-                ?? throw ApiProblemException.BadRequest("Unknown field to show.", $"'{sidebarId}' has no field '{fieldId}'.");
-            if (!FieldTypes.CanShowInLookup(shown.type))
-                throw ApiProblemException.BadRequest("This field can't be shown in a lookup.", $"'{shown.sidebarName}' is a {shown.type} field; pick a text, number, select, date or member field.");
+            await EnsureShowableAsync(sidebarId, fieldId, ct);
 
             settings.lookupLinkFieldId = linkFieldId;
             settings.lookupSidebarId = sidebarId;
