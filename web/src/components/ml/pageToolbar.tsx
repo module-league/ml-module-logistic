@@ -94,7 +94,7 @@ export function ModulePageToolbar({
       <div
         ref={measureRef}
         className={cn(
-          "flex min-h-[41px] items-center gap-2 border-b bg-primary-10 p-4 py-1",
+          "flex min-h-[41px] items-center gap-2 border-b p-4 py-1",
           className,
         )}
       >

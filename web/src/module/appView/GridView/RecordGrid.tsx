@@ -335,6 +335,7 @@ export function RecordGrid<T>({
                             aria-label="Select record"
                             checked={selected}
                             onCheckedChange={() => row.toggleSelected()}
+                            className="bg-white"
                           />
                           {onRowExpand && (
                             <Button
@@ -346,7 +347,7 @@ export function RecordGrid<T>({
                               startIcon={<Maximize2 className="size-2" />}
                               variant={"outline"}
                               size="xs"
-                              className="shadow-md opacity-0 group-hover/row:opacity-100 hover:bg-foreground/10 hover:text-foreground focus-visible:opacity-100"
+                              className="shadow-md opacity-0 group-hover/row:opacity-100 hover:bg-white hover:text-foreground focus-visible:opacity-100"
                             ></Button>
                           )}
                         </div>
