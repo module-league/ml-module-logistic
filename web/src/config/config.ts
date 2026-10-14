@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { ChartColumn, ClipboardClock, LayoutDashboard, MapPin, PackageCheck, Truck } from "lucide-react";
+import { ChartColumn, FileText, LayoutDashboard, MapPin, Package, Receipt, TriangleAlert, Truck } from "lucide-react";
 import type { IModuleConfig } from "@/module/shell/module.types";
 
 export const moduleConfig: IModuleConfig = {
@@ -27,46 +27,46 @@ export const moduleConfig: IModuleConfig = {
           sidebarId: "shipment",
           sidebarText: "Shipments",
           sidebarDesc: "Track shipments from origin to destination.",
-          sidebarIcon: Truck,
+          sidebarIcon: Package,
           page: lazy(() => import("@/pages/Shipment")),
         },
-        // {
-        //   sidebarId: "dispatch",
-        //   sidebarText: "Dispatch",
-        //   sidebarDesc: "Pending shipments waiting to be dispatched.",
-        //   sidebarIcon: ClipboardClock,
-        //   className: "text-amber-700",
-        //   page: lazy(() => import("@/pages/AwaitingTask")),
-        // },
-        // {
-        //   sidebarId: "exeptions",
-        //   sidebarText: "Exeptions",
-        //   sidebarDesc: "",
-        //   sidebarIcon: PackageCheck,
-        //   hidePageSeparator: false,
-        //   page: lazy(() => import("@/pages/Shipment")),
-        // },
-        // {
-        //   sidebarId: "documents",
-        //   sidebarText: "Documents",
-        //   sidebarDesc: "",
-        //   sidebarIcon: PackageCheck,
-        //   hidePageSeparator: false,
-        //   page: lazy(() => import("@/pages/Shipment")),
-        // },
-        // {
-        //   sidebarId: "billing",
-        //   sidebarText: "Billing",
-        //   sidebarDesc: "",
-        //   sidebarIcon: PackageCheck,
-        //   hidePageSeparator: false,
-        //   page: lazy(() => import("@/pages/Shipment")),
-        // },
+        {
+          sidebarId: "dispatch",
+          sidebarText: "Dispatch",
+          sidebarDesc: "Pending shipments waiting to be dispatched.",
+          sidebarIcon: Truck,
+          // className: "text-amber-700",
+          page: lazy(() => import("@/pages/Dispatch")),
+        },
+        {
+          sidebarId: "exeptions",
+          sidebarText: "Exeptions",
+          sidebarDesc: "",
+          sidebarIcon: TriangleAlert,
+          hidePageSeparator: false,
+          page: lazy(() => import("@/pages/Exeption")),
+        },
+        {
+          sidebarId: "documents",
+          sidebarText: "Documents",
+          sidebarDesc: "",
+          sidebarIcon: FileText,
+          hidePageSeparator: false,
+          page: lazy(() => import("@/pages/Document")),
+        },
+        {
+          sidebarId: "billing",
+          sidebarText: "Billing",
+          sidebarDesc: "",
+          sidebarIcon: Receipt,
+          hidePageSeparator: false,
+          page: lazy(() => import("@/pages/Billing")),
+        },
         //  {
         //   sidebarId: "master-data",
         //   sidebarText: "Master Data",
         //   sidebarDesc: "",
-        //   sidebarIcon: PackageCheck,
+        //   sidebarIcon: Database,
         //   hidePageSeparator: false,
         //   page: lazy(() => import("@/pages/Shipment")),
         // },
