@@ -116,6 +116,16 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
       ),
     [],
   );
+  const recordNavigation = useMemo(() => {
+    const pinned = new Set(shownPinnedRows);
+    const keys = [
+      ...shownPinnedRows,
+      ...orderedRecords.map(getRecordKey).filter((key) => !pinned.has(key)),
+    ];
+    const index = keys.indexOf(data.openedRecordId ?? "");
+    if (index < 0) return {};
+    return { previousKey: keys[index - 1], nextKey: keys[index + 1] };
+  }, [orderedRecords, shownPinnedRows, data.openedRecordId]);
   const total = filteredRecords.length;
   const pinnedCount = shownPinnedRows.length;
   const currentPage = useMemo(
@@ -360,6 +370,8 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
         members={members}
         onUploadAttachment={data.onUploadAttachment}
         record={data.openedRecord}
+        {...recordNavigation}
+        onNavigate={onOpenRecord}
         isLoading={openedRecordLoading}
         error={data.openedRecordState?.error ?? data.fieldsState?.error}
         onRetry={data.openedRecordState?.onRetry}

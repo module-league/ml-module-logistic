@@ -50,6 +50,11 @@ export interface ModuleOpenRecordProps
   fields: ISidebarField[];
   members?: IUserInfo[];
   record?: ISidebarRecord;
+  /** objIds of the records before and after this one in the grid; undefined turns that arrow off. */
+  previousKey?: string;
+  nextKey?: string;
+  /** Opens another record, after any unsaved edits are saved. */
+  onNavigate?: (recordKey: string) => void;
   /** Called by auto-save after edits pause; without it the dialog is read-only. A rejection shows its message. */
   onSave?: (values: ISidebarRecordValues) => void | Promise<unknown>;
 }

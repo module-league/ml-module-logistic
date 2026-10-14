@@ -1,5 +1,7 @@
 import { useCallback, useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -23,6 +25,9 @@ export function ModuleOpenRecord({
   members,
   onUploadAttachment,
   record,
+  previousKey,
+  nextKey,
+  onNavigate,
   isLoading = false,
   error,
   onRetry,
@@ -50,6 +55,13 @@ export function ModuleOpenRecord({
     },
     [flush, onClose],
   );
+  const navigate = useCallback(
+    (key?: string) => {
+      if (!key || !onNavigate) return;
+      flush().then(() => onNavigate(key));
+    },
+    [flush, onNavigate],
+  );
   const title = useMemo(() => {
     const first = fields?.[0];
     return (
@@ -65,9 +77,33 @@ export function ModuleOpenRecord({
         className="flex flex-col gap-0 p-0 rounded-md"
         style={RECORD_DIALOG_STYLE}
       >
-        <DialogHeader className="shrink-0 p-4 pr-10 pb-3 border-b">
-          <DialogTitle className="flex min-w-0 items-center gap-3">
-            <span className="truncate">{title}</span>
+        <DialogHeader className="shrink-0 flex-row items-center gap-2 p-4 pr-10 pb-3 border-b">
+          {onNavigate && (
+            <div className="flex shrink-0 items-center gap-0.5">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Previous record"
+                title="Previous record"
+                disabled={!previousKey}
+                className="text-black"
+                startIcon={<ChevronLeft size={13} />}
+                onClick={() => navigate(previousKey)}
+              ></Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Next record"
+                title="Next record"
+                disabled={!nextKey}
+                className="text-black"
+                startIcon={<ChevronRight size={13} />}
+                onClick={() => navigate(nextKey)}
+              ></Button>
+            </div>
+          )}
+          <DialogTitle className="flex min-w-0 flex-1 items-center gap-3">
+            {/* <span className="truncate">{title}</span> */}
             <ModuleAutoSaveStatus status={status} />
           </DialogTitle>
         </DialogHeader>
