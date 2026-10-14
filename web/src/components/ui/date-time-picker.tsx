@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, type DropdownProps } from "react-day-picker";
 import { maskitoInitialCalibrationPlugin } from "@maskito/core";
 import { useMaskito } from "@maskito/react";
 import {
@@ -238,6 +238,48 @@ function display12HourValue(hours: number) {
 
 // ---------- utils end ----------
 
+function CalendarDropdown({
+  options,
+  value,
+  onChange,
+  disabled,
+  "aria-label": ariaLabel,
+}: DropdownProps) {
+  const selected = React.useMemo(
+    () => options?.find((option) => String(option?.value) === String(value)),
+    [options, value],
+  );
+  const change = React.useCallback(
+    (next: string) =>
+      onChange?.({
+        target: { value: next },
+      } as React.ChangeEvent<HTMLSelectElement>),
+    [onChange],
+  );
+
+  return (
+    <Select value={String(value)} onValueChange={change} disabled={disabled}>
+      <SelectTrigger
+        aria-label={ariaLabel}
+        className="h-7 w-auto gap-1 rounded-md border-none bg-transparent px-2 text-sm font-medium shadow-none hover:bg-primary-10 focus:ring-0 data-[state=open]:bg-primary-10"
+      >
+        <SelectValue>{selected?.label}</SelectValue>
+      </SelectTrigger>
+      <SelectContent className="max-h-64 min-w-28">
+        {options?.map((option) => (
+          <SelectItem
+            key={option.value}
+            value={String(option.value)}
+            disabled={option.disabled}
+          >
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function Calendar({
   className,
   classNames,
@@ -252,17 +294,16 @@ function Calendar({
         months:
           "flex flex-col sm:flex-row space-y-4  sm:space-y-0 justify-center",
         month: "flex flex-col items-center space-y-4",
-        month_caption:
-          "flex justify-center pt-2 relative items-center **:aria-hidden:hidden",
+        month_caption: "flex justify-center pt-2 relative items-center",
         caption_label: "text-sm font-medium",
         nav: "space-x-1 flex items-center ",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-5 top-5",
+          "h-6 w-6 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-5 top-5",
         ),
         button_next: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-5 top-5",
+          "h-6 w-6 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-5 top-5",
         ),
         month_grid: "w-full border-collapse space-y-1",
         weekdays: cn("flex", props.showWeekNumber && "justify-end"),
@@ -284,9 +325,11 @@ function Calendar({
         range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
         hidden: "invisible",
+        dropdowns: "flex items-center gap-1",
         ...classNames,
       }}
       components={{
+        Dropdown: CalendarDropdown,
         Chevron: ({ ...props }) =>
           props.orientation === "left" ? (
             <ChevronLeft className="h-4 w-4" />
@@ -342,7 +385,7 @@ const TimePeriodSelect = React.forwardRef<
   };
 
   return (
-    <div className="flex h-10 items-center">
+    <div className="flex h-8 items-center">
       <Select
         defaultValue={period}
         onValueChange={(value: Period) => handleValueChange(value)}
@@ -830,7 +873,7 @@ function DateTimePickerContent({
         {...props}
       />
       {granularity !== "day" && (
-        <div className="border-t border-border p-3">
+        <div className="border-t border-border p-2">
           <TimePicker
             onChange={onChange}
             date={value}
