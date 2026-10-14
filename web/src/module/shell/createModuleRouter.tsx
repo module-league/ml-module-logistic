@@ -6,26 +6,36 @@ import {
 } from "@/module/settings/moduleSettings.utils";
 // import NotFound from "@/pages/NotFound";
 import { ModuleLayout } from "./ModuleLayout";
-import { flattenNavItems } from "./nav.utils";
+import { flattenNavItems, listNavItems } from "./nav.utils";
 import { openTab, workspaceKey } from "@/module/workspace/workspace.utils";
 import type {
   IModuleConfig,
   INavItemConfig,
+  INavPageConfig,
 } from "./module.types";
 
 const KEY_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-function validateConfig(items: INavItemConfig[], homeKey: string | undefined) {
-  if (items?.length === 0)
-    throw new Error("src/config/config.ts has no sidebar items.");
-  if (homeKey && !items?.some((item) => item?.sidebarId === homeKey)) {
+function validateConfig(
+  items: INavItemConfig[],
+  pages: INavPageConfig[],
+  homeKey: string | undefined,
+) {
+  if (pages?.length === 0)
+    throw new Error("src/config/config.ts has no sidebar pages.");
+  if (homeKey && !pages?.some((item) => item?.sidebarId === homeKey)) {
     throw new Error(
-      `homeKey "${homeKey}" does not match any sidebarId in src/config/config.ts.`,
+      `homeKey "${homeKey}" does not match any sidebarId with a page in src/config/config.ts.`,
     );
   }
 
   const visited = new Set<string>();
   for (const item of items) {
+    if (!item?.page && !item?.sidebarItems?.length) {
+      throw new Error(
+        `sidebarId "${item?.sidebarId}" needs a page, sidebarItems, or both.`,
+      );
+    }
     if (!KEY_PATTERN.test(item.sidebarId)) {
       throw new Error(
         `sidebarId "${item.sidebarId}" must be kebab-case, e.g. "awaiting-task".`,
@@ -41,13 +51,13 @@ function validateConfig(items: INavItemConfig[], homeKey: string | undefined) {
 }
 
 export function createModuleRouter(config: IModuleConfig) {
-  const items = flattenNavItems(config);
-  validateConfig(items, config?.homeKey);
-  const homeKey = config?.homeKey ?? items[0].sidebarId;
+  const pages = flattenNavItems(config);
+  validateConfig(listNavItems(config), pages, config?.homeKey);
+  const homeKey = config?.homeKey ?? pages[0].sidebarId;
   const storageKey = workspaceKey(config?.code);
   applyModuleTheme(readModuleSettings(settingsKey(config?.code)));
 
-  const pageRoutes: RouteObject[] = items?.map((item) => ({
+  const pageRoutes: RouteObject[] = pages?.map((item) => ({
     path: item?.sidebarId,
     loader: () => {
       openTab(storageKey, item?.sidebarId);

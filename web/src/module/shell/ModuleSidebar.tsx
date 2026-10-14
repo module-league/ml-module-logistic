@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { NavLink, useMatch } from "react-router";
+import { NavLink, useLocation } from "react-router";
 import {
   ChevronDown,
+  ChevronRight,
   CircleQuestionMark,
   PanelLeftClose,
   PanelLeftOpen,
@@ -11,6 +12,9 @@ import {
 } from "lucide-react";
 import {
   Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   cn,
   InputGroup,
   InputGroupAddon,
@@ -23,9 +27,13 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarSeparator,
   useSidebar,
 } from "@moduleleague/ui";
@@ -33,9 +41,11 @@ import { useCurrentUser } from "@/services/user/current.user";
 import type {
   IModuleConfig,
   INavItemConfig,
+  INavSubItemConfig,
 } from "./module.types";
 import { UserAvatar } from "@/components/custom/UserAvatar";
 import { ModuleSettings } from "@/module/settings/ModuleSettings";
+import { filterNavItems, navTargetKey } from "./nav.utils";
 
 const IS_MAC =
   typeof navigator !== "undefined" &&
@@ -79,18 +89,18 @@ export function ModuleSidebar({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isMobile, setOpen, setOpenMobile]);
 
-  // "Search pages" filters the entries by their label
+  // "Search pages" filters the entries, sub-sidebars included, by their label
   const term = query.trim().toLowerCase();
-  const groups = config.groups
-    .map((group) => ({
-      ...group,
-      items: term
-        ? group.items.filter((item) =>
-            item.sidebarText.toLowerCase().includes(term),
-          )
-        : group.items,
-    }))
-    .filter((group) => group.items.length > 0);
+  const groups = useMemo(
+    () =>
+      config.groups
+        .map((group) => ({
+          ...group,
+          sidebarItems: filterNavItems(group.sidebarItems, term),
+        }))
+        .filter((group) => group.sidebarItems.length > 0),
+    [config.groups, term],
+  );
 
   return (
     <Sidebar collapsible="icon" className={className}>
@@ -174,8 +184,13 @@ export function ModuleSidebar({
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarMenu className="space-y-1">
-              {group.items.map((item) => (
-                <SidebarNavItem key={item.sidebarId} item={item} />
+              {group.sidebarItems.map((item) => (
+                <SidebarNavItem
+                  key={item.sidebarId}
+                  item={item}
+                  collapsed={collapsed}
+                  searching={!!term}
+                />
               ))}
             </SidebarMenu>
           </SidebarGroup>
@@ -215,34 +230,141 @@ export function ModuleSidebar({
 
 const useNoBadge = () => undefined;
 
-function SidebarNavItem({ item }: { item: INavItemConfig }) {
-  const path = `/${item.sidebarId}`;
-  const isActive = useMatch({ path, end: false }) !== null;
+/** The sidebarId in the URL, e.g. "shipment" for /shipment. */
+function useCurrentKey() {
+  return useLocation().pathname.split("/")[1] ?? "";
+}
+
+/**
+ * A sidebar entry and its sub-sidebar. It opens by itself while one of its sub-sidebar pages is shown,
+ * until the user opens or closes it. Collapsed to icons, it goes straight to its page (or its first sub-sidebar's).
+ */
+function SidebarNavItem({
+  item,
+  collapsed,
+  searching,
+}: {
+  item: INavItemConfig;
+  collapsed: boolean;
+  searching: boolean;
+}) {
+  const currentKey = useCurrentKey();
+  const [userOpen, setUserOpen] = useState<boolean>();
+  const useBadge = item?.useBadge ?? useNoBadge;
+  const badge = useBadge();
+  const Icon = item.sidebarIcon;
+  const itemChildren = item?.sidebarItems;
+  const children = useMemo(() => itemChildren ?? [], [itemChildren]);
+  const childActive = useMemo(
+    () => children.some((child) => child?.sidebarId === currentKey),
+    [children, currentKey],
+  );
+  const open = searching || (userOpen ?? childActive);
+  const isActive =
+    currentKey === item.sidebarId || (childActive && (!open || collapsed));
+  const targetKey = navTargetKey(item);
+
+  const content = (
+    <>
+      {isActive && (
+        <span className="absolute top-1/2 left-0 h-4 -translate-y-1/2 border-l-2 border-primary" />
+      )}
+      {Icon && <Icon />}
+      <span>{item.sidebarText}</span>
+    </>
+  );
+  const badgeNode = badge ? (
+    <SidebarMenuBadge
+      className={cn(
+        "rounded-full bg-amber-100 px-1.5 text-amber-900",
+        children.length > 0 && "right-7",
+      )}
+    >
+      {badge}
+    </SidebarMenuBadge>
+  ) : null;
+
+  if (!children.length) {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          isActive={isActive}
+          tooltip={item.sidebarText}
+          className={cn("relative", item?.className)}
+        >
+          <NavLink to={`/${item.sidebarId}`} title={item.sidebarDesc}>
+            {content}
+          </NavLink>
+        </SidebarMenuButton>
+        {badgeNode}
+      </SidebarMenuItem>
+    );
+  }
+
+  return (
+    <Collapsible asChild open={open} onOpenChange={setUserOpen}>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          isActive={isActive}
+          tooltip={item.sidebarText}
+          className={cn("relative pr-8", item?.className)}
+        >
+          {item?.page || collapsed ? (
+            <NavLink to={`/${targetKey}`} title={item.sidebarDesc}>
+              {content}
+            </NavLink>
+          ) : (
+            <CollapsibleTrigger title={item.sidebarDesc}>
+              {content}
+            </CollapsibleTrigger>
+          )}
+        </SidebarMenuButton>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuAction
+            aria-label={`${open ? "Close" : "Open"} ${item.sidebarText}`}
+            className="transition-transform data-[state=open]:rotate-90"
+          >
+            <ChevronRight />
+          </SidebarMenuAction>
+        </CollapsibleTrigger>
+        {badgeNode}
+        <CollapsibleContent>
+          <SidebarMenuSub className="mt-1">
+            {children.map((child) => (
+              <SidebarNavSubItem key={child.sidebarId} item={child} />
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
+  );
+}
+
+function SidebarNavSubItem({ item }: { item: INavSubItemConfig }) {
+  const isActive = useCurrentKey() === item.sidebarId;
   const useBadge = item?.useBadge ?? useNoBadge;
   const badge = useBadge();
   const Icon = item.sidebarIcon;
 
   return (
-    <SidebarMenuItem>
-      <SidebarMenuButton
+    <SidebarMenuSubItem>
+      <SidebarMenuSubButton
         asChild
         isActive={isActive}
-        tooltip={item.sidebarText}
-        className={cn("relative", item?.className)}
+        className={item?.className}
       >
-        <NavLink to={path} title={item.sidebarDesc}>
-          {isActive && (
-            <span className="absolute top-1/2 left-0 h-4 -translate-y-1/2 border-l-2 border-primary" />
-          )}
+        <NavLink to={`/${item.sidebarId}`} title={item.sidebarDesc}>
           {Icon && <Icon />}
-          <span>{item.sidebarText}</span>
+          <span className="min-w-0 flex-1 truncate">{item.sidebarText}</span>
+          {badge ? (
+            <span className="ml-auto rounded-full bg-amber-100 px-1.5 text-xs text-amber-900 tabular-nums">
+              {badge}
+            </span>
+          ) : null}
         </NavLink>
-      </SidebarMenuButton>
-      {badge ? (
-        <SidebarMenuBadge className="rounded-full bg-amber-100 px-1.5 text-amber-900">
-          {badge}
-        </SidebarMenuBadge>
-      ) : null}
-    </SidebarMenuItem>
+      </SidebarMenuSubButton>
+    </SidebarMenuSubItem>
   );
 }

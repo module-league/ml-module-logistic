@@ -10,7 +10,7 @@ export const moduleConfig: IModuleConfig = {
   groups: [
     // {
     //   label: "Overview",
-    //   items: [
+    //   sidebarItems: [
     //     {
     //       sidebarId: "dashboard",
     //       sidebarText: "Dashboard",
@@ -22,13 +22,57 @@ export const moduleConfig: IModuleConfig = {
     // },
     {
       label: "Operations",
-      items: [
+      sidebarItems: [
         {
-          sidebarId: "shipment",
-          sidebarText: "Shipments",
+          sidebarId: "logistic",
+          sidebarText: "Logistic",
           sidebarDesc: "Track shipments from origin to destination.",
           sidebarIcon: Package,
-          page: lazy(() => import("@/pages/Shipment")),
+          page: lazy(() => import("@/pages/Logistic/Logistic")),
+          sidebarItems:[
+            {
+                sidebarId: "shipment",
+                sidebarText: "Shipments",
+                sidebarDesc: "Track shipments from origin to destination.",
+                sidebarIcon: Package,
+                page: lazy(() => import("@/pages/Logistic/Shipment")),
+            },
+            {
+              sidebarId: "shipment-party",
+              sidebarText: "Party",
+              sidebarDesc: "Track shipments from origin to destination.",
+              sidebarIcon: Package,
+              page: lazy(() => import("@/pages/Logistic/ShipmentParty")),
+            },
+            {
+              sidebarId: "shipment-package",
+              sidebarText: "Package",
+              sidebarDesc: "Track shipments from origin to destination.",
+              sidebarIcon: Package,
+              page: lazy(() => import("@/pages/Logistic/ShipmentPackage")),
+            },
+            {
+              sidebarId: "shipment-tracking-event",
+              sidebarText: "Tracking Event",
+              sidebarDesc: "Track shipments from origin to destination.",
+              sidebarIcon: Package,
+              page: lazy(() => import("@/pages/Logistic/ShipmentTrackEvent")),
+            },
+            {
+              sidebarId: "shipment-location",
+              sidebarText: "Location",
+              sidebarDesc: "Track shipments from origin to destination.",
+              sidebarIcon: Package,
+              page: lazy(() => import("@/pages/Logistic/ShipmentLocation")),
+            },
+            {
+              sidebarId: "shipment-execption",
+              sidebarText: "Shipment Execption",
+              sidebarDesc: "Track shipments from origin to destination.",
+              sidebarIcon: Package,
+              page: lazy(() => import("@/pages/Logistic/ShipmentException")),
+            },
+          ]
         },
         {
           sidebarId: "dispatch",
@@ -75,7 +119,7 @@ export const moduleConfig: IModuleConfig = {
     },
     // {
     //   label: "Insights",
-    //   items: [
+    //   sidebarItems: [
     //     {
     //       sidebarId: "reports",
     //       sidebarText: "Reports",

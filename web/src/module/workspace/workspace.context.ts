@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { IModuleConfig, INavItemConfig } from "@/module/shell/module.types";
+import type { IModuleConfig, INavPageConfig } from "@/module/shell/module.types";
 import type { IWorkspace } from "./workspace.types";
 
 /** The tab being dragged and the pane it came from. */
@@ -13,7 +13,7 @@ export interface WorkspaceContextValue {
   config: IModuleConfig;
   storageKey: string;
   workspace: IWorkspace;
-  items: INavItemConfig[];
+  items: INavPageConfig[];
   dragging: DraggedTab | null;
   /** Desktop only: phones show a single pane and tabs cannot be dragged. */
   canSplit: boolean;

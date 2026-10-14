@@ -17,23 +17,17 @@ import {
   Spinner,
 } from "@moduleleague/ui";
 import { XIcon } from "@/components/custom/XIcon";
-import type { INavItemConfig } from "@/module/shell/module.types";
-import {
-  useWorkspaceContext,
-  type DraggedTab,
-} from "./workspace.context";
+import type { INavPageConfig } from "@/module/shell/module.types";
+import { useWorkspaceContext, type DraggedTab } from "./workspace.context";
 import {
   canDrop,
+  closeAllTabs,
   closeTab,
   focusedKey,
   listPanes,
   moveTab,
 } from "./workspace.utils";
-import type {
-  DropTarget,
-  PaneNode,
-  SplitEdge,
-} from "./workspace.types";
+import type { DropTarget, PaneNode, SplitEdge } from "./workspace.types";
 
 export function ModuleViewerTab({
   pane,
@@ -48,7 +42,7 @@ export function ModuleViewerTab({
     () =>
       pane.tabs
         .map((key) => items.find((item) => item.sidebarId === key))
-        .filter((item): item is INavItemConfig => item !== undefined),
+        .filter((item): item is INavPageConfig => item !== undefined),
     [pane.tabs, items],
   );
   const totalTabs = useMemo(
@@ -107,14 +101,15 @@ function WorkspaceViewerTab({
   movable,
 }: {
   pane: PaneNode;
-  item: INavItemConfig;
+  item: INavPageConfig;
   active: boolean;
   focused: boolean;
   closable: boolean;
   /** False when a drag could not go anywhere (the only tab in the workspace). */
   movable: boolean;
 }) {
-  const { workspace, storageKey, canSplit, goTo } = useWorkspaceContext();
+  const { config, items, workspace, storageKey, canSplit, goTo } =
+    useWorkspaceContext();
   const draggable = canSplit && movable;
   const tab: DraggedTab = { key: item.sidebarId, fromPaneId: pane.id };
   // setNodeRef: the whole tab (what moves and what other tabs are dropped on).
@@ -166,6 +161,11 @@ function WorkspaceViewerTab({
     () => goTo(focusedKey(closeTab(storageKey, pane.id, item.sidebarId))),
     [goTo, storageKey, pane.id, item.sidebarId],
   );
+
+  const homeKey = config?.homeKey ?? items?.[0]?.sidebarId;
+  const closeAll = useCallback(() => {
+    if (homeKey) goTo(focusedKey(closeAllTabs(storageKey, homeKey)));
+  }, [goTo, storageKey, homeKey]);
 
   return (
     <ContextMenu>
@@ -275,6 +275,14 @@ function WorkspaceViewerTab({
         >
           <XIcon />
           Close
+        </ContextMenuItem>
+        <ContextMenuItem
+          variant="destructive"
+          disabled={!closable}
+          onSelect={closeAll}
+        >
+          <XIcon />
+          Close all tabs
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

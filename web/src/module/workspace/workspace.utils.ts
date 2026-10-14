@@ -187,6 +187,13 @@ export function closeTab(storageKey: string, paneId: string, key: string): IWork
   return next;
 }
 
+/** Closes every tab in every pane; the workspace goes back to one pane showing only homeKey. */
+export function closeAllTabs(storageKey: string, homeKey: string): IWorkspace {
+  const next = emptyWorkspace([homeKey]);
+  write(storageKey, next);
+  return next;
+}
+
 export function canDrop(workspace: IWorkspace, fromPaneId: string, target: DropTarget): boolean {
   const from = findPane(workspace.root, fromPaneId);
   if (!from || !findPane(workspace.root, target.paneId)) return false;
