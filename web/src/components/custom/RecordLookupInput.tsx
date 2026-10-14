@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
-import { MultiSelect } from "@/ui-kit";
+import { PanelRightOpen } from "lucide-react";
+import { Button, cn, MultiSelect } from "@/ui-kit";
 import {
   lookupDisplayField,
   lookupRecordsOf,
@@ -23,6 +24,8 @@ export function RecordLookupInput({
   style,
   onChange,
   onBlur,
+  onPreview,
+  previewActive = false,
 }: RecordLookupInputProps) {
   const { lookups, sources } = useRecordLookups();
   const records = useMemo(
@@ -67,7 +70,7 @@ export function RecordLookupInput({
     [linked],
   );
 
-  return (
+  const picker = (
     <MultiSelect
       id={id}
       options={options}
@@ -81,8 +84,26 @@ export function RecordLookupInput({
       }
       disableAllSelection
       onBlur={onBlur}
-      className={className}
-      style={style}
+      className={onPreview ? "min-w-0 flex-1" : className}
+      style={onPreview ? undefined : style}
     />
+  );
+  if (!onPreview) return picker;
+
+  return (
+    <div className={cn("flex items-start gap-2", className)} style={style}>
+      {picker}
+      <Button
+        variant="outline"
+        size="icon"
+        aria-label="Preview linked records"
+        aria-pressed={previewActive}
+        title="Preview linked records"
+        disabled={!selectedIds.length}
+        className={cn("h-10 w-10 shrink-0", previewActive && "bg-primary-10")}
+        startIcon={<PanelRightOpen size={16} />}
+        onClick={onPreview}
+      />
+    </div>
   );
 }

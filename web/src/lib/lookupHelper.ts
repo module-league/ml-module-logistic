@@ -40,6 +40,16 @@ export function shownLookupFields(source?: LookupSource) {
   );
 }
 
+/** objId of the Create time system column, which a lookup preview can show too. */
+export const LOOKUP_CREATE_TIME_ID = "ds_create_time";
+
+/** The fields of a looked-up sidebar a preview can show, in display order; lookup fields are left out. */
+export function previewableLookupFields(fields?: ISidebarField[]) {
+  return (fields ?? [])
+    .filter((field) => field?.type !== "lookup")
+    .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0));
+}
+
 /** The field a lookup shows; when it was deleted, the source's primary or first showable field instead. */
 export function lookupDisplayField(field: IField, lookups?: RecordLookups) {
   const fields = lookups?.[field?.lookupSettings?.categoryId ?? ""]?.fields;

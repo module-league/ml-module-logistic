@@ -59,7 +59,12 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "@/components/ui/sonner";
 import { errorParser } from "@/hooks/useErrorParser";
-import { shownLookupFields } from "@/lib/lookupHelper";
+import {
+  LOOKUP_CREATE_TIME_ID,
+  previewableLookupFields,
+  shownLookupFields,
+} from "@/lib/lookupHelper";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useRecordLookups } from "@/components/custom/RecordLookup.context";
 import { FieldTypeIcon } from "./fieldTypeIcon";
 import type {
@@ -270,6 +275,8 @@ function AddFieldSteps({
     useState<ModuleFieldLookupSettings>(() => ({
       categoryId: field?.lookupSettings?.categoryId,
       lookupFieldId: field?.lookupSettings?.lookupFieldId,
+      previewEnabled: field?.lookupSettings?.previewEnabled ?? true,
+      previewFieldIds: field?.lookupSettings?.previewFieldIds,
     }));
   const option = useMemo(
     () => (type ? fieldTypeOption(type) : undefined),
@@ -488,15 +495,61 @@ function FieldLookupSettings({
     [sources, value.categoryId],
   );
   const shownFields = useMemo(() => shownLookupFields(source), [source]);
+  const previewFields = useMemo(
+    () => previewableLookupFields(source?.fields),
+    [source],
+  );
+  // Never picked means every field, so the list starts with all of them ticked
+  const previewIds = useMemo(
+    () =>
+      value.previewFieldIds ?? [
+        ...previewFields.map((previewField) => previewField.objId),
+        LOOKUP_CREATE_TIME_ID,
+      ],
+    [value.previewFieldIds, previewFields],
+  );
+  const previewEnabled = value.previewEnabled ?? true;
   const pickSource = useCallback(
     (categoryId: string) => {
       const picked = sources?.find((entry) => entry?.sidebarId === categoryId);
       onChange({
         categoryId,
         lookupFieldId: shownLookupFields(picked)[0]?.objId,
+        previewEnabled: true,
+        previewFieldIds: [
+          ...previewableLookupFields(picked?.fields).map(
+            (previewField) => previewField.objId,
+          ),
+          LOOKUP_CREATE_TIME_ID,
+        ],
       });
     },
     [sources, onChange],
+  );
+  const togglePreviewField = useCallback(
+    (id: string, checked: boolean) =>
+      onChange({
+        ...value,
+        previewFieldIds: checked
+          ? [...previewIds.filter((previewId) => previewId !== id), id]
+          : previewIds.filter((previewId) => previewId !== id),
+      }),
+    [value, previewIds, onChange],
+  );
+  const previewOptions = useMemo(
+    () => [
+      ...previewFields.map((previewField) => ({
+        id: previewField.objId,
+        name: previewField.name,
+        type: previewField.type,
+      })),
+      {
+        id: LOOKUP_CREATE_TIME_ID,
+        name: "Create time",
+        type: "ds_create_time" as IField["type"],
+      },
+    ],
+    [previewFields],
   );
 
   if (!sources?.length && !sourceLocked) {
@@ -573,6 +626,50 @@ function FieldLookupSettings({
             {source?.sidebarText ?? "this sidebar"}, shown by this field.
           </p>
         </Field>
+      )}
+      {!!value.categoryId && (
+        <div className="flex flex-col gap-2">
+          <label className="flex cursor-pointer items-start gap-2 text-sm">
+            <Checkbox
+              checked={previewEnabled}
+              onCheckedChange={(checked) =>
+                onChange({ ...value, previewEnabled: checked === true })
+              }
+              className="mt-0.5"
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="font-medium">Fields to preview</span>
+              <span className="text-xs text-muted-foreground">
+                {previewEnabled
+                  ? "Shown when you preview a linked record from an open record."
+                  : "No preview for this field. Your picked fields are kept for when you turn it back on."}
+              </span>
+            </span>
+          </label>
+          {previewEnabled && (
+            <div
+              role="group"
+              aria-label="Fields to preview"
+              className="ml-6 flex max-h-56 flex-col gap-0.5 overflow-y-auto rounded-lg border p-1"
+            >
+              {previewOptions.map((option) => (
+                <label
+                  key={option.id}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                >
+                  <Checkbox
+                    checked={previewIds.includes(option.id)}
+                    onCheckedChange={(checked) =>
+                      togglePreviewField(option.id, checked === true)
+                    }
+                  />
+                  <FieldTypeIcon type={option.type} />
+                  <span className="truncate">{option.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

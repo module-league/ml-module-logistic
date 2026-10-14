@@ -28,6 +28,10 @@ export interface ModuleRecordFormProps {
   onSave?: (values: ISidebarRecordValues) => void;
   /** Called with every value after each edit; used for auto-save. */
   onValuesChange?: (values: ISidebarRecordValues) => void;
+  /** Shows a preview button next to each lookup field. */
+  onPreviewLookup?: (field: ISidebarField) => void;
+  /** objId of the lookup field whose preview is showing. */
+  previewFieldId?: string;
 }
 
 export interface ModuleNewRecordFormProps
@@ -57,6 +61,28 @@ export interface ModuleOpenRecordProps
   onNavigate?: (recordKey: string) => void;
   /** Called by auto-save after edits pause; without it the dialog is read-only. A rejection shows its message. */
   onSave?: (values: ISidebarRecordValues) => void | Promise<unknown>;
+}
+
+export interface ModuleLookupPreviewProps {
+  field: IField;
+  /** The lookup's current value, unsaved edits included: a JSON array of linked record ids. */
+  value?: string | null;
+  members?: IUserInfo[];
+  onClose: () => void;
+}
+
+export interface ModuleLinkedRecordCardProps {
+  label: string;
+  /** Undefined while loading, or when the linked record no longer exists. */
+  record?: ISidebarRecord;
+  /** The looked-up sidebar's fields to list, in display order. */
+  fields: ISidebarField[];
+  /** Each field's value as text, in the order of fields; what the search matches. */
+  texts: string[];
+  /** The lower-cased search; matches are marked and the card stays open. */
+  term: string;
+  members?: IUserInfo[];
+  defaultOpen?: boolean;
 }
 
 export interface ModuleAutoSaveStatusProps {

@@ -25,4 +25,8 @@ export interface RecordLookupInputProps {
   style?: CSSProperties;
   onChange?: (value: string) => void;
   onBlur?: () => void;
+  /** Shows a preview button right of the picker; off while nothing is linked. */
+  onPreview?: () => void;
+  /** The preview of this field is showing. */
+  previewActive?: boolean;
 }

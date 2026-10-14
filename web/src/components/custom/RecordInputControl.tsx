@@ -32,6 +32,10 @@ export type RecordInputControlProps = {
   members?: IUserInfo[];
   /** Uploads files for attachment fields; without it attachments can only be opened or removed. */
   onUploadAttachment?: AttachmentUploadHandler;
+  /** Lookup fields only: shows a preview button right of the picker. */
+  onPreview?: () => void;
+  /** Lookup fields only: the preview of this field is showing. */
+  previewActive?: boolean;
   //lookupRecords?: ITransformedRecord[];
   /** Default pickers where applicable (Single-select, date picker etc) */
   defaultOpen?: boolean;
@@ -68,6 +72,8 @@ export function RecordInputControl(props: RecordInputControlProps) {
     id,
     members,
     onUploadAttachment,
+    onPreview,
+    previewActive,
     field,
     value,
     onChange,
@@ -175,6 +181,8 @@ export function RecordInputControl(props: RecordInputControlProps) {
       <RecordLookupInput
         id={id}
         field={field}
+        onPreview={onPreview}
+        previewActive={previewActive}
         value={value}
         members={members}
         disabled={disabled}

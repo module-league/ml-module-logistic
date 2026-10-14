@@ -25,6 +25,8 @@ export function ModuleRecordForm({
   onCancel,
   onSave,
   onValuesChange,
+  onPreviewLookup,
+  previewFieldId,
 }: ModuleRecordFormProps) {
   const defaultValues = useMemo<ModuleRecordFormValues>(
     () => ({
@@ -87,6 +89,14 @@ export function ModuleRecordForm({
                   field={field}
                   members={members}
                   onUploadAttachment={onUploadAttachment}
+                  onPreview={
+                    onPreviewLookup &&
+                    field?.type === "lookup" &&
+                    field?.lookupSettings?.previewEnabled !== false
+                      ? () => onPreviewLookup(field)
+                      : undefined
+                  }
+                  previewActive={previewFieldId === field?.objId}
                   name={input.name}
                   value={input.value ?? ""}
                   disabled={saving || readOnly}

@@ -44,6 +44,13 @@ namespace LogisticApi.MVVM
 
         /// <summary>The field of that sidebar shown for each linked record.</summary>
         public Guid? lookupFieldId { get; set; }
+
+        /// <summary>Linked records can be previewed from an open record.</summary>
+        public bool? previewEnabled { get; set; }
+
+        /// <summary>The looked-up fields shown in the preview: field ObjIds of that sidebar, or "ds_create_time".</summary>
+        [MaxLength(200)]
+        public List<string>? previewFieldIds { get; set; }
     }
 
     public abstract class SidebarFieldSettingsRequest

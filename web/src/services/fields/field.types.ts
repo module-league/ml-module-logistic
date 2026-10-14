@@ -88,6 +88,10 @@ declare global {
         // color?: string;
         /** For lookup field only. The field of that sidebar shown for each linked record */
         lookupFieldId?: string;
+        /** For lookup field only. Linked records can be previewed from an open record. @default true */
+        previewEnabled?: boolean;
+        /** For lookup field only. The looked-up fields the preview shows; kept while the preview is off. Left out, every field shows. */
+        previewFieldIds?: string[];
         /** For mirror field only. The destined linked record field ID */
         mirrorFieldId?: string;
         /** For mirror field only. The dependant lookup field ID */

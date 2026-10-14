@@ -15,7 +15,7 @@ export const LinkedRecordChip = memo(function LinkedRecordChip({
   return (
     <span
       className={cn(
-        "max-w-48 shrink-0 truncate rounded-lg bg-primary px-2 py-1 text-[0.8em] text-primary-foreground",
+        "max-w-48 shrink-0 truncate rounded-md bg-primary px-2 py-1 text-[0.8em] text-primary-foreground",
         className,
       )}
       title={label}

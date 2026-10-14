@@ -29,6 +29,10 @@ namespace LogisticApi.Models
         public string? lookupSidebarId { get; set; }
         /// <summary>Lookup fields only: the field of that sidebar shown for each linked record.</summary>
         public Guid? lookupFieldId { get; set; }
+        /// <summary>Lookup fields only: linked records can be previewed from an open record.</summary>
+        public bool lookupPreview { get; set; } = true;
+        /// <summary>Lookup fields only: the looked-up fields shown in the preview; kept while the preview is off. Null shows every field.</summary>
+        public List<string>? lookupPreviewFieldIds { get; set; }
 
         public static FieldSettings Read(string? json) =>
             string.IsNullOrWhiteSpace(json) ? new() : JsonSerializer.Deserialize<FieldSettings>(json, Json) ?? new();

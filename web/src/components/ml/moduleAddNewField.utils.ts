@@ -249,6 +249,8 @@ export function toField({
         ? {
             categoryId: lookupSettings?.categoryId,
             lookupFieldId: lookupSettings?.lookupFieldId,
+            previewEnabled: lookupSettings?.previewEnabled ?? true,
+            previewFieldIds: lookupSettings?.previewFieldIds,
           }
         : undefined,
   };

@@ -222,6 +222,32 @@ namespace LogisticApi.Services
 
             settings.lookupSidebarId = sidebarId;
             settings.lookupFieldId = fieldId;
+            if (request?.previewEnabled is { } previewEnabled) settings.lookupPreview = previewEnabled;
+            if (request?.previewFieldIds is { } previewFieldIds)
+                settings.lookupPreviewFieldIds = await CleanPreviewFieldIdsAsync(sidebarId, previewFieldIds, ct);
+        }
+
+        private const string CreateTimeFieldId = "ds_create_time";
+
+        /// <summary>Each id must be a field of the looked-up sidebar, or the Create time system column; repeats are dropped.</summary>
+        private async Task<List<string>> CleanPreviewFieldIdsAsync(string sidebarId, List<string> ids, CancellationToken ct)
+        {
+            var fieldIds = await db.SidebarFields
+                .AsNoTracking()
+                .Where(f => f.sidebarId == sidebarId)
+                .Select(f => f.ObjId)
+                .ToListAsync(ct);
+            var cleaned = new List<string>();
+            foreach (var id in ids)
+            {
+                var normalized = id == CreateTimeFieldId
+                    ? id
+                    : Guid.TryParse(id, out var guid) && fieldIds.Contains(guid) ? guid.ToString() : null;
+                if (normalized is null)
+                    throw ApiProblemException.BadRequest("Unknown field to preview.", $"'{sidebarId}' has no field '{id}'.");
+                if (!cleaned.Contains(normalized)) cleaned.Add(normalized);
+            }
+            return cleaned;
         }
 
         private static List<SidebarFieldOptionRequest> CleanOptions(string type, List<SidebarFieldOptionRequest>? options)

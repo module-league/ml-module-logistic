@@ -43,6 +43,9 @@ namespace LogisticApi.MVVM
         /// <summary>The sidebarId whose records are linked.</summary>
         public string? categoryId { get; set; }
         public Guid? lookupFieldId { get; set; }
+        public bool previewEnabled { get; set; } = true;
+        /// <summary>Null when never picked: the preview shows every field.</summary>
+        public List<string>? previewFieldIds { get; set; }
     }
 
     public class SidebarFieldResponse
@@ -119,7 +122,13 @@ namespace LogisticApi.MVVM
                     }
                     : null,
                 lookupSettings = FieldTypes.IsLookup(field.type)
-                    ? new() { categoryId = settings.lookupSidebarId, lookupFieldId = settings.lookupFieldId }
+                    ? new()
+                    {
+                        categoryId = settings.lookupSidebarId,
+                        lookupFieldId = settings.lookupFieldId,
+                        previewEnabled = settings.lookupPreview,
+                        previewFieldIds = settings.lookupPreviewFieldIds,
+                    }
                     : null,
                 dropDownValues = field.options
                     .Where(option => !option.IsDeleted)

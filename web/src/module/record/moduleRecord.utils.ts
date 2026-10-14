@@ -4,5 +4,5 @@ export const RECORD_DIALOG_STYLE = {
   width: "100%",
   maxWidth: "60%",
   height: "80%",
-  marginTop: "3%",
+  marginTop: "0%",
 };

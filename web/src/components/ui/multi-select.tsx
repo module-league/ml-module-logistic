@@ -283,7 +283,7 @@ export const MultiSelect: MultiSelectPropsWithForwardRef = React.forwardRef<
                             <CheckIcon className="h-4 w-4" />
                           </div>
                           <span
-                            className="rounded-lg overflow-hidden py-1 px-2 text-[0.8em] bg-slate-600"
+                            className="rounded-md overflow-hidden py-1 px-2 text-[0.8em] bg-slate-600 truncate"
                             style={{
                               backgroundColor: option.color,
                               color: "white",

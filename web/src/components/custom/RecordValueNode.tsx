@@ -27,7 +27,7 @@ export function SelectionNode(props: SelectionNodeProps) {
   return (
     <span
       className={cn(
-        "rounded-lg overflow-hidden py-1 px-2 text-[0.8em] bg-slate-600",
+        "rounded-md overflow-hidden py-1 px-2 text-[0.8em] bg-slate-600",
         className,
       )}
       style={{
@@ -53,7 +53,10 @@ export function RecordValueNode({
 }) {
   if (field?.type === "checkbox") {
     return value === "true" ? (
-      <SquareCheck aria-label="Ticked" className="inline-block size-4 align-middle text-primary" />
+      <SquareCheck
+        aria-label="Ticked"
+        className="inline-block size-4 align-middle text-primary"
+      />
     ) : (
       <Square
         aria-label="Not ticked"

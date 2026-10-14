@@ -50,7 +50,7 @@ export interface ModuleFieldNumberSettingsProps {
 /** The sidebar a lookup field links to and the field it shows for each record. */
 export type ModuleFieldLookupSettings = Pick<
   NonNullable<IField["lookupSettings"]>,
-  "categoryId" | "lookupFieldId"
+  "categoryId" | "lookupFieldId" | "previewEnabled" | "previewFieldIds"
 >;
 
 export interface ModuleFieldLookupSettingsProps {
