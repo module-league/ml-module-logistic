@@ -26,6 +26,10 @@ import { RecordLookupInput } from "./RecordLookupInput";
 import type { AttachmentUploadHandler } from "./RecordAttachmentInput.types";
 import { DateTimePicker } from "../ui/date-time-picker";
 import { parseFieldDate, toFieldDateValue } from "@/lib/dateHelper";
+import {
+  RECORD_INPUT_CLASS,
+  RECORD_INPUT_GROW_CLASS,
+} from "./recordInput.utils";
 
 export type RecordInputControlProps = {
   /** Set by FormControl so a label points at the input. */
@@ -121,7 +125,7 @@ export function RecordInputControl(props: RecordInputControlProps) {
             clearable === true && "**:aria-[label=date-picker-button]:right-9",
             props.className,
           )}
-          inputClassName={props.className}
+          inputClassName={cn(RECORD_INPUT_CLASS, props.className)}
           style={props.style}
           clearable={clearable === "inline"}
         />
@@ -227,7 +231,7 @@ export function RecordInputControl(props: RecordInputControlProps) {
   if (field.type === "checkbox") {
     return (
       <div
-        className={cn("flex h-9 items-center", props.className)}
+        className={cn("flex h-10 items-center", props.className)}
         style={props.style}
       >
         <Checkbox
@@ -263,6 +267,7 @@ export function RecordInputControl(props: RecordInputControlProps) {
           <SelectTrigger
             id={id}
             className={cn(
+              RECORD_INPUT_CLASS,
               "py-1 leading-normal",
               clearable === true && "pr-10",
               props.className,
@@ -302,13 +307,13 @@ export function RecordInputControl(props: RecordInputControlProps) {
 
         {clearable === true && (
           <Button
-            size="icon-sm"
+            size="xs"
             variant="ghost"
             onClick={(e) => {
               e.stopPropagation();
               props.onChange?.("");
             }}
-            className="absolute top-1/2 -translate-y-1/2 right-2"
+            className="absolute top-1/2 -translate-y-1/2 right-2 text-black"
             disabled={disabled}
           >
             <XIcon size={13} />
@@ -321,7 +326,10 @@ export function RecordInputControl(props: RecordInputControlProps) {
   if (field.type === "number" || field.type === "currency") {
     const symbol = field.type === "currency" && field.numberSettings?.symbol;
     return (
-      <InputGroup className={props.className} style={props.style}>
+      <InputGroup
+        className={cn(RECORD_INPUT_CLASS, props.className)}
+        style={props.style}
+      >
         {!!symbol && (
           <InputGroupAddon>
             <InputGroupText>{symbol}</InputGroupText>
@@ -358,7 +366,11 @@ export function RecordInputControl(props: RecordInputControlProps) {
         maxHeight={150}
         autoFocus={autoFocus}
         disabled={disabled}
-        className={cn("py-2.5 min-h-full resize-none", props.className)}
+        className={cn(
+          RECORD_INPUT_GROW_CLASS,
+          "py-2.5 min-h-full resize-none",
+          props.className,
+        )}
         style={props.style}
         onFocus={(e) =>
           e.target.setSelectionRange(
@@ -382,7 +394,7 @@ export function RecordInputControl(props: RecordInputControlProps) {
       disabled={disabled}
       placeholder={placeholder}
       autoFocus={autoFocus}
-      className={props.className}
+      className={cn(RECORD_INPUT_CLASS, props.className)}
       style={props.style}
     />
   );

@@ -152,7 +152,7 @@ export function RecordAttachmentInput({
             <button
               type="button"
               onClick={open}
-              className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed px-3 py-3 text-center text-xs text-muted-foreground transition-colors hover:border-primary hover:bg-primary-10 focus-visible:border-primary focus-visible:outline-none"
+              className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed px-3 py-3 text-center text-xs text-muted-foreground transition-colors hover:border-primary hover:bg-primary-10 focus-visible:border-primary focus-visible:outline-none"
             >
               <Upload className="size-4" />
               <span>
@@ -224,7 +224,7 @@ export function RecordAttachmentInput({
           </AttachmentGroup>
         )}
         {isDragActive && (
-          <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-primary bg-primary-10 text-center text-xs text-primary">
+          <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-1 rounded-md border border-dashed border-primary bg-primary-10 text-center text-xs text-primary">
             <Upload className="size-4" />
             <span className="font-medium">Drop to upload</span>
             <span className="text-[0.7rem]">Up to {maxSizeLabel} each</span>

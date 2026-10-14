@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { MultiSelect } from "@/ui-kit";
+import { cn, MultiSelect } from "@/ui-kit";
 import {
   lookupDisplayField,
   lookupRecordsOf,
@@ -10,6 +10,7 @@ import { linkedRecordLabel, lookupLabels } from "@/lib/recordTextHelper";
 import { useRecordLookups } from "./RecordLookup.context";
 import { LinkedRecordChip } from "./LinkedRecordChip";
 import type { RecordLinkInputProps } from "./RecordLookupInput.types";
+import { RECORD_INPUT_GROW_CLASS } from "./recordInput.utils";
 
 /** Picks records of the sidebar a link field links to, searchable by their label; one record unless the field allows several. */
 export function RecordLinkInput({
@@ -94,7 +95,7 @@ export function RecordLinkInput({
       disableAllSelection
       closeOnSelect={!multiple}
       onBlur={onBlur}
-      className={className}
+      className={cn(RECORD_INPUT_GROW_CLASS, className)}
       style={style}
     />
   );

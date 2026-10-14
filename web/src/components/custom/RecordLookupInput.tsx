@@ -5,6 +5,10 @@ import { lookupLabels } from "@/lib/recordTextHelper";
 import { useRecordLookups } from "./RecordLookup.context";
 import { LinkedRecordChip } from "./LinkedRecordChip";
 import type { RecordLookupInputProps } from "./RecordLookupInput.types";
+import {
+  RECORD_INPUT_CLASS,
+  RECORD_INPUT_GROW_CLASS,
+} from "./recordInput.utils";
 
 /** A lookup can't be edited: it shows the records its link field links to, which change from that field. */
 export function RecordLookupInput({
@@ -37,7 +41,8 @@ export function RecordLookupInput({
       aria-label={field?.name}
       title={linkName ? `Change the links in ${linkName}` : undefined}
       className={cn(
-        "flex min-h-10 min-w-0 flex-1 flex-wrap items-center gap-1 rounded-md border px-2 py-1",
+        RECORD_INPUT_GROW_CLASS,
+        "flex min-w-0 flex-1 flex-wrap items-center gap-1 border px-2 py-1",
         !onPreview && className,
       )}
       style={onPreview ? undefined : style}
@@ -67,7 +72,11 @@ export function RecordLookupInput({
         aria-pressed={previewActive}
         title="Preview linked records"
         disabled={!linked.length}
-        className={cn("h-10 w-10 shrink-0", previewActive && "bg-primary-10")}
+        className={cn(
+          RECORD_INPUT_CLASS,
+          "w-10 shrink-0",
+          previewActive && "bg-primary-10",
+        )}
         startIcon={<PanelRightOpen size={16} />}
         onClick={onPreview}
       />

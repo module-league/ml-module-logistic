@@ -1,8 +1,9 @@
 import { useCallback, useMemo } from "react";
-import { MultiSelect } from "@/ui-kit";
+import { cn, MultiSelect } from "@/ui-kit";
 import { parseOptionIds, toOptionsValue } from "@/lib/selectHelper";
 import { SelectionNode } from "./RecordValueNode";
 import type { RecordMultiSelectInputProps } from "./RecordMultiSelectInput.types";
+import { RECORD_INPUT_GROW_CLASS } from "./recordInput.utils";
 
 export function RecordMultiSelectInput({
   id,
@@ -65,7 +66,7 @@ export function RecordMultiSelectInput({
       renderOptionEmpty="No options yet. Add some in Edit field."
       disableAllSelection
       onBlur={onBlur}
-      className={className}
+      className={cn(RECORD_INPUT_GROW_CLASS, className)}
       style={style}
     />
   );

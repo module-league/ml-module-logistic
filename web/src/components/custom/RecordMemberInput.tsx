@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { findMember, parseMemberIds, toMemberValue } from "@/lib/memberHelper";
 import {
   Combobox,
@@ -15,6 +16,7 @@ import {
 import { MemberChip } from "./MemberChip";
 import { UserAvatar } from "./UserAvatar";
 import type { RecordMemberInputProps } from "./RecordMemberInput.types";
+import { RECORD_INPUT_GROW_CLASS } from "./recordInput.utils";
 
 export function RecordMemberInput({
   id,
@@ -66,7 +68,10 @@ export function RecordMemberInput({
         disabled={disabled}
         onOpenChange={changeOpen}
       >
-        <ComboboxChips ref={anchor} className="w-full">
+        <ComboboxChips
+          ref={anchor}
+          className={cn("w-full", RECORD_INPUT_GROW_CLASS)}
+        >
           <ComboboxValue>
             {(ids) => (
               <>
