@@ -11,6 +11,8 @@ export type AutoSaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
 /** The inputs and buttons shared by the new and the open record dialogs. */
 export interface ModuleRecordFormProps {
   fields: ISidebarField[];
+  /** People member fields can pick from. */
+  members?: IUserInfo[];
   /** Starting values of an existing record; Save then stays off until something changes. */
   values?: ISidebarRecordValues;
   saving?: boolean;
@@ -29,6 +31,7 @@ export interface ModuleNewRecordFormProps extends ModuleQueryState {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fields: ISidebarField[];
+  members?: IUserInfo[];
   /** Return a promise to keep the dialog open until it settles; a rejection shows its message and keeps the input. */
   onSave: (values: ISidebarRecordValues) => void | Promise<unknown>;
 }
@@ -38,6 +41,7 @@ export interface ModuleOpenRecordProps extends ModuleQueryState {
   recordKey?: string;
   onClose: () => void;
   fields: ISidebarField[];
+  members?: IUserInfo[];
   record?: ISidebarRecord;
   /** Called by auto-save after edits pause; without it the dialog is read-only. A rejection shows its message. */
   onSave?: (values: ISidebarRecordValues) => void | Promise<unknown>;

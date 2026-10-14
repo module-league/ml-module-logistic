@@ -179,6 +179,7 @@ namespace LogisticApi.Services
                 settings.timeFormat = request.timeFormat;
             }
             if (request.displayTime is not null) settings.displayTime = request.displayTime.Value;
+            if (request.memberSettings?.multiple is not null) settings.multipleMembers = request.memberSettings.multiple.Value;
             if (request.color is not null) settings.color = request.color.ToUpperInvariant();
             return settings;
         }

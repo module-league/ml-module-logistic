@@ -20,6 +20,7 @@ export function ModuleOpenRecord({
   recordKey,
   onClose,
   fields,
+  members,
   record,
   isLoading = false,
   error,
@@ -51,10 +52,10 @@ export function ModuleOpenRecord({
   const title = useMemo(() => {
     const first = fields?.[0];
     return (
-      (first && toRecordText(first, record?.values?.[first.objId])) ||
+      (first && toRecordText(first, record?.values?.[first.objId], members)) ||
       "Untitled record"
     );
-  }, [fields, record]);
+  }, [fields, record, members]);
 
   return (
     <Dialog open={!!recordKey} onOpenChange={changeOpen}>
@@ -74,6 +75,7 @@ export function ModuleOpenRecord({
             <ModuleRecordForm
               key={record.objId}
               fields={fields}
+              members={members}
               values={record.values}
               readOnly={!onSave}
               onValuesChange={onSave ? schedule : undefined}

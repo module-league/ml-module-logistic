@@ -136,6 +136,7 @@ function AddFieldSteps({
   const [dateSettings, setDateSettings] = useState<ModuleFieldDateSettings>(
     DEFAULT_DATE_SETTINGS,
   );
+  const [multipleMembers, setMultipleMembers] = useState(false);
   const option = useMemo(
     () => (type ? fieldTypeOption(type) : undefined),
     [type],
@@ -147,8 +148,9 @@ function AddFieldSteps({
       name: name.trim(),
       dropDownValues: options,
       ...dateSettings,
+      memberSettings: { multiple: multipleMembers },
     });
-  }, [type, name, options, dateSettings]);
+  }, [type, name, options, dateSettings, multipleMembers]);
   const nameTaken = useMemo(
     () => isFieldNameTaken(name, takenNames),
     [name, takenNames],
@@ -254,6 +256,22 @@ function AddFieldSteps({
           )}
           {type === "date" && (
             <FieldDateSettings value={dateSettings} onChange={setDateSettings} />
+          )}
+          {type === "member" && (
+            <label className="flex items-start justify-between gap-3 text-sm">
+              <span className="flex flex-col gap-0.5">
+                <span className="font-medium">Allow several people</span>
+                <span className="text-xs text-muted-foreground">
+                  {multipleMembers
+                    ? "Each record can list several people."
+                    : "Each record has one person."}
+                </span>
+              </span>
+              <Switch
+                checked={multipleMembers}
+                onCheckedChange={setMultipleMembers}
+              />
+            </label>
           )}
         </div>
       </div>

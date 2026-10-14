@@ -116,6 +116,15 @@ namespace LogisticApi.Services
                         throw ApiProblemException.BadRequest("Invalid date.", $"'{field.sidebarName}' needs a date like 2026-10-13.");
                     return day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
+                case "member":
+                    var memberIds = ReadMemberIds(field, text);
+                    if (memberIds.Count == 0) return null;
+                    if (FieldSettings.Read(field.settings).multipleMembers)
+                        return JsonSerializer.Serialize(memberIds, Json);
+                    if (memberIds.Count > 1)
+                        throw ApiProblemException.BadRequest("Too many members.", $"'{field.sidebarName}' takes one person.");
+                    return memberIds[0];
+
                 case "single_select":
                     if (!Guid.TryParse(text, out var optionId) || field.options.All(o => o.ObjId != optionId))
                         throw ApiProblemException.BadRequest("Invalid option.", $"'{field.sidebarName}' has no such option.");
@@ -126,6 +135,32 @@ namespace LogisticApi.Services
                         throw ApiProblemException.BadRequest("Value too long.", $"'{field.sidebarName}' allows up to 1000 characters.");
                     return text;
             }
+        }
+
+        /// <summary>One user id, or a JSON array of them; each must be a Guid (the Keycloak "sub").</summary>
+        private static List<string> ReadMemberIds(SidebarField field, string text)
+        {
+            List<string>? raw;
+            try
+            {
+                raw = text.StartsWith('[') ? JsonSerializer.Deserialize<List<string>>(text, Json) : [text];
+            }
+            catch (JsonException)
+            {
+                raw = null;
+            }
+            if (raw is null)
+                throw ApiProblemException.BadRequest("Invalid member.", $"'{field.sidebarName}' needs a user id or a list of user ids.");
+
+            var ids = new List<string>();
+            foreach (var item in raw)
+            {
+                if (!Guid.TryParse(item, out var id))
+                    throw ApiProblemException.BadRequest("Invalid member.", $"'{item}' isn't a user id.");
+                var normalized = id.ToString();
+                if (!ids.Contains(normalized)) ids.Add(normalized);
+            }
+            return ids;
         }
 
         private static LogisticRecordResponse ToResponse(Logistic record)

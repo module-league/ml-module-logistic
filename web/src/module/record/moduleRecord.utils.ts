@@ -1,4 +1,5 @@
 import { formatFieldDate } from "@/lib/dateHelper";
+import { memberNames } from "@/lib/memberHelper";
 
 /** Size of the new and open record dialogs. */
 export const RECORD_DIALOG_STYLE = {
@@ -8,9 +9,14 @@ export const RECORD_DIALOG_STYLE = {
   marginTop: "3%",
 };
 
-/** The text a value shows in a cell: a select shows its option's label instead of the option id. */
-export function toRecordText(field: IField, value?: string | null) {
+/** The text a value shows in a cell: a select shows its option's label, a member field the people's names. */
+export function toRecordText(
+  field: IField,
+  value?: string | null,
+  members?: IUserInfo[],
+) {
   if (!value || field?.type === "checkbox") return "";
+  if (field?.type === "member") return memberNames(members, value);
   if (field?.type === "date") return formatFieldDate(field, value);
   if (field?.type === "single_select") {
     return field?.dropDownValues?.find((option) => option?.id === value)?.value ?? "";

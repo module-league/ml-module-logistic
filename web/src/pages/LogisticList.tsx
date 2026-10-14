@@ -12,6 +12,7 @@ import {
   getLogisticRecords,
   updateLogisticRecord,
 } from "@/services/records/record.api";
+import { getLogisticMembers } from "@/services/user/user.api";
 
 const logisticListApi: ModuleDataApi = {
   getFields: getLogisticFields,
@@ -20,6 +21,7 @@ const logisticListApi: ModuleDataApi = {
   createRecord: createLogisticRecord,
   updateRecord: updateLogisticRecord,
   createField: createLogisticField,
+  getMembers: getLogisticMembers,
 };
 
 export default function LogisticList() {

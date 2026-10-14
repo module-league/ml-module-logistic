@@ -3,10 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toFieldCreate } from "@/services/fields/field.api";
 import { fieldKeys, putInLists } from "@/services/fields/field.utils";
 import { recordKeys } from "@/services/records/record.api";
+import { memberKeys } from "@/services/user/user.api";
 import type { ModuleData, ModuleDataApi } from "./modulePage.types";
 
 const NO_FIELDS: ISidebarField[] = [];
 const NO_RECORDS: ISidebarRecord[] = [];
+const NO_MEMBERS: IUserInfo[] = [];
 
 /** Runs the page's API for one sidebar and returns it as ModuleData. Pass a module-level api object so it stays the same between renders. */
 export function useModuleData(
@@ -25,6 +27,11 @@ export function useModuleData(
     queryKey: recordKeys.list(id),
     queryFn: () => api.getRecords(id),
     enabled: !!sidebarId,
+  });
+
+  const membersQuery = useQuery({
+    queryKey: memberKeys.all,
+    queryFn: () => api.getMembers(),
   });
 
   const [openedRecordId, setOpenedRecordId] = useState<string>();
@@ -133,6 +140,7 @@ export function useModuleData(
       fieldsState,
       records: recordsQuery.data ?? NO_RECORDS,
       recordsState,
+      members: membersQuery.data ?? NO_MEMBERS,
       onRefreshFields,
       onAddRecord,
       openedRecordId,
@@ -153,6 +161,7 @@ export function useModuleData(
       fieldsState,
       recordsQuery.data,
       recordsState,
+      membersQuery.data,
       onRefreshFields,
       onAddRecord,
       onAddField,

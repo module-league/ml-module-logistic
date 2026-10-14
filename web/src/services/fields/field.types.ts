@@ -58,6 +58,11 @@ declare global {
       timeFormat: "hh:mm a" | "HH:mm";
       /** Color hexcode for visual difference. The usage is depend on the field type. Only some field types would utilize this value */
       color?: string;
+      /** Settings for member field only */
+      memberSettings?: {
+        /** Several people can be picked; the value is then a JSON array of user ids. */
+        multiple?: boolean;
+      };
       /** Settings for sys_running_number field only */
       autoNumberSettings?: {
         prefix?: string;
@@ -143,7 +148,7 @@ declare global {
   };
 
   type ISidebarFieldCreate = Pick<IField, "name" | "type" | "description"> &
-    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat">> & {
+    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat" | "memberSettings">> & {
     isPrimaryField?: boolean;
     dropDownValues?: ISidebarFieldOptionInput[];
   };

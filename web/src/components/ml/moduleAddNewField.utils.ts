@@ -37,6 +37,12 @@ export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
     description: "Pickups, deadlines, deliveries.",
     icon: FIELD_TYPE_ICONS.date,
   },
+  {
+    fieldType: "member",
+    label: "Member",
+    description: "One person or a list of people.",
+    icon: FIELD_TYPE_ICONS.member,
+  },
 ];
 
 export const FIELD_DATE_FORMATS: IField["dateFormat"][] = [
@@ -130,8 +136,10 @@ export function toField({
   dateFormat = DEFAULT_DATE_SETTINGS.dateFormat,
   displayTime = DEFAULT_DATE_SETTINGS.displayTime,
   timeFormat = DEFAULT_DATE_SETTINGS.timeFormat,
+  memberSettings,
 }: Pick<IField, "type" | "name" | "dropDownValues"> &
-  Partial<ModuleFieldDateSettings>): IField {
+  Partial<ModuleFieldDateSettings> &
+  Pick<IField, "memberSettings">): IField {
   return {
     name,
     type,
@@ -141,7 +149,7 @@ export function toField({
     isSelectionField: type === "single_select",
     isMultiSelectField: false,
     isDateField: type === "date",
-    isUserField: false,
+    isUserField: type === "member",
     isNumeric: type === "number",
     isVirtualField: false,
     isForeignField: false,
@@ -153,5 +161,7 @@ export function toField({
       type === "single_select" ? cleanDropDownValues(dropDownValues, name) : [],
     displayTime: type === "date" && displayTime,
     timeFormat,
+    memberSettings:
+      type === "member" ? { multiple: !!memberSettings?.multiple } : undefined,
   };
 }

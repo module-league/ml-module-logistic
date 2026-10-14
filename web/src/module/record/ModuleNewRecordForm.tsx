@@ -16,6 +16,7 @@ export function ModuleNewRecordForm({
   open,
   onOpenChange,
   fields,
+  members,
   isLoading = false,
   error,
   onRetry,
@@ -60,6 +61,7 @@ export function ModuleNewRecordForm({
         <QueryWrapper isLoading={isLoading} error={error} onRetry={onRetry}>
           <ModuleRecordForm
             fields={fields}
+            members={members}
             saving={saving}
             submitLabel="Add record"
             savingLabel="Adding…"

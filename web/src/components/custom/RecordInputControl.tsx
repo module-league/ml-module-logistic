@@ -14,6 +14,7 @@ import {
 import type { CSSProperties } from "react";
 import { XIcon } from "@/components/custom/XIcon";
 import { SelectionNode } from "./RecordValueNode";
+import { RecordMemberInput } from "./RecordMemberInput";
 import { DateTimePicker } from "../ui/date-time-picker";
 import { parseFieldDate, toFieldDateValue } from "@/lib/dateHelper";
 
@@ -122,6 +123,23 @@ export function RecordInputControl(props: RecordInputControlProps) {
           </Button>
         )}
       </div>
+    );
+  }
+
+  if (field.type === "member") {
+    return (
+      <RecordMemberInput
+        id={id}
+        field={field}
+        value={value}
+        members={members}
+        disabled={disabled}
+        placeholder={placeholder}
+        className={props.className}
+        style={props.style}
+        onChange={onChange}
+        onBlur={onBlur}
+      />
     );
   }
 

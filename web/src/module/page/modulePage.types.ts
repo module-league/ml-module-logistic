@@ -19,6 +19,8 @@ export interface ModuleDataApi {
     sidebarId: string,
     body: ISidebarFieldCreate,
   ) => Promise<ISidebarField>;
+  /** People member fields can pick from. */
+  getMembers: () => Promise<IUserInfo[]>;
 }
 
 /** What every page passes into ModulePage, whichever API it came from. */
@@ -28,6 +30,7 @@ export interface ModuleData {
   fieldsState: ModuleQueryState;
   records: ISidebarRecord[];
   recordsState: ModuleQueryState;
+  members: IUserInfo[];
   onRefreshFields: () => void;
   onAddRecord: (values: ISidebarRecordValues) => Promise<unknown>;
   /** objId of the record open in ModuleOpenRecord. */

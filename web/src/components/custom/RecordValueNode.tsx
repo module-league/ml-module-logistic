@@ -2,6 +2,8 @@ import { cn } from "@/ui-kit";
 import { Square, SquareCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { formatFieldDate } from "@/lib/dateHelper";
+import { findMember, parseMemberIds } from "@/lib/memberHelper";
+import { MemberChip } from "./MemberChip";
 
 type SpanProps = Omit<
   React.DetailedHTMLProps<
@@ -37,9 +39,12 @@ export function SelectionNode(props: SelectionNodeProps) {
 export function RecordValueNode({
   field,
   value,
+  members,
 }: {
   field: IField;
   value?: string | null;
+  /** Needed to show member fields as people. */
+  members?: IUserInfo[];
 }) {
   if (field?.type === "checkbox") {
     return value === "true" ? (
@@ -49,6 +54,15 @@ export function RecordValueNode({
     );
   }
   if (!value) return <span className="text-muted-foreground">—</span>;
+  if (field?.type === "member") {
+    return (
+      <span className="flex min-w-0 items-center gap-1 overflow-hidden">
+        {parseMemberIds(value).map((memberId) => (
+          <MemberChip key={memberId} member={findMember(members, memberId)} />
+        ))}
+      </span>
+    );
+  }
   if (field?.type === "date") {
     return <span className="tabular-nums">{formatFieldDate(field, value)}</span>;
   }

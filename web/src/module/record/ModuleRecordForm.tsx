@@ -15,6 +15,7 @@ import type {
 
 export function ModuleRecordForm({
   fields,
+  members,
   values,
   saving = false,
   readOnly = false,
@@ -83,6 +84,7 @@ export function ModuleRecordForm({
               render={({ field: input }) => (
                 <RecordInputControl
                   field={field}
+                  members={members}
                   name={input.name}
                   value={input.value ?? ""}
                   disabled={saving || readOnly}

@@ -24,6 +24,11 @@ namespace LogisticApi.MVVM
     }
 
     /// <summary>Matches IField in web/src/services/fields/field.types.ts, plus objId and versionNo.</summary>
+    public class SidebarMemberSettingsResponse
+    {
+        public bool multiple { get; set; }
+    }
+
     public class SidebarFieldResponse
     {
         public Guid objId { get; set; }
@@ -49,6 +54,8 @@ namespace LogisticApi.MVVM
         public bool displayTime { get; set; }
         public string timeFormat { get; set; } = string.Empty;
         public string? color { get; set; }
+        /// <summary>Only set for member fields.</summary>
+        public SidebarMemberSettingsResponse? memberSettings { get; set; }
 
         public List<SidebarFieldOptionResponse> dropDownValues { get; set; } = [];
 
@@ -82,6 +89,7 @@ namespace LogisticApi.MVVM
                 displayTime = settings.displayTime,
                 timeFormat = settings.timeFormat,
                 color = settings.color,
+                memberSettings = field.type == "member" ? new() { multiple = settings.multipleMembers } : null,
                 dropDownValues = field.options
                     .Where(option => !option.IsDeleted)
                     .OrderBy(option => option.displayOrder)

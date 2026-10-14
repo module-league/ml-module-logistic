@@ -22,7 +22,7 @@ const ADD_LABEL = "New record";
 const getRecordKey = (record: ISidebarRecord) => record?.objId;
 
 export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
-  const { fields, records } = data;
+  const { fields, records, members } = data;
   const item = useCurrentNavItem();
   const user = useCurrentUser();
   const people = useMemo(() => [user], [user]);
@@ -67,13 +67,13 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     return (
       records?.filter((record) =>
         fields?.some((field) =>
-          toRecordText(field, record?.values?.[field.objId])
+          toRecordText(field, record?.values?.[field.objId], members)
             .toLowerCase()
             .includes(term),
         ),
       ) ?? []
     );
-  }, [records, fields, search]);
+  }, [records, fields, search, members]);
 
   const orderedRecords = useMemo(() => {
     if (!rowOrder.length) return filteredRecords;
@@ -134,12 +134,13 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
             <RecordValueNode
               field={field}
               value={record?.values?.[field.objId]}
+              members={members}
             />
           ),
         }))
         .sort((a, b) => position(a.key) - position(b.key)) ?? []
     );
-  }, [fields, columnOrder]);
+  }, [fields, columnOrder, members]);
   const fieldTypeById = useMemo(
     () => new Map(fields?.map((field) => [field?.objId, field?.type])),
     [fields],
@@ -282,12 +283,14 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
         open={newRecordOpen}
         onOpenChange={setNewRecordOpen}
         fields={fields}
+        members={members}
         onSave={saveRecord}
       />
       <ModuleOpenRecord
         recordKey={data.openedRecordId}
         onClose={data.onCloseRecord}
         fields={fields}
+        members={members}
         record={data.openedRecord}
         isLoading={openedRecordLoading}
         error={data.openedRecordState?.error ?? data.fieldsState?.error}

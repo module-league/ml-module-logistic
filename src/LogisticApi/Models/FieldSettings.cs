@@ -16,6 +16,8 @@ namespace LogisticApi.Models
         public bool displayTime { get; set; }
         public string timeFormat { get; set; } = "hh:mm a";
         public string? color { get; set; }
+        /// <summary>Member fields only: several people can be picked.</summary>
+        public bool multipleMembers { get; set; }
 
         public static FieldSettings Read(string? json) =>
             string.IsNullOrWhiteSpace(json) ? new() : JsonSerializer.Deserialize<FieldSettings>(json, Json) ?? new();

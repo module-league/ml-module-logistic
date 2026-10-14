@@ -17,6 +17,12 @@ namespace LogisticApi.MVVM
         public int? displayOrder { get; set; }
     }
 
+    public class SidebarMemberSettingsRequest
+    {
+        /// <summary>Several people can be picked; the value is then a JSON array of user ids.</summary>
+        public bool? multiple { get; set; }
+    }
+
     public abstract class SidebarFieldSettingsRequest
     {
         [MaxLength(500)]
@@ -32,6 +38,9 @@ namespace LogisticApi.MVVM
 
         [RegularExpression("^#[0-9A-Fa-f]{6}$", ErrorMessage = "color must be a 6-digit hex color, e.g. #047857.")]
         public string? color { get; set; }
+
+        /// <summary>Only for member fields.</summary>
+        public SidebarMemberSettingsRequest? memberSettings { get; set; }
 
         /// <summary>Only for select fields. On update, the full list: options left out are deleted.</summary>
         public List<SidebarFieldOptionRequest>? dropDownValues { get; set; }
