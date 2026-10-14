@@ -82,6 +82,7 @@ import {
   nextOptionValue,
   toField,
   fieldDateDraft,
+  hasFieldOptions,
   fieldNumberDraft,
   FIELD_DATE_FORMATS,
   FIELD_TIME_FORMATS,
@@ -373,7 +374,7 @@ function AddFieldSteps({
               </p>
             )}
           </Field>
-          {type === "single_select" && (
+          {hasFieldOptions(type) && (
             <Field>
               <FieldLabel>Options</FieldLabel>
               <FieldOptionsEditor options={options} onChange={setOptions} />

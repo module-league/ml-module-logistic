@@ -1,10 +1,14 @@
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, SearchIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
+import { InputGroup, InputGroupAddon } from "./input-group";
 import { XIcon } from "../custom/XIcon";
+
+/** The lower-cased search of a searchable SelectContent; empty shows every item. */
+const SelectSearchContext = React.createContext("");
 
 const Select = SelectPrimitive.Root;
 
@@ -85,7 +89,105 @@ type SelectContentProps = React.ComponentPropsWithoutRef<
    * Good when select item text is expected to be long
    */
   fitTriggerWidth?: boolean;
+  /**
+   * `true` to show a search box above the items. An item is matched by its `textValue`,
+   * or by its children when they are plain text.
+   */
+  searchable?: boolean;
+  /** @default "Search..." */
+  searchPlaceholder?: string;
+  /** @default "No results found." */
+  searchEmpty?: React.ReactNode;
 };
+
+const SEARCH_INPUT_KEYS = ["Home", "End", "ArrowLeft", "ArrowRight"];
+
+/**
+ * Radix moves focus onto the items and jumps between them as you type. While searchable, typed
+ * characters go to the search box instead, ArrowDown still walks the items, and Enter in the box
+ * picks the first match.
+ */
+function routeSearchKeys(event: React.KeyboardEvent<HTMLDivElement>) {
+  const input = event.currentTarget.querySelector<HTMLInputElement>(
+    "[data-slot=select-search]",
+  );
+  if (!input) return;
+  const fromInput = event.target === input;
+  const typing =
+    (event.key.length === 1 || event.key === "Backspace" || event.key === "Delete") &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey;
+
+  if (fromInput && event.key === "Enter") {
+    event.preventDefault();
+    event.stopPropagation();
+    const first = event.currentTarget.querySelector<HTMLElement>(
+      "[role=option]:not([hidden]):not([data-disabled])",
+    );
+    first?.focus();
+    first?.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+    return;
+  }
+  if (fromInput) {
+    if (typing || SEARCH_INPUT_KEYS.includes(event.key)) event.stopPropagation();
+    return;
+  }
+  if (typing && event.key !== " ") {
+    event.stopPropagation();
+    input.focus();
+  }
+}
+
+/** The search box and the filtered items; it remounts on every open, so each open starts with an empty search. */
+function SelectSearch({
+  placeholder = "Search...",
+  empty = "No results found.",
+  viewportClassName,
+  children,
+}: {
+  placeholder?: string;
+  empty?: React.ReactNode;
+  viewportClassName?: string;
+  children?: React.ReactNode;
+}) {
+  const [search, setSearch] = React.useState("");
+  const term = React.useMemo(() => search.trim().toLowerCase(), [search]);
+  return (
+    <SelectSearchContext.Provider value={term}>
+      <div className="p-1 pb-0">
+        <InputGroup className="h-8! rounded-lg! border-input/30 bg-input/30 shadow-none! *:data-[slot=input-group-addon]:pl-2!">
+          <input
+            data-slot="select-search"
+            aria-label={placeholder}
+            placeholder={placeholder}
+            autoComplete="off"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="w-full bg-transparent text-sm outline-hidden placeholder:text-muted-foreground"
+          />
+          <InputGroupAddon>
+            <SearchIcon className="size-4 shrink-0 opacity-50" />
+          </InputGroupAddon>
+        </InputGroup>
+      </div>
+      <SelectScrollUpButton />
+      <SelectPrimitive.Viewport
+        data-select-search-viewport=""
+        className={viewportClassName}
+      >
+        {children}
+      </SelectPrimitive.Viewport>
+      <SelectScrollDownButton />
+      <div className="hidden py-6 text-center text-sm text-muted-foreground [[data-select-search-viewport]:not(:has([role=option]:not([hidden])))~&]:block">
+        {empty}
+      </div>
+    </SelectSearchContext.Provider>
+  );
+}
+
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   SelectContentProps
@@ -96,37 +198,59 @@ const SelectContent = React.forwardRef<
       children,
       position = "popper",
       fitTriggerWidth = false,
+      searchable = false,
+      searchPlaceholder,
+      searchEmpty,
+      onKeyDownCapture,
       ...props
     },
     ref,
-  ) => (
-    <SelectPrimitive.Portal>
-      <SelectPrimitive.Content
-        ref={ref}
-        className={cn(
-          "relative z-50 max-h-96 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-          position === "popper" &&
-            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-          className,
-        )}
-        position={position}
-        {...props}
-      >
-        <SelectScrollUpButton />
-        <SelectPrimitive.Viewport
+  ) => {
+    const viewportClassName = cn(
+      "p-1 w-full",
+      fitTriggerWidth && "w-(--radix-select-trigger-width)",
+      position === "popper" &&
+        "min-w-[max(var(--radix-select-trigger-width),10rem)]",
+    );
+    return (
+      <SelectPrimitive.Portal>
+        <SelectPrimitive.Content
+          ref={ref}
           className={cn(
-            "p-1 w-full",
-            fitTriggerWidth && "w-(--radix-select-trigger-width)",
+            "relative z-50 max-h-96 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
             position === "popper" &&
-              "min-w-[max(var(--radix-select-trigger-width),10rem)]",
+              "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+            searchable && "flex flex-col",
+            className,
           )}
+          position={position}
+          onKeyDownCapture={(event) => {
+            onKeyDownCapture?.(event);
+            if (searchable) routeSearchKeys(event);
+          }}
+          {...props}
         >
-          {children}
-        </SelectPrimitive.Viewport>
-        <SelectScrollDownButton />
-      </SelectPrimitive.Content>
-    </SelectPrimitive.Portal>
-  ),
+          {searchable ? (
+            <SelectSearch
+              placeholder={searchPlaceholder}
+              empty={searchEmpty}
+              viewportClassName={viewportClassName}
+            >
+              {children}
+            </SelectSearch>
+          ) : (
+            <>
+              <SelectScrollUpButton />
+              <SelectPrimitive.Viewport className={viewportClassName}>
+                {children}
+              </SelectPrimitive.Viewport>
+              <SelectScrollDownButton />
+            </>
+          )}
+        </SelectPrimitive.Content>
+      </SelectPrimitive.Portal>
+    );
+  },
 );
 SelectContent.displayName = SelectPrimitive.Content.displayName;
 
@@ -149,28 +273,39 @@ const SelectItem = React.forwardRef<
     /** true to apply truncate CSS class to inner component */
     truncate?: boolean;
   }
->(({ className, indicator, children, ...props }, ref) => (
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      "max-w-full max-h-(--radix-popover-available-height) overflow-hidden",
-      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 *:flex-1",
-      className,
-      "*:data-[role='item-text']:truncate",
-    )}
-    {...props}
-  >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-      <SelectPrimitive.ItemIndicator>
-        {indicator ?? <Check className="h-4 w-4" />}
-      </SelectPrimitive.ItemIndicator>
-    </span>
+>(({ className, indicator, children, ...props }, ref) => {
+  const search = React.useContext(SelectSearchContext);
+  const text =
+    props.textValue ??
+    (typeof children === "string" || typeof children === "number"
+      ? String(children)
+      : props.value);
+  const filteredOut = !!search && !text?.toLowerCase().includes(search);
+  return (
+    <SelectPrimitive.Item
+      ref={ref}
+      className={cn(
+        "max-w-full max-h-(--radix-popover-available-height) overflow-hidden",
+        "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 *:flex-1",
+        className,
+        "*:data-[role='item-text']:truncate",
+      )}
+      {...props}
+      disabled={filteredOut || props.disabled}
+      hidden={filteredOut || undefined}
+    >
+      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+        <SelectPrimitive.ItemIndicator>
+          {indicator ?? <Check className="h-4 w-4" />}
+        </SelectPrimitive.ItemIndicator>
+      </span>
 
-    <SelectPrimitive.ItemText data-role="item-text">
-      <div className="flex items-center gap-2">{children}</div>
-    </SelectPrimitive.ItemText>
-  </SelectPrimitive.Item>
-));
+      <SelectPrimitive.ItemText data-role="item-text">
+        <div className="flex items-center gap-2">{children}</div>
+      </SelectPrimitive.ItemText>
+    </SelectPrimitive.Item>
+  );
+});
 SelectItem.displayName = SelectPrimitive.Item.displayName;
 
 const SelectSeparator = React.forwardRef<
@@ -208,7 +343,10 @@ type Select2Props = Omit<SelectPrimitive.SelectProps, "children"> & {
   contentClassName?: string;
   wrapperClassName?: string;
   renderValue?: React.ReactNode;
-} & Pick<SelectContentProps, "fitTriggerWidth">;
+} & Pick<
+    SelectContentProps,
+    "fitTriggerWidth" | "searchable" | "searchPlaceholder" | "searchEmpty"
+  >;
 /** Custom component to simplify shadcn long ass `<Select/>` boilerplate. */
 const Select2 = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
@@ -224,6 +362,9 @@ const Select2 = React.forwardRef<
     wrapperClassName,
     renderValue,
     fitTriggerWidth,
+    searchable,
+    searchPlaceholder,
+    searchEmpty,
     ...others
   } = props;
   return (
@@ -239,6 +380,9 @@ const Select2 = React.forwardRef<
         <SelectContent
           className={contentClassName}
           fitTriggerWidth={fitTriggerWidth}
+          searchable={searchable}
+          searchPlaceholder={searchPlaceholder}
+          searchEmpty={searchEmpty}
         >
           {Array.isArray(children) && !children.length ? (
             <div className="emptyContent">No items</div>

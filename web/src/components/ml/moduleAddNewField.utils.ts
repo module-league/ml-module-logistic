@@ -36,6 +36,12 @@ export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
     icon: FIELD_TYPE_ICONS.single_select,
   },
   {
+    fieldType: "multi_select",
+    label: "Multiple select",
+    description: "Several choices from a list.",
+    icon: FIELD_TYPE_ICONS.multi_select,
+  },
+  {
     fieldType: "checkbox",
     label: "Checkbox",
     description: "A tick for yes or no.",
@@ -110,6 +116,10 @@ export const lockToVerticalAxis: Modifier = ({
 
 export function fieldTypeOption(type: IField["type"]) {
   return MODULE_FIELD_TYPES.find((option) => option.fieldType === type);
+}
+
+export function hasFieldOptions(type?: IField["type"] | null) {
+  return type === "single_select" || type === "multi_select";
 }
 
 export function isFieldNameTaken(name: string, takenNames?: string[]) {
@@ -209,7 +219,7 @@ export function toField({
     isEditable: true,
     isSystemField: false,
     isSelectionField: type === "single_select",
-    isMultiSelectField: false,
+    isMultiSelectField: type === "multi_select",
     isDateField: type === "date",
     isUserField: type === "member",
     isNumeric: type === "number" || type === "currency",
@@ -219,8 +229,9 @@ export function toField({
     dateFormat,
     categoryId: "",
     displayOrder: 0,
-    dropDownValues:
-      type === "single_select" ? cleanDropDownValues(dropDownValues, name) : [],
+    dropDownValues: hasFieldOptions(type)
+      ? cleanDropDownValues(dropDownValues, name)
+      : [],
     displayTime: type === "date" && displayTime,
     timeFormat,
     memberSettings:

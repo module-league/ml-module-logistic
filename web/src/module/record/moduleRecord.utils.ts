@@ -2,6 +2,7 @@ import { formatFieldDate } from "@/lib/dateHelper";
 import { memberNames } from "@/lib/memberHelper";
 import { attachmentNames } from "@/lib/attachmentHelper";
 import { formatFieldNumber } from "@/lib/numberHelper";
+import { optionNames } from "@/lib/selectHelper";
 
 /** Size of the new and open record dialogs. */
 export const RECORD_DIALOG_STYLE = {
@@ -27,5 +28,6 @@ export function toRecordText(
   if (field?.type === "single_select") {
     return field?.dropDownValues?.find((option) => option?.id === value)?.value ?? "";
   }
+  if (field?.type === "multi_select") return optionNames(field, value);
   return value;
 }

@@ -20,6 +20,7 @@ import { XIcon } from "@/components/custom/XIcon";
 import { SelectionNode } from "./RecordValueNode";
 import { RecordMemberInput } from "./RecordMemberInput";
 import { RecordAttachmentInput } from "./RecordAttachmentInput";
+import { RecordMultiSelectInput } from "./RecordMultiSelectInput";
 import type { AttachmentUploadHandler } from "./RecordAttachmentInput.types";
 import { DateTimePicker } from "../ui/date-time-picker";
 import { parseFieldDate, toFieldDateValue } from "@/lib/dateHelper";
@@ -152,6 +153,22 @@ export function RecordInputControl(props: RecordInputControlProps) {
     );
   }
 
+  if (field.type === "multi_select") {
+    return (
+      <RecordMultiSelectInput
+        id={id}
+        field={field}
+        value={value}
+        disabled={disabled}
+        placeholder={placeholder}
+        className={props.className}
+        style={props.style}
+        onChange={onChange}
+        onBlur={onBlur}
+      />
+    );
+  }
+
   if (field.type === "attachment") {
     return (
       <RecordAttachmentInput
@@ -227,15 +244,15 @@ export function RecordInputControl(props: RecordInputControlProps) {
               )}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent searchable searchPlaceholder="Find an option">
             <SelectGroup>
               {clearable === "inline" && (
-                <SelectItem value="___">
+                <SelectItem value="___" textValue="None">
                   <em>-None-</em>
                 </SelectItem>
               )}
               {field.dropDownValues.map((ddv) => (
-                <SelectItem key={ddv.id} value={ddv.id}>
+                <SelectItem key={ddv.id} value={ddv.id} textValue={ddv.value}>
                   <SelectionNode dropDownValue={ddv}>{ddv.value}</SelectionNode>
                 </SelectItem>
               ))}

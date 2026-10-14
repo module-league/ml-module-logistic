@@ -41,6 +41,8 @@ export * from "./components/ui/marker";
 export * from "./components/ui/menubar";
 export * from "./components/ui/message";
 export * from "./components/ui/message-scroller";
+export * from "./components/ui/multi-select";
+export * from "./components/ui/multi-select.variants";
 export * from "./components/ui/native-select";
 export * from "./components/ui/navigation-menu";
 export * from "./components/ui/pagination";

@@ -180,11 +180,41 @@ namespace LogisticApi.Services
                         throw ApiProblemException.BadRequest("Invalid option.", $"'{field.sidebarName}' has no such option.");
                     return optionId.ToString();
 
+                case "multi_select":
+                    var optionIds = ReadOptionIds(field, text);
+                    return optionIds.Count == 0 ? null : JsonSerializer.Serialize(optionIds, Json);
+
                 default:
                     if (text.Length > 1000)
                         throw ApiProblemException.BadRequest("Value too long.", $"'{field.sidebarName}' allows up to 1000 characters.");
                     return text;
             }
+        }
+
+        /// <summary>One option id, or a JSON array of them; each must be one of the field's options.</summary>
+        private static List<string> ReadOptionIds(SidebarField field, string text)
+        {
+            List<string>? raw;
+            try
+            {
+                raw = text.StartsWith('[') ? JsonSerializer.Deserialize<List<string>>(text, Json) : [text];
+            }
+            catch (JsonException)
+            {
+                raw = null;
+            }
+            if (raw is null)
+                throw ApiProblemException.BadRequest("Invalid option.", $"'{field.sidebarName}' needs an option id or a list of option ids.");
+
+            var ids = new List<string>();
+            foreach (var item in raw)
+            {
+                if (!Guid.TryParse(item, out var id) || field.options.All(o => o.ObjId != id))
+                    throw ApiProblemException.BadRequest("Invalid option.", $"'{field.sidebarName}' has no option '{item}'.");
+                var normalized = id.ToString();
+                if (!ids.Contains(normalized)) ids.Add(normalized);
+            }
+            return ids;
         }
 
         /// <summary>One user id, or a JSON array of them; each must be a Guid (the Keycloak "sub").</summary>

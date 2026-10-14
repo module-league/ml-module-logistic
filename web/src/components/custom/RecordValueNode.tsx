@@ -7,6 +7,7 @@ import { findMember, parseMemberIds } from "@/lib/memberHelper";
 import { MemberChip } from "./MemberChip";
 import { AttachmentChipList } from "./AttachmentChip";
 import { parseAttachments } from "@/lib/attachmentHelper";
+import { selectedOptions } from "@/lib/selectHelper";
 
 type SpanProps = Omit<
   React.DetailedHTMLProps<
@@ -88,6 +89,21 @@ export function RecordValueNode({
       <SelectionNode dropDownValue={option}>
         {option?.value ?? "Unknown"}
       </SelectionNode>
+    );
+  }
+  if (field?.type === "multi_select") {
+    return (
+      <span className="flex min-w-0 items-center gap-1 overflow-hidden">
+        {selectedOptions(field, value).map((option) => (
+          <SelectionNode
+            key={option.id}
+            dropDownValue={option}
+            className="shrink-0 truncate"
+          >
+            {option.value}
+          </SelectionNode>
+        ))}
+      </span>
     );
   }
   return (
