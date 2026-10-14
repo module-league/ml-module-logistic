@@ -83,6 +83,7 @@ export * from "./components/ml/pageToolbar.utils";
 
 // Hooks
 export * from "./hooks/use-mobile";
+export * from "./hooks/useAttachmentPreview";
 export * from "./hooks/useAutoSave";
 export * from "./hooks/useDialog";
 export * from "./hooks/useDrawer";

@@ -133,6 +133,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           key: field.objId,
           header: field.name,
           icon: <FieldTypeIcon type={field.type} />,
+          className: field.type === "checkbox" ? "text-center" : undefined,
           cell: (record: ISidebarRecord) => (
             <RecordValueNode
               field={field}

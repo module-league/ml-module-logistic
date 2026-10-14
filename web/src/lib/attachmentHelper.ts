@@ -18,6 +18,19 @@ export function toAttachmentValue(attachments: IAttachment[]) {
   return attachments?.length ? JSON.stringify(attachments) : "";
 }
 
+/** Types the API serves inline (AttachmentController.InlineTypes); anything else only downloads. */
+export const PREVIEW_FILE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+];
+
+export function canPreviewAttachment(attachment?: Pick<IAttachment, "fileType">) {
+  return PREVIEW_FILE_TYPES.includes(attachment?.fileType ?? "");
+}
+
 export function isImageAttachment(attachment?: Pick<IAttachment, "fileType">) {
   return !!attachment?.fileType?.startsWith("image/");
 }

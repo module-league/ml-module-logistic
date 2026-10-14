@@ -9,6 +9,6 @@ namespace LogisticApi.Models
         public string Path { get; set; } = "App_Data/attachments";
 
         /// <summary>Largest file accepted, in bytes. Keep it under Kestrel's 30 MB request limit.</summary>
-        public long MaxBytes { get; set; } = 10 * 1024 * 1024;
+        public long MaxBytes { get; set; } = 15 * 1024 * 1024;
     }
 }

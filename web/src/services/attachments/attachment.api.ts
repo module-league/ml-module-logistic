@@ -1,7 +1,7 @@
 import { apiClient } from "@/lib/apiClient";
 
 /** Largest file the API accepts; keep in step with AttachmentStorage:MaxBytes. */
-export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+export const ATTACHMENT_MAX_BYTES = 15 * 1024 * 1024;
 
 /** Uploads one file for refId; a record only takes attachments whose refId is its sidebar id. */
 export async function uploadLogisticAttachment(refId: string, file: File) {

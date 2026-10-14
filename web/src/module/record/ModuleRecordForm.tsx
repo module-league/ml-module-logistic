@@ -81,7 +81,7 @@ export function ModuleRecordForm({
                 </span>
               }
               labelProps={{ size: "sm" }}
-              className="grid grid-cols-[minmax(0,12rem)_1fr] items-center gap-x-4"
+              className="grid grid-cols-[minmax(0,12rem)_1fr] items-start gap-x-4"
               render={({ field: input }) => (
                 <RecordInputControl
                   field={field}

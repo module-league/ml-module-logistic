@@ -5,7 +5,7 @@ import { formatFieldDate } from "@/lib/dateHelper";
 import { formatFieldNumber } from "@/lib/numberHelper";
 import { findMember, parseMemberIds } from "@/lib/memberHelper";
 import { MemberChip } from "./MemberChip";
-import { AttachmentChip } from "./AttachmentChip";
+import { AttachmentChipList } from "./AttachmentChip";
 import { parseAttachments } from "@/lib/attachmentHelper";
 
 type SpanProps = Omit<
@@ -51,23 +51,17 @@ export function RecordValueNode({
 }) {
   if (field?.type === "checkbox") {
     return value === "true" ? (
-      <SquareCheck aria-label="Ticked" className="size-4 text-primary" />
+      <SquareCheck aria-label="Ticked" className="inline-block size-4 align-middle text-primary" />
     ) : (
       <Square
         aria-label="Not ticked"
-        className="size-4 text-muted-foreground/40"
+        className="inline-block size-4 align-middle text-muted-foreground/40"
       />
     );
   }
   if (!value) return <span className="text-muted-foreground">—</span>;
   if (field?.type === "attachment") {
-    return (
-      <span className="flex min-w-0 items-center gap-1 overflow-hidden">
-        {parseAttachments(value).map((attachment) => (
-          <AttachmentChip key={attachment.id} attachment={attachment} />
-        ))}
-      </span>
-    );
+    return <AttachmentChipList attachments={parseAttachments(value)} />;
   }
   if (field?.type === "member") {
     return (
