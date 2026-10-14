@@ -8,6 +8,7 @@ import { MemberChip } from "./MemberChip";
 import { AttachmentChipList } from "./AttachmentChip";
 import { parseAttachments } from "@/lib/attachmentHelper";
 import { selectedOptions } from "@/lib/selectHelper";
+import { LinkedRecordChipList } from "./LinkedRecordChip";
 
 type SpanProps = Omit<
   React.DetailedHTMLProps<
@@ -89,6 +90,11 @@ export function RecordValueNode({
       <SelectionNode dropDownValue={option}>
         {option?.value ?? "Unknown"}
       </SelectionNode>
+    );
+  }
+  if (field?.type === "lookup") {
+    return (
+      <LinkedRecordChipList field={field} value={value} members={members} />
     );
   }
   if (field?.type === "multi_select") {

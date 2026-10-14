@@ -21,6 +21,11 @@ namespace LogisticApi.Models
 
         public static bool IsMultiSelect(string type) => type == "multi_select";
 
+        public static bool IsLookup(string type) => type == "lookup";
+
+        /// <summary>The field types a lookup can show for each linked record: plain values that read as text.</summary>
+        public static bool CanShowInLookup(string type) => IsPlain(type) && type is not ("attachment" or "checkbox");
+
         public static bool IsDate(string type) => type is "date" or "sys_create_time" or "sys_update_time";
 
         public static bool IsUser(string type) => type is "member" or "sys_creator_id" or "sys_updater_id";

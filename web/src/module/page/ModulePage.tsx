@@ -16,6 +16,7 @@ import { ModuleAppView } from "@/module/appView/ModuleAppView";
 import { ModuleNewRecordForm } from "@/module/record/ModuleNewRecordForm";
 import { ModuleOpenRecord } from "@/module/record/ModuleOpenRecord";
 import { RecordValueNode } from "@/components/custom/RecordValueNode";
+import { RecordLookupContext } from "@/components/custom/RecordLookup.context";
 import { toRecordText } from "@/module/record/moduleRecord.utils";
 import { ModulePageFooter } from "./ModulePageFooter";
 import { recordFieldValue, SYSTEM_FIELDS } from "./modulePage.utils";
@@ -25,7 +26,7 @@ const ADD_LABEL = "New record";
 const getRecordKey = (record: ISidebarRecord) => record?.objId;
 
 export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
-  const { fields, records, members } = data;
+  const { fields, records, members, lookupSources, lookups } = data;
   const item = useCurrentNavItem();
   const user = useCurrentUser();
   const people = useMemo(() => [user], [user]);
@@ -76,13 +77,13 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     return (
       records?.filter((record) =>
         gridFields.some((field) =>
-          toRecordText(field, recordFieldValue(field, record), members)
+          toRecordText(field, recordFieldValue(field, record), members, lookups)
             .toLowerCase()
             .includes(term),
         ),
       ) ?? []
     );
-  }, [records, gridFields, search, members]);
+  }, [records, gridFields, search, members, lookups]);
 
   const orderedRecords = useMemo(() => {
     if (!rowOrder.length) return filteredRecords;
@@ -143,24 +144,22 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
       const index = columnOrder.indexOf(key);
       return index < 0 ? Number.MAX_SAFE_INTEGER : index;
     };
-    return (
-      gridFields
-        .map((field) => ({
-          key: field.objId,
-          header: field.name,
-          icon: <FieldTypeIcon type={field.type} />,
-          className: field.type === "checkbox" ? "text-center" : undefined,
-          system: field.isSystemField,
-          cell: (record: ISidebarRecord) => (
-            <RecordValueNode
-              field={field}
-              value={recordFieldValue(field, record)}
-              members={members}
-            />
-          ),
-        }))
-        .sort((a, b) => position(a.key) - position(b.key))
-    );
+    return gridFields
+      .map((field) => ({
+        key: field.objId,
+        header: field.name,
+        icon: <FieldTypeIcon type={field.type} />,
+        className: field.type === "checkbox" ? "text-center" : undefined,
+        system: field.isSystemField,
+        cell: (record: ISidebarRecord) => (
+          <RecordValueNode
+            field={field}
+            value={recordFieldValue(field, record)}
+            members={members}
+          />
+        ),
+      }))
+      .sort((a, b) => position(a.key) - position(b.key));
   }, [gridFields, columnOrder, members]);
   const fieldTypeById = useMemo(
     () => new Map(gridFields.map((field) => [field?.objId, field?.type])),
@@ -231,7 +230,8 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [onRefreshFields],
   );
   const deleteColumn = useCallback(
-    (key: string) => setFieldAction({ kind: "delete", fieldId: key, open: true }),
+    (key: string) =>
+      setFieldAction({ kind: "delete", fieldId: key, open: true }),
     [],
   );
   const changeFieldActionOpen = useCallback(
@@ -278,6 +278,11 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [records?.length, openNewRecord],
   );
 
+  const lookupContext = useMemo(
+    () => ({ sources: lookupSources, lookups }),
+    [lookupSources, lookups],
+  );
+
   const pageToolbar = useMemo<PageToolbarProps>(
     () => ({
       onAdd: openNewRecord,
@@ -305,92 +310,94 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <main className="flex min-h-0 flex-1 flex-col">
-        {!!(item?.sidebarText?.length || item?.sidebarDesc?.length) && (
-          <PageHeader
-            title={item?.sidebarText}
-            description={item?.sidebarDesc}
-            hidePageSeparator={item?.hidePageSeparator}
-            actions={actions}
-            people={people}
-            onInvitePeople={invitePeople}
+    <RecordLookupContext.Provider value={lookupContext}>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <main className="flex min-h-0 flex-1 flex-col">
+          {!!(item?.sidebarText?.length || item?.sidebarDesc?.length) && (
+            <PageHeader
+              title={item?.sidebarText}
+              description={item?.sidebarDesc}
+              hidePageSeparator={item?.hidePageSeparator}
+              actions={actions}
+              people={people}
+              onInvitePeople={invitePeople}
+            />
+          )}
+          <ModulePageToolbar {...pageToolbar} />
+          <ModuleAppView
+            {...data.recordsState}
+            records={orderedRecords}
+            getKey={getRecordKey}
+            columns={visibleColumns}
+            empty={empty}
+            columnWidths={columnWidths}
+            onColumnResize={resizeColumn}
+            onColumnReorder={reorderVisibleColumns}
+            pinnedColumns={pinnedColumns}
+            onColumnPinToggle={togglePinnedColumn}
+            onColumnEdit={editColumn}
+            onColumnHide={hideColumn}
+            onColumnDelete={deleteColumn}
+            selectedKeys={selectedKeys}
+            onSelectionChange={setSelectedKeys}
+            onRowReorder={reorderRow}
+            pinnedRows={shownPinnedRows}
+            onRowPinToggle={togglePinnedRow}
+            onRowExpand={openRecord}
+            onAddField={data.onAddField}
+            onAdd={openNewRecord}
+            addLabel={ADD_LABEL}
+            pageSize={pageSize}
+            page={currentPage}
           />
-        )}
-        <ModulePageToolbar {...pageToolbar} />
-        <ModuleAppView
-          {...data.recordsState}
-          records={orderedRecords}
-          getKey={getRecordKey}
-          columns={visibleColumns}
-          empty={empty}
-          columnWidths={columnWidths}
-          onColumnResize={resizeColumn}
-          onColumnReorder={reorderVisibleColumns}
-          pinnedColumns={pinnedColumns}
-          onColumnPinToggle={togglePinnedColumn}
-          onColumnEdit={editColumn}
-          onColumnHide={hideColumn}
-          onColumnDelete={deleteColumn}
-          selectedKeys={selectedKeys}
-          onSelectionChange={setSelectedKeys}
-          onRowReorder={reorderRow}
-          pinnedRows={shownPinnedRows}
-          onRowPinToggle={togglePinnedRow}
-          onRowExpand={openRecord}
-          onAddField={data.onAddField}
-          onAdd={openNewRecord}
-          addLabel={ADD_LABEL}
-          pageSize={pageSize}
+        </main>
+        <ModulePageFooter
+          total={total}
           page={currentPage}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          selectedCount={selectedCount}
+          onClearSelection={clearSelection}
+          pinnedCount={pinnedCount}
         />
-      </main>
-      <ModulePageFooter
-        total={total}
-        page={currentPage}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        selectedCount={selectedCount}
-        onClearSelection={clearSelection}
-        pinnedCount={pinnedCount}
-      />
-      <ModuleNewRecordForm
-        {...data.fieldsState}
-        open={newRecordOpen}
-        onOpenChange={setNewRecordOpen}
-        fields={fields}
-        members={members}
-        onUploadAttachment={data.onUploadAttachment}
-        onSave={saveRecord}
-      />
-      <ModuleOpenRecord
-        recordKey={data.openedRecordId}
-        onClose={data.onCloseRecord}
-        fields={fields}
-        members={members}
-        onUploadAttachment={data.onUploadAttachment}
-        record={data.openedRecord}
-        {...recordNavigation}
-        onNavigate={onOpenRecord}
-        isLoading={openedRecordLoading}
-        error={data.openedRecordState?.error ?? data.fieldsState?.error}
-        onRetry={data.openedRecordState?.onRetry}
-        onSave={data.onUpdateRecord}
-      />
-      <ModuleEditFieldDialog
-        key={actionField?.objId}
-        field={fieldAction?.kind === "edit" ? actionField : undefined}
-        open={fieldAction?.kind === "edit" && fieldAction.open}
-        onOpenChange={changeFieldActionOpen}
-        onSave={saveField}
-        takenNames={otherFieldNames}
-      />
-      <ModuleDeleteFieldDialog
-        field={fieldAction?.kind === "delete" ? actionField : undefined}
-        open={fieldAction?.kind === "delete" && fieldAction.open}
-        onOpenChange={changeFieldActionOpen}
-        onDelete={deleteField}
-      />
-    </div>
+        <ModuleNewRecordForm
+          {...data.fieldsState}
+          open={newRecordOpen}
+          onOpenChange={setNewRecordOpen}
+          fields={fields}
+          members={members}
+          onUploadAttachment={data.onUploadAttachment}
+          onSave={saveRecord}
+        />
+        <ModuleOpenRecord
+          recordKey={data.openedRecordId}
+          onClose={data.onCloseRecord}
+          fields={fields}
+          members={members}
+          onUploadAttachment={data.onUploadAttachment}
+          record={data.openedRecord}
+          {...recordNavigation}
+          onNavigate={onOpenRecord}
+          isLoading={openedRecordLoading}
+          error={data.openedRecordState?.error ?? data.fieldsState?.error}
+          onRetry={data.openedRecordState?.onRetry}
+          onSave={data.onUpdateRecord}
+        />
+        <ModuleEditFieldDialog
+          key={actionField?.objId}
+          field={fieldAction?.kind === "edit" ? actionField : undefined}
+          open={fieldAction?.kind === "edit" && fieldAction.open}
+          onOpenChange={changeFieldActionOpen}
+          onSave={saveField}
+          takenNames={otherFieldNames}
+        />
+        <ModuleDeleteFieldDialog
+          field={fieldAction?.kind === "delete" ? actionField : undefined}
+          open={fieldAction?.kind === "delete" && fieldAction.open}
+          onOpenChange={changeFieldActionOpen}
+          onDelete={deleteField}
+        />
+      </div>
+    </RecordLookupContext.Provider>
   );
 }

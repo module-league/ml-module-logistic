@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { NumberSettings } from "@/lib/numberHelper";
+import type { LookupSource } from "@/lib/lookupHelper";
 
 export interface ModuleFieldTypeOption {
   fieldType: IField["type"];
@@ -44,6 +45,20 @@ export interface ModuleFieldNumberSettingsProps {
   onChange: (value: NumberSettings) => void;
   /** Currency fields also pick the symbol shown before the number. */
   withSymbol?: boolean;
+}
+
+/** The sidebar a lookup field links to and the field it shows for each record. */
+export type ModuleFieldLookupSettings = Pick<
+  NonNullable<IField["lookupSettings"]>,
+  "categoryId" | "lookupFieldId"
+>;
+
+export interface ModuleFieldLookupSettingsProps {
+  value: ModuleFieldLookupSettings;
+  onChange: (value: ModuleFieldLookupSettings) => void;
+  sources: LookupSource[];
+  /** An existing lookup field keeps its sidebar: its linked record ids belong to it. */
+  sourceLocked?: boolean;
 }
 
 export interface ModuleDeleteFieldDialogProps

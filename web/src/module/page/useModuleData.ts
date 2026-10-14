@@ -1,14 +1,30 @@
 import { useCallback, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { toFieldCreate, toFieldUpdate } from "@/services/fields/field.api";
 import { fieldKeys, putInLists } from "@/services/fields/field.utils";
 import { recordKeys } from "@/services/records/record.api";
 import { memberKeys } from "@/services/user/user.api";
+import { useWorkspaceContext } from "@/module/workspace/workspace.context";
+import {
+  shownLookupFields,
+  type LookupSource,
+  type RecordLookups,
+} from "@/lib/lookupHelper";
 import type { ModuleData, ModuleDataApi } from "./modulePage.types";
 
 const NO_FIELDS: ISidebarField[] = [];
 const NO_RECORDS: ISidebarRecord[] = [];
 const NO_MEMBERS: IUserInfo[] = [];
+
+function dataOf<T>(results: UseQueryResult<T>[]) {
+  return results.map((result) => result.data);
+}
 
 /** Runs the page's API for one sidebar and returns it as ModuleData. Pass a module-level api object so it stays the same between renders. */
 export function useModuleData(
@@ -34,6 +50,66 @@ export function useModuleData(
     queryFn: () => api.getMembers(),
   });
 
+  // Every page's fields, shared with that page's own query: they list the other sidebars a lookup can link to
+  const { items: pages } = useWorkspaceContext();
+  const pageFields = useQueries({
+    queries: pages.map((page) => ({
+      queryKey: fieldKeys.list(page.sidebarId),
+      queryFn: () => api.getFields(page.sidebarId),
+    })),
+    combine: dataOf<ISidebarField[]>,
+  });
+  const lookupSources = useMemo<LookupSource[]>(
+    () =>
+      pages
+        .map((page, index) => ({
+          sidebarId: page.sidebarId,
+          sidebarText: page.sidebarText,
+          fields: pageFields[index] ?? NO_FIELDS,
+        }))
+        .filter(
+          (source) =>
+            source.sidebarId !== id && shownLookupFields(source).length > 0,
+        ),
+    [pages, pageFields, id],
+  );
+  const fieldsBySidebar = useMemo(
+    () =>
+      new Map(pages.map((page, index) => [page.sidebarId, pageFields[index]])),
+    [pages, pageFields],
+  );
+
+  // Records of the sidebars this sidebar's lookup fields link to, shared with those pages' own queries
+  const lookupSidebarIds = useMemo(
+    () => [
+      ...new Set(
+        (fieldsQuery.data ?? NO_FIELDS)
+          .filter((field) => field?.type === "lookup")
+          .map((field) => field?.lookupSettings?.categoryId)
+          .filter((categoryId): categoryId is string => !!categoryId),
+      ),
+    ],
+    [fieldsQuery.data],
+  );
+  const lookupRecords = useQueries({
+    queries: lookupSidebarIds.map((lookupId) => ({
+      queryKey: recordKeys.list(lookupId),
+      queryFn: () => api.getRecords(lookupId),
+    })),
+    combine: dataOf<ISidebarRecord[]>,
+  });
+  const lookups = useMemo<RecordLookups>(
+    () =>
+      Object.fromEntries(
+        lookupSidebarIds.flatMap((lookupId, index) => {
+          const records = lookupRecords[index];
+          const fields = fieldsBySidebar.get(lookupId);
+          return records && fields ? [[lookupId, { fields, records }]] : [];
+        }),
+      ),
+    [lookupSidebarIds, lookupRecords, fieldsBySidebar],
+  );
+
   const [openedRecordId, setOpenedRecordId] = useState<string>();
   const recordQuery = useQuery({
     queryKey: recordKeys.detail(id, openedRecordId ?? ""),
@@ -55,14 +131,21 @@ export function useModuleData(
       ),
   });
   const { mutateAsync: updateRecord } = useMutation({
-    mutationFn: ({ objId, body }: { objId: string; body: ISidebarRecordUpdate }) =>
-      api.updateRecord(id, objId, body),
+    mutationFn: ({
+      objId,
+      body,
+    }: {
+      objId: string;
+      body: ISidebarRecordUpdate;
+    }) => api.updateRecord(id, objId, body),
     onSuccess: (updated) => {
       queryClient.setQueryData(recordKeys.detail(id, updated.objId), updated);
-      queryClient.setQueryData<ISidebarRecord[]>(recordKeys.list(id), (current) =>
-        current?.map((record) =>
-          record?.objId === updated.objId ? updated : record,
-        ),
+      queryClient.setQueryData<ISidebarRecord[]>(
+        recordKeys.list(id),
+        (current) =>
+          current?.map((record) =>
+            record?.objId === updated.objId ? updated : record,
+          ),
       );
     },
   });
@@ -89,8 +172,13 @@ export function useModuleData(
   });
 
   const { mutateAsync: updateField } = useMutation({
-    mutationFn: ({ objId, body }: { objId: string; body: ISidebarFieldUpdate }) =>
-      api.updateField(objId, body),
+    mutationFn: ({
+      objId,
+      body,
+    }: {
+      objId: string;
+      body: ISidebarFieldUpdate;
+    }) => api.updateField(objId, body),
     onSuccess: (updated) =>
       putInLists(queryClient, id, (fields) =>
         fields.map((field) =>
@@ -187,8 +275,12 @@ export function useModuleData(
       onUpdateField,
       onDeleteField,
       onUploadAttachment,
+      lookupSources,
+      lookups,
     }),
     [
+      lookupSources,
+      lookups,
       openedRecordId,
       openedRecord,
       openedRecordState,

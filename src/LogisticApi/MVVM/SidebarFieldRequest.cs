@@ -36,6 +36,16 @@ namespace LogisticApi.MVVM
         public string? abbreviation { get; set; }
     }
 
+    public class SidebarLookupSettingsRequest
+    {
+        /// <summary>The sidebarId whose records are linked. Can't change once the field exists.</summary>
+        [MaxLength(100), RegularExpression("^[a-z0-9]+(-[a-z0-9]+)*$")]
+        public string? categoryId { get; set; }
+
+        /// <summary>The field of that sidebar shown for each linked record.</summary>
+        public Guid? lookupFieldId { get; set; }
+    }
+
     public abstract class SidebarFieldSettingsRequest
     {
         [MaxLength(500)]
@@ -57,6 +67,9 @@ namespace LogisticApi.MVVM
 
         /// <summary>Only for number and currency fields.</summary>
         public SidebarNumberSettingsRequest? numberSettings { get; set; }
+
+        /// <summary>Only for lookup fields; required when one is created.</summary>
+        public SidebarLookupSettingsRequest? lookupSettings { get; set; }
 
         /// <summary>Only for select fields. On update, the full list: options left out are deleted.</summary>
         public List<SidebarFieldOptionRequest>? dropDownValues { get; set; }

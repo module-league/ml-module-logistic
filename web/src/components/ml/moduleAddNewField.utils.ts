@@ -60,6 +60,12 @@ export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
     icon: FIELD_TYPE_ICONS.member,
   },
   {
+    fieldType: "lookup",
+    label: "Lookup",
+    description: "Link to records of another sidebar.",
+    icon: FIELD_TYPE_ICONS.lookup,
+  },
+  {
     fieldType: "attachment",
     label: "Attachment",
     description: "Documents, photos, proof of delivery.",
@@ -209,9 +215,10 @@ export function toField({
   timeFormat = DEFAULT_DATE_SETTINGS.timeFormat,
   memberSettings,
   numberSettings = DEFAULT_NUMBER_SETTINGS,
+  lookupSettings,
 }: Pick<IField, "type" | "name" | "dropDownValues"> &
   Partial<ModuleFieldDateSettings> &
-  Pick<IField, "memberSettings" | "numberSettings">): IField {
+  Pick<IField, "memberSettings" | "numberSettings" | "lookupSettings">): IField {
   return {
     name,
     type,
@@ -223,9 +230,9 @@ export function toField({
     isDateField: type === "date",
     isUserField: type === "member",
     isNumeric: type === "number" || type === "currency",
-    isVirtualField: false,
-    isForeignField: false,
-    isPlainField: true,
+    isVirtualField: type === "lookup",
+    isForeignField: type === "lookup",
+    isPlainField: type !== "lookup",
     dateFormat,
     categoryId: "",
     displayOrder: 0,
@@ -237,5 +244,12 @@ export function toField({
     memberSettings:
       type === "member" ? { multiple: !!memberSettings?.multiple } : undefined,
     numberSettings: toNumberSettings(type, numberSettings),
+    lookupSettings:
+      type === "lookup"
+        ? {
+            categoryId: lookupSettings?.categoryId,
+            lookupFieldId: lookupSettings?.lookupFieldId,
+          }
+        : undefined,
   };
 }

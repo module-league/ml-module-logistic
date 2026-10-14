@@ -25,6 +25,10 @@ namespace LogisticApi.Models
         public int? decimalPlaces { get; set; }
         /// <summary>Number and currency fields: one of <see cref="Abbreviations"/>.</summary>
         public string abbreviation { get; set; } = "none";
+        /// <summary>Lookup fields only: the sidebar whose records are linked. Can't change once set.</summary>
+        public string? lookupSidebarId { get; set; }
+        /// <summary>Lookup fields only: the field of that sidebar shown for each linked record.</summary>
+        public Guid? lookupFieldId { get; set; }
 
         public static FieldSettings Read(string? json) =>
             string.IsNullOrWhiteSpace(json) ? new() : JsonSerializer.Deserialize<FieldSettings>(json, Json) ?? new();

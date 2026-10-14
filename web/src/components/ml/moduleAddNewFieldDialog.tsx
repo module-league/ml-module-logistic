@@ -15,7 +15,7 @@ import {
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Check, ChevronLeft, GripVertical, Plus, X } from "lucide-react";
+import { Check, ChevronLeft, GripVertical, Link2, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getContrastColor, presetColors } from "@/lib/colorUtils";
 import { Button } from "@/components/ui/button";
@@ -59,11 +59,16 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "@/components/ui/sonner";
 import { errorParser } from "@/hooks/useErrorParser";
+import { shownLookupFields } from "@/lib/lookupHelper";
+import { useRecordLookups } from "@/components/custom/RecordLookup.context";
+import { FieldTypeIcon } from "./fieldTypeIcon";
 import type {
   ModuleAddFieldStepsProps,
   ModuleFieldNumberSettingsProps,
   ModuleFieldDateSettings,
   ModuleFieldDateSettingsProps,
+  ModuleFieldLookupSettings,
+  ModuleFieldLookupSettingsProps,
   ModuleAddNewFieldDialogProps,
   ModuleDeleteFieldDialogProps,
   ModuleEditFieldDialogProps,
@@ -260,6 +265,12 @@ function AddFieldSteps({
   const [numberSettings, setNumberSettings] = useState<NumberSettings>(() =>
     fieldNumberDraft(field),
   );
+  const { sources } = useRecordLookups();
+  const [lookupSettings, setLookupSettings] =
+    useState<ModuleFieldLookupSettings>(() => ({
+      categoryId: field?.lookupSettings?.categoryId,
+      lookupFieldId: field?.lookupSettings?.lookupFieldId,
+    }));
   const option = useMemo(
     () => (type ? fieldTypeOption(type) : undefined),
     [type],
@@ -273,8 +284,17 @@ function AddFieldSteps({
       ...dateSettings,
       memberSettings: { multiple: multipleMembers },
       numberSettings,
+      lookupSettings,
     });
-  }, [type, name, options, dateSettings, multipleMembers, numberSettings]);
+  }, [
+    type,
+    name,
+    options,
+    dateSettings,
+    multipleMembers,
+    numberSettings,
+    lookupSettings,
+  ]);
   const nameTaken = useMemo(
     () => isFieldNameTaken(name, takenNames),
     [name, takenNames],
@@ -282,7 +302,9 @@ function AddFieldSteps({
   const canAdd =
     !!draft?.name &&
     !nameTaken &&
-    (!draft.isSelectionField || draft.dropDownValues.length > 0);
+    (!draft.isSelectionField || draft.dropDownValues.length > 0) &&
+    (type !== "lookup" ||
+      (!!lookupSettings.categoryId && !!lookupSettings.lookupFieldId));
   const submit = useCallback(
     (event: SyntheticEvent) => {
       event.preventDefault();
@@ -393,6 +415,14 @@ function AddFieldSteps({
               withSymbol={type === "currency"}
             />
           )}
+          {type === "lookup" && (
+            <FieldLookupSettings
+              value={lookupSettings}
+              onChange={setLookupSettings}
+              sources={sources}
+              sourceLocked={editing}
+            />
+          )}
           {type === "member" && (
             <label className="flex items-start justify-between gap-3 text-sm">
               <span className="flex flex-col gap-0.5">
@@ -444,6 +474,107 @@ function AddFieldSteps({
         </div>
       </DialogFooter>
     </form>
+  );
+}
+
+function FieldLookupSettings({
+  value,
+  onChange,
+  sources,
+  sourceLocked = false,
+}: ModuleFieldLookupSettingsProps) {
+  const source = useMemo(
+    () => sources?.find((entry) => entry?.sidebarId === value.categoryId),
+    [sources, value.categoryId],
+  );
+  const shownFields = useMemo(() => shownLookupFields(source), [source]);
+  const pickSource = useCallback(
+    (categoryId: string) => {
+      const picked = sources?.find((entry) => entry?.sidebarId === categoryId);
+      onChange({
+        categoryId,
+        lookupFieldId: shownLookupFields(picked)[0]?.objId,
+      });
+    },
+    [sources, onChange],
+  );
+
+  if (!sources?.length && !sourceLocked) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center">
+        <Link2 className="size-5 text-muted-foreground" />
+        <p className="text-sm font-medium">No available sources to look up.</p>
+        <p className="text-xs text-muted-foreground">
+          Add a lookup source, then try to configure your lookup again.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Field>
+        <FieldLabel htmlFor="field-lookup-source">Look up records in</FieldLabel>
+        <Select
+          value={value.categoryId ?? ""}
+          onValueChange={pickSource}
+          disabled={sourceLocked}
+        >
+          <SelectTrigger id="field-lookup-source" className="w-full">
+            <SelectValue placeholder="Choose a sidebar">
+              {source?.sidebarText ?? value.categoryId}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent position="popper" searchable>
+            {sources?.map((entry) => (
+              <SelectItem
+                key={entry.sidebarId}
+                value={entry.sidebarId}
+                textValue={entry.sidebarText}
+              >
+                {entry.sidebarText}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {sourceLocked && (
+          <p className="text-xs text-muted-foreground">
+            The sidebar can't change once the field exists.
+          </p>
+        )}
+      </Field>
+      {!!value.categoryId && (
+        <Field>
+          <FieldLabel htmlFor="field-lookup-shown">Field to show</FieldLabel>
+          <Select
+            value={value.lookupFieldId ?? ""}
+            onValueChange={(lookupFieldId) =>
+              onChange({ ...value, lookupFieldId })
+            }
+          >
+            <SelectTrigger id="field-lookup-shown" className="w-full">
+              <SelectValue placeholder="Choose a field" />
+            </SelectTrigger>
+            <SelectContent position="popper" searchable>
+              {shownFields.map((shown) => (
+                <SelectItem
+                  key={shown.objId}
+                  value={shown.objId}
+                  textValue={shown.name}
+                >
+                  <FieldTypeIcon type={shown.type} />
+                  {shown.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Each record can link to several records in{" "}
+            {source?.sidebarText ?? "this sidebar"}, shown by this field.
+          </p>
+        </Field>
+      )}
+    </div>
   );
 }
 

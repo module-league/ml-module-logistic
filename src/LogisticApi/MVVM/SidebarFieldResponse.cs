@@ -38,6 +38,13 @@ namespace LogisticApi.MVVM
         public string abbreviation { get; set; } = string.Empty;
     }
 
+    public class SidebarLookupSettingsResponse
+    {
+        /// <summary>The sidebarId whose records are linked.</summary>
+        public string? categoryId { get; set; }
+        public Guid? lookupFieldId { get; set; }
+    }
+
     public class SidebarFieldResponse
     {
         public Guid objId { get; set; }
@@ -67,6 +74,8 @@ namespace LogisticApi.MVVM
         public SidebarMemberSettingsResponse? memberSettings { get; set; }
         /// <summary>Only set for number and currency fields.</summary>
         public SidebarNumberSettingsResponse? numberSettings { get; set; }
+        /// <summary>Only set for lookup fields.</summary>
+        public SidebarLookupSettingsResponse? lookupSettings { get; set; }
 
         public List<SidebarFieldOptionResponse> dropDownValues { get; set; } = [];
 
@@ -108,6 +117,9 @@ namespace LogisticApi.MVVM
                         decimalPlaces = settings.decimalPlaces ?? (field.type == "currency" ? 2 : null),
                         abbreviation = settings.abbreviation,
                     }
+                    : null,
+                lookupSettings = FieldTypes.IsLookup(field.type)
+                    ? new() { categoryId = settings.lookupSidebarId, lookupFieldId = settings.lookupFieldId }
                     : null,
                 dropDownValues = field.options
                     .Where(option => !option.IsDeleted)

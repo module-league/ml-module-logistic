@@ -80,13 +80,13 @@ declare global {
         leadingZeros?: number;
       };
       lookupSettings?: {
-        /** The category to lookup */
+        /** The sidebarId whose records a lookup field links to. Fixed once the field exists. */
         categoryId?: string;
         /** Optional view to adopt the filter and sort settings */
         viewId?: string;
         // /** Color of the lookup+mirror group */
         // color?: string;
-        /** For lookup field only. The field ID to display the value on the linked record node */
+        /** For lookup field only. The field of that sidebar shown for each linked record */
         lookupFieldId?: string;
         /** For mirror field only. The destined linked record field ID */
         mirrorFieldId?: string;
@@ -158,14 +158,14 @@ declare global {
   };
 
   type ISidebarFieldCreate = Pick<IField, "name" | "type" | "description"> &
-    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat" | "memberSettings" | "numberSettings">> & {
+    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat" | "memberSettings" | "numberSettings" | "lookupSettings">> & {
     isPrimaryField?: boolean;
     dropDownValues?: ISidebarFieldOptionInput[];
   };
 
   /** The type can't change once a field exists. Options left out of dropDownValues are deleted. */
   type ISidebarFieldUpdate = Pick<IField, "name" | "description"> &
-    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat" | "memberSettings" | "numberSettings">> & {
+    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat" | "memberSettings" | "numberSettings" | "lookupSettings">> & {
     versionNo: number;
     isPrimaryField?: boolean;
     dropDownValues?: ISidebarFieldOptionInput[];

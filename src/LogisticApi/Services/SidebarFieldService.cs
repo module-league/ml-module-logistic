@@ -55,8 +55,10 @@ namespace LogisticApi.Services
                 sidebarDescription = CleanDescription(request.description),
                 type = type,
                 displayOrder = (lastOrder ?? -1) + 1,
-                settings = ApplySettings(new FieldSettings(), request).Write(),
             };
+            var settings = ApplySettings(new FieldSettings(), request);
+            if (FieldTypes.IsLookup(type)) await ApplyLookupAsync(sidebarId, settings, request.lookupSettings, ct);
+            field.settings = settings.Write();
             foreach (var (option, index) in options.Select((option, index) => (option, index)))
                 field.options.Add(NewOption(field.ObjId, option, index));
 
@@ -86,7 +88,10 @@ namespace LogisticApi.Services
                 field.sidebarName = name;
             }
             field.sidebarDescription = CleanDescription(request.description);
-            field.settings = ApplySettings(FieldSettings.Read(field.settings), request).Write();
+            var settings = ApplySettings(FieldSettings.Read(field.settings), request);
+            if (FieldTypes.IsLookup(field.type) && request.lookupSettings is not null)
+                await ApplyLookupAsync(field.sidebarId, settings, request.lookupSettings, ct);
+            field.settings = settings.Write();
 
             if (request.isPrimaryField == true && !field.isPrimaryField)
                 await MakePrimaryAsync(field, ct);
@@ -193,6 +198,30 @@ namespace LogisticApi.Services
             }
             if (request.color is not null) settings.color = request.color.ToUpperInvariant();
             return settings;
+        }
+
+        /// <summary>Checks the lookup's sidebar and shown field. The sidebar is another one than the field's own, and fixed once set: linked record ids belong to it.</summary>
+        private async Task ApplyLookupAsync(string ownSidebarId, FieldSettings settings, SidebarLookupSettingsRequest? request, CancellationToken ct)
+        {
+            var sidebarId = request?.categoryId ?? settings.lookupSidebarId;
+            if (string.IsNullOrEmpty(sidebarId))
+                throw ApiProblemException.BadRequest("Pick the sidebar to look up.", "lookupSettings.categoryId is required for a lookup field.");
+            if (sidebarId == ownSidebarId)
+                throw ApiProblemException.BadRequest("A lookup can't look up its own sidebar.", "Pick another sidebar to look up.");
+            if (settings.lookupSidebarId is not null && settings.lookupSidebarId != sidebarId)
+                throw ApiProblemException.BadRequest("The looked-up sidebar can't change.", "Delete the field and add a new one to look up another sidebar.");
+
+            var fieldId = request?.lookupFieldId ?? settings.lookupFieldId
+                ?? throw ApiProblemException.BadRequest("Pick the field to show.", "lookupSettings.lookupFieldId is required for a lookup field.");
+            var shown = await db.SidebarFields
+                .AsNoTracking()
+                .FirstOrDefaultAsync(f => f.ObjId == fieldId && f.sidebarId == sidebarId, ct)
+                ?? throw ApiProblemException.BadRequest("Unknown field to show.", $"'{sidebarId}' has no field '{fieldId}'.");
+            if (!FieldTypes.CanShowInLookup(shown.type))
+                throw ApiProblemException.BadRequest("This field can't be shown in a lookup.", $"'{shown.sidebarName}' is a {shown.type} field; pick a text, number, select, date or member field.");
+
+            settings.lookupSidebarId = sidebarId;
+            settings.lookupFieldId = fieldId;
         }
 
         private static List<SidebarFieldOptionRequest> CleanOptions(string type, List<SidebarFieldOptionRequest>? options)

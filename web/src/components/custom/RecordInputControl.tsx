@@ -21,6 +21,7 @@ import { SelectionNode } from "./RecordValueNode";
 import { RecordMemberInput } from "./RecordMemberInput";
 import { RecordAttachmentInput } from "./RecordAttachmentInput";
 import { RecordMultiSelectInput } from "./RecordMultiSelectInput";
+import { RecordLookupInput } from "./RecordLookupInput";
 import type { AttachmentUploadHandler } from "./RecordAttachmentInput.types";
 import { DateTimePicker } from "../ui/date-time-picker";
 import { parseFieldDate, toFieldDateValue } from "@/lib/dateHelper";
@@ -159,6 +160,23 @@ export function RecordInputControl(props: RecordInputControlProps) {
         id={id}
         field={field}
         value={value}
+        disabled={disabled}
+        placeholder={placeholder}
+        className={props.className}
+        style={props.style}
+        onChange={onChange}
+        onBlur={onBlur}
+      />
+    );
+  }
+
+  if (field.type === "lookup") {
+    return (
+      <RecordLookupInput
+        id={id}
+        field={field}
+        value={value}
+        members={members}
         disabled={disabled}
         placeholder={placeholder}
         className={props.className}

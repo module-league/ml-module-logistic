@@ -88,14 +88,68 @@ namespace LogisticApi.Services
                     .Where(a => a.refId == sidebarId && wanted.Contains(a.ObjId))
                     .ToDictionaryAsync(a => a.ObjId, ct);
 
+            var linkedIds = fields
+                .Where(f => FieldTypes.IsLookup(f.type))
+                .ToDictionary(f => f.ObjId, f => ReadRecordIds(f, values.GetValueOrDefault(f.ObjId)));
+            var wantedRecords = linkedIds.Values.SelectMany(ids => ids).Distinct().ToList();
+            var linkedSidebars = wantedRecords.Count == 0
+                ? []
+                : await db.SidebarRecords
+                    .AsNoTracking()
+                    .Where(r => wantedRecords.Contains(r.ObjId))
+                    .ToDictionaryAsync(r => r.ObjId, r => r.sidebarId, ct);
+
             return fields.Select(f => new SidebarRecordValue
             {
                 fieldId = f.ObjId,
                 type = f.type,
                 value = attachmentIds.TryGetValue(f.ObjId, out var ids)
                     ? AttachmentsValue(f, ids, attachments)
-                    : CleanValue(f, values.GetValueOrDefault(f.ObjId)),
+                    : linkedIds.TryGetValue(f.ObjId, out var recordIds)
+                        ? LinkedRecordsValue(f, recordIds, linkedSidebars)
+                        : CleanValue(f, values.GetValueOrDefault(f.ObjId)),
             }).ToList();
+        }
+
+        /// <summary>The record ids in a lookup value: a JSON array of ids, or one id, in order, without repeats.</summary>
+        private static List<Guid> ReadRecordIds(SidebarField field, string? value)
+        {
+            var text = value?.Trim();
+            if (string.IsNullOrEmpty(text)) return [];
+            var raw = ParseIdList(text)
+                ?? throw ApiProblemException.BadRequest("Invalid linked records.", $"'{field.sidebarName}' needs a record id or a list of record ids.");
+            var ids = new List<Guid>();
+            foreach (var item in raw)
+            {
+                if (!Guid.TryParse(item, out var id))
+                    throw ApiProblemException.BadRequest("Invalid linked records.", $"'{item}' isn't a record id.");
+                if (!ids.Contains(id)) ids.Add(id);
+            }
+            return ids;
+        }
+
+        /// <summary>Every linked record must exist in the sidebar the lookup field looks up.</summary>
+        private static string? LinkedRecordsValue(SidebarField field, List<Guid> ids, Dictionary<Guid, string> recordSidebars)
+        {
+            if (ids.Count == 0) return null;
+            var sidebarId = FieldSettings.Read(field.settings).lookupSidebarId;
+            var missing = ids.Where(id => recordSidebars.GetValueOrDefault(id) != sidebarId).Select(id => (Guid?)id).FirstOrDefault();
+            if (missing is not null)
+                throw ApiProblemException.BadRequest("Unknown linked record.", $"'{field.sidebarName}' can't link to record '{missing}'.");
+            return JsonSerializer.Serialize(ids.Select(id => id.ToString()), Json);
+        }
+
+        /// <summary>A JSON array of strings, or the text itself as one item; null when the JSON is broken.</summary>
+        private static List<string>? ParseIdList(string text)
+        {
+            try
+            {
+                return text.StartsWith('[') ? JsonSerializer.Deserialize<List<string>>(text, Json) : [text];
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
         }
 
         /// <summary>The attachment ids in a value: a JSON array of attachment objects (or of bare ids), in order, without repeats.</summary>

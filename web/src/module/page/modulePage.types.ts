@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { ModuleQueryState } from "@/module/shell/module.types";
+import type { LookupSource, RecordLookups } from "@/lib/lookupHelper";
 
 /** The API functions a page hands to useModuleData; each page picks its own, all return the same shapes. */
 export interface ModuleDataApi {
@@ -55,6 +56,10 @@ export interface ModuleData {
   onDeleteField: (objId: string) => Promise<unknown>;
   /** Uploads one file for an attachment field of this sidebar. */
   onUploadAttachment: (file: File) => Promise<IAttachment>;
+  /** The module's sidebars that have a field a lookup can show; a new lookup field links to one of them. */
+  lookupSources: LookupSource[];
+  /** Fields and records of the sidebars this sidebar's lookup fields link to. */
+  lookups: RecordLookups;
 }
 
 /** The field the header menu is editing or deleting; kept after open turns false so its dialog can animate out. */
