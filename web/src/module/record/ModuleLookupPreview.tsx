@@ -1,5 +1,10 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronLeftIcon, Link2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeftIcon,
+  Link2,
+  TextSearchIcon,
+} from "lucide-react";
 import {
   Button,
   cn,
@@ -109,12 +114,6 @@ export function ModuleLookupPreview({
         : cards,
     [cards, shownFields, term],
   );
-  const sourceText = useMemo(
-    () =>
-      sources?.find((source) => source?.sidebarId === categoryId)
-        ?.sidebarText ?? "another sidebar",
-    [sources, categoryId],
-  );
 
   return (
     <aside
@@ -133,13 +132,13 @@ export function ModuleLookupPreview({
         /> */}
 
         <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary-10 text-primary">
-          <Link2 className="size-4" />
+          <TextSearchIcon className="size-4" />
         </span>
         <div className="min-w-0 flex-1 flex flex-row items-center">
           <p className="truncate text-sm font-medium">{field?.name}</p>
           <Separator orientation="vertical" className="mx-2 h-3.5 w-px" />
           <p className="truncate text-xs text-muted-foreground flex-1">
-            {linked.length} linked from {sourceText}
+            {linked.length} linked.
           </p>
           <Input
             className="w-48"
