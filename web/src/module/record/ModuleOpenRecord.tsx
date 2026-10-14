@@ -21,6 +21,7 @@ export function ModuleOpenRecord({
   onClose,
   fields,
   members,
+  onUploadAttachment,
   record,
   isLoading = false,
   error,
@@ -76,6 +77,7 @@ export function ModuleOpenRecord({
               key={record.objId}
               fields={fields}
               members={members}
+              onUploadAttachment={onUploadAttachment}
               values={record.values}
               readOnly={!onSave}
               onValuesChange={onSave ? schedule : undefined}

@@ -53,6 +53,12 @@ export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
     description: "One person or a list of people.",
     icon: FIELD_TYPE_ICONS.member,
   },
+  {
+    fieldType: "attachment",
+    label: "Attachment",
+    description: "Documents, photos, proof of delivery.",
+    icon: FIELD_TYPE_ICONS.attachment,
+  },
 ];
 
 export const FIELD_DATE_FORMATS: IField["dateFormat"][] = [

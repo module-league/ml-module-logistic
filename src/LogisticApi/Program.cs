@@ -1,5 +1,6 @@
 using LogisticApi.Services;
 using LogisticApi.Context;
+using LogisticApi.Models;
 using Microsoft.EntityFrameworkCore;
 using ModuleLeague.Core.Abstractions;
 using ModuleLeague.Core.Interceptors;
@@ -25,6 +26,10 @@ builder.Services.AddDbContext<ContextDb>((sp, options) =>
 
 // Field templates per sidebar
 builder.Services.AddScoped<SidebarFieldService>();
+
+// Files for attachment fields, saved on disk
+builder.Services.Configure<AttachmentStorageOptions>(builder.Configuration.GetSection(AttachmentStorageOptions.Section));
+builder.Services.AddScoped<AttachmentService>();
 
 // Expected failures (400/404/409) thrown as ApiProblemException become ProblemDetails responses
 builder.Services.AddProblemDetails();

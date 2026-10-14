@@ -17,6 +17,7 @@ export function ModuleNewRecordForm({
   onOpenChange,
   fields,
   members,
+  onUploadAttachment,
   isLoading = false,
   error,
   onRetry,
@@ -62,6 +63,7 @@ export function ModuleNewRecordForm({
           <ModuleRecordForm
             fields={fields}
             members={members}
+            onUploadAttachment={onUploadAttachment}
             saving={saving}
             submitLabel="Add record"
             savingLabel="Adding…"

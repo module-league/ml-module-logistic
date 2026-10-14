@@ -1,5 +1,6 @@
 import { formatFieldDate } from "@/lib/dateHelper";
 import { memberNames } from "@/lib/memberHelper";
+import { attachmentNames } from "@/lib/attachmentHelper";
 import { formatFieldNumber } from "@/lib/numberHelper";
 
 /** Size of the new and open record dialogs. */
@@ -18,6 +19,7 @@ export function toRecordText(
 ) {
   if (!value || field?.type === "checkbox") return "";
   if (field?.type === "member") return memberNames(members, value);
+  if (field?.type === "attachment") return attachmentNames(value);
   if (field?.type === "date") return formatFieldDate(field, value);
   if (field?.type === "number" || field?.type === "currency") {
     return formatFieldNumber(field, value);

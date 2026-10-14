@@ -341,6 +341,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
         onOpenChange={setNewRecordOpen}
         fields={fields}
         members={members}
+        onUploadAttachment={data.onUploadAttachment}
         onSave={saveRecord}
       />
       <ModuleOpenRecord
@@ -348,6 +349,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
         onClose={data.onCloseRecord}
         fields={fields}
         members={members}
+        onUploadAttachment={data.onUploadAttachment}
         record={data.openedRecord}
         isLoading={openedRecordLoading}
         error={data.openedRecordState?.error ?? data.fieldsState?.error}

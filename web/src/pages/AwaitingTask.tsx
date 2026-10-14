@@ -15,6 +15,7 @@ import {
   updateLogisticRecord,
 } from "@/services/records/record.api";
 import { getLogisticMembers } from "@/services/user/user.api";
+import { uploadLogisticAttachment } from "@/services/attachments/attachment.api";
 
 const awaitingTaskApi: ModuleDataApi = {
   getFields: getLogisticFields,
@@ -26,6 +27,7 @@ const awaitingTaskApi: ModuleDataApi = {
   updateField: updateLogisticField,
   deleteField: deleteLogisticField,
   getMembers: getLogisticMembers,
+  uploadAttachment: uploadLogisticAttachment,
 };
 
 export default function AwaitingTask() {

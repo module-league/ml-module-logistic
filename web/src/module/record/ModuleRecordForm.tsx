@@ -16,6 +16,7 @@ import type {
 export function ModuleRecordForm({
   fields,
   members,
+  onUploadAttachment,
   values,
   saving = false,
   readOnly = false,
@@ -85,6 +86,7 @@ export function ModuleRecordForm({
                 <RecordInputControl
                   field={field}
                   members={members}
+                  onUploadAttachment={onUploadAttachment}
                   name={input.name}
                   value={input.value ?? ""}
                   disabled={saving || readOnly}

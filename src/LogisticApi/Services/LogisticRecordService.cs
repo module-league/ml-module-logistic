@@ -77,12 +77,61 @@ namespace LogisticApi.Services
             if (unknown.Count > 0)
                 throw ApiProblemException.BadRequest("Unknown field.", $"Field '{unknown[0]}' isn't part of this sidebar.");
 
+            var attachmentIds = fields
+                .Where(f => f.type == "attachment")
+                .ToDictionary(f => f.ObjId, f => ReadAttachmentIds(f, values.GetValueOrDefault(f.ObjId)));
+            var wanted = attachmentIds.Values.SelectMany(ids => ids).Distinct().ToList();
+            var attachments = wanted.Count == 0
+                ? []
+                : await db.Attachments
+                    .AsNoTracking()
+                    .Where(a => a.refId == sidebarId && wanted.Contains(a.ObjId))
+                    .ToDictionaryAsync(a => a.ObjId, ct);
+
             return fields.Select(f => new LogisticRecordValue
             {
                 fieldId = f.ObjId,
                 type = f.type,
-                value = CleanValue(f, values.GetValueOrDefault(f.ObjId)),
+                value = attachmentIds.TryGetValue(f.ObjId, out var ids)
+                    ? AttachmentsValue(f, ids, attachments)
+                    : CleanValue(f, values.GetValueOrDefault(f.ObjId)),
             }).ToList();
+        }
+
+        /// <summary>The attachment ids in a value: a JSON array of attachment objects (or of bare ids), in order, without repeats.</summary>
+        private static List<Guid> ReadAttachmentIds(SidebarField field, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return [];
+            var invalid = ApiProblemException.BadRequest("Invalid attachments.", $"'{field.sidebarName}' needs a list of uploaded attachments.");
+            List<Guid> ids = [];
+            try
+            {
+                using var json = JsonDocument.Parse(value);
+                if (json.RootElement.ValueKind != JsonValueKind.Array) throw invalid;
+                foreach (var item in json.RootElement.EnumerateArray())
+                {
+                    var text = item.ValueKind == JsonValueKind.Object && item.TryGetProperty("id", out var id)
+                        ? id.GetString()
+                        : item.ValueKind == JsonValueKind.String ? item.GetString() : null;
+                    if (!Guid.TryParse(text, out var attachmentId)) throw invalid;
+                    if (!ids.Contains(attachmentId)) ids.Add(attachmentId);
+                }
+            }
+            catch (Exception error) when (error is JsonException or InvalidOperationException)
+            {
+                throw invalid;
+            }
+            return ids;
+        }
+
+        /// <summary>Stores each attachment's name, size and type from the database, not from what the client sent.</summary>
+        private static string? AttachmentsValue(SidebarField field, List<Guid> ids, Dictionary<Guid, Attachment> attachments)
+        {
+            if (ids.Count == 0) return null;
+            var missing = ids.Where(id => !attachments.ContainsKey(id)).Select(id => (Guid?)id).FirstOrDefault();
+            if (missing is not null)
+                throw ApiProblemException.BadRequest("Unknown attachment.", $"'{field.sidebarName}' has no uploaded attachment '{missing}'.");
+            return JsonSerializer.Serialize(ids.Select(id => AttachmentResponse.From(attachments[id])), Json);
         }
 
         private static ApiProblemException StaleVersion() =>

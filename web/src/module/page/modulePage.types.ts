@@ -26,6 +26,8 @@ export interface ModuleDataApi {
   deleteField: (objId: string) => Promise<unknown>;
   /** People member fields can pick from. */
   getMembers: () => Promise<IUserInfo[]>;
+  /** useModuleData passes the sidebar id as refId. */
+  uploadAttachment: (refId: string, file: File) => Promise<IAttachment>;
 }
 
 /** What every page passes into ModulePage, whichever API it came from. */
@@ -51,6 +53,8 @@ export interface ModuleData {
   /** Saves a field edited in ModuleEditFieldDialog with its latest versionNo. */
   onUpdateField: (objId: string, field: IField) => Promise<unknown>;
   onDeleteField: (objId: string) => Promise<unknown>;
+  /** Uploads one file for an attachment field of this sidebar. */
+  onUploadAttachment: (file: File) => Promise<IAttachment>;
 }
 
 /** The field the header menu is editing or deleting; kept after open turns false so its dialog can animate out. */

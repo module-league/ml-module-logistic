@@ -433,3 +433,6 @@ FodyWeavers.xsd
 appsettings.*.local.json
 node_modules/
 dist/
+
+# Uploaded attachment files (AttachmentStorage:Path)
+**/App_Data/

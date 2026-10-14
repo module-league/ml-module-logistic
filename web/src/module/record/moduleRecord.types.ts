@@ -1,4 +1,5 @@
 import type { ModuleQueryState } from "@/module/shell/module.types";
+import type { AttachmentUploadHandler } from "@/components/custom/RecordAttachmentInput.types";
 
 /** react-hook-form values: one entry per field, in field order. */
 export interface ModuleRecordFormValues {
@@ -13,6 +14,8 @@ export interface ModuleRecordFormProps {
   fields: ISidebarField[];
   /** People member fields can pick from. */
   members?: IUserInfo[];
+  /** Uploads files for attachment fields. */
+  onUploadAttachment?: AttachmentUploadHandler;
   /** Starting values of an existing record; Save then stays off until something changes. */
   values?: ISidebarRecordValues;
   saving?: boolean;
@@ -27,7 +30,9 @@ export interface ModuleRecordFormProps {
   onValuesChange?: (values: ISidebarRecordValues) => void;
 }
 
-export interface ModuleNewRecordFormProps extends ModuleQueryState {
+export interface ModuleNewRecordFormProps
+  extends ModuleQueryState,
+    Pick<ModuleRecordFormProps, "onUploadAttachment"> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fields: ISidebarField[];
@@ -36,7 +41,9 @@ export interface ModuleNewRecordFormProps extends ModuleQueryState {
   onSave: (values: ISidebarRecordValues) => void | Promise<unknown>;
 }
 
-export interface ModuleOpenRecordProps extends ModuleQueryState {
+export interface ModuleOpenRecordProps
+  extends ModuleQueryState,
+    Pick<ModuleRecordFormProps, "onUploadAttachment"> {
   /** objId of the record to show; undefined keeps the dialog closed. */
   recordKey?: string;
   onClose: () => void;

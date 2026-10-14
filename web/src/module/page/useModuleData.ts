@@ -116,6 +116,12 @@ export function useModuleData(
       ),
   });
 
+  const uploadAttachment = api.uploadAttachment;
+  const onUploadAttachment = useCallback(
+    (file: File) => uploadAttachment(id, file),
+    [id, uploadAttachment],
+  );
+
   const refetchFields = fieldsQuery.refetch;
   const refetchRecords = recordsQuery.refetch;
   const refetchRecord = recordQuery.refetch;
@@ -180,6 +186,7 @@ export function useModuleData(
       onAddField,
       onUpdateField,
       onDeleteField,
+      onUploadAttachment,
     }),
     [
       openedRecordId,
@@ -197,6 +204,7 @@ export function useModuleData(
       onAddField,
       onUpdateField,
       onDeleteField,
+      onUploadAttachment,
     ],
   );
 }

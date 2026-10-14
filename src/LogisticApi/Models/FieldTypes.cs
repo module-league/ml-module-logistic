@@ -32,6 +32,6 @@ namespace LogisticApi.Models
         public static bool IsForeign(string type) => type is "lookup" or "mirror";
 
         public static bool IsPlain(string type) =>
-            type is "text" or "long_text" or "number" or "single_select" or "multi_select" or "checkbox" or "date" or "member" or "currency";
+            type is "text" or "long_text" or "number" or "single_select" or "multi_select" or "checkbox" or "date" or "member" or "currency" or "attachment";
     }
 }

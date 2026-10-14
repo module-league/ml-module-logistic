@@ -19,6 +19,8 @@ import type { CSSProperties } from "react";
 import { XIcon } from "@/components/custom/XIcon";
 import { SelectionNode } from "./RecordValueNode";
 import { RecordMemberInput } from "./RecordMemberInput";
+import { RecordAttachmentInput } from "./RecordAttachmentInput";
+import type { AttachmentUploadHandler } from "./RecordAttachmentInput.types";
 import { DateTimePicker } from "../ui/date-time-picker";
 import { parseFieldDate, toFieldDateValue } from "@/lib/dateHelper";
 
@@ -26,6 +28,8 @@ export type RecordInputControlProps = {
   /** Set by FormControl so a label points at the input. */
   id?: string;
   members?: IUserInfo[];
+  /** Uploads files for attachment fields; without it attachments can only be opened or removed. */
+  onUploadAttachment?: AttachmentUploadHandler;
   //lookupRecords?: ITransformedRecord[];
   /** Default pickers where applicable (Single-select, date picker etc) */
   defaultOpen?: boolean;
@@ -61,6 +65,7 @@ export function RecordInputControl(props: RecordInputControlProps) {
   const {
     id,
     members,
+    onUploadAttachment,
     field,
     value,
     onChange,
@@ -143,6 +148,21 @@ export function RecordInputControl(props: RecordInputControlProps) {
         style={props.style}
         onChange={onChange}
         onBlur={onBlur}
+      />
+    );
+  }
+
+  if (field.type === "attachment") {
+    return (
+      <RecordAttachmentInput
+        id={id}
+        value={value}
+        disabled={disabled}
+        className={props.className}
+        style={props.style}
+        onChange={onChange}
+        onBlur={onBlur}
+        onUpload={onUploadAttachment}
       />
     );
   }

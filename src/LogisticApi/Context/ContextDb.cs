@@ -17,6 +17,7 @@ namespace LogisticApi.Context
         public virtual DbSet<Logistic> Logistics { get; set; } = null!;
         public virtual DbSet<SidebarField> SidebarFields { get; set; } = null!;
         public virtual DbSet<SidebarFieldOption> SidebarFieldOptions { get; set; } = null!;
+        public virtual DbSet<Attachment> Attachments { get; set; } = null!;
         //public virtual DbSet<JobOrder> JobOrders { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
