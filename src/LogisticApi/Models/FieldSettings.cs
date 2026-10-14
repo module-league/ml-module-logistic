@@ -9,6 +9,7 @@ namespace LogisticApi.Models
     {
         public static readonly string[] DateFormats = ["dd/MM/yyyy", "MM/dd/yyyy", "dd MMM yyyy", "yyyy-MM-dd"];
         public static readonly string[] TimeFormats = ["hh:mm a", "HH:mm"];
+        public static readonly string[] Abbreviations = ["none", "thousand", "million", "billion"];
 
         private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -18,6 +19,12 @@ namespace LogisticApi.Models
         public string? color { get; set; }
         /// <summary>Member fields only: several people can be picked.</summary>
         public bool multipleMembers { get; set; }
+        /// <summary>Currency fields only: shown before the number.</summary>
+        public string currencySymbol { get; set; } = "$";
+        /// <summary>Number and currency fields: 0 to 8; null shows the decimals as typed.</summary>
+        public int? decimalPlaces { get; set; }
+        /// <summary>Number and currency fields: one of <see cref="Abbreviations"/>.</summary>
+        public string abbreviation { get; set; } = "none";
 
         public static FieldSettings Read(string? json) =>
             string.IsNullOrWhiteSpace(json) ? new() : JsonSerializer.Deserialize<FieldSettings>(json, Json) ?? new();

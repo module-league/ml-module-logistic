@@ -23,6 +23,19 @@ namespace LogisticApi.MVVM
         public bool? multiple { get; set; }
     }
 
+    public class SidebarNumberSettingsRequest
+    {
+        /// <summary>Currency fields only.</summary>
+        [MaxLength(5)]
+        public string? symbol { get; set; }
+
+        [Range(0, 8)]
+        public int? decimalPlaces { get; set; }
+
+        /// <summary>none, thousand, million or billion.</summary>
+        public string? abbreviation { get; set; }
+    }
+
     public abstract class SidebarFieldSettingsRequest
     {
         [MaxLength(500)]
@@ -41,6 +54,9 @@ namespace LogisticApi.MVVM
 
         /// <summary>Only for member fields.</summary>
         public SidebarMemberSettingsRequest? memberSettings { get; set; }
+
+        /// <summary>Only for number and currency fields.</summary>
+        public SidebarNumberSettingsRequest? numberSettings { get; set; }
 
         /// <summary>Only for select fields. On update, the full list: options left out are deleted.</summary>
         public List<SidebarFieldOptionRequest>? dropDownValues { get; set; }

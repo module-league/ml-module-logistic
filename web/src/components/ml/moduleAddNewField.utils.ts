@@ -1,6 +1,10 @@
 import type { Modifier } from "@dnd-kit/core";
 import { FIELD_TYPE_ICONS } from "./fieldTypeIcon.utils";
 import { presetColors } from "@/lib/colorUtils";
+import {
+  DEFAULT_NUMBER_SETTINGS,
+  type NumberSettings,
+} from "@/lib/numberHelper";
 import type {
   ModuleFieldDateSettings,
   ModuleFieldTypeOption,
@@ -18,6 +22,12 @@ export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
     label: "Number",
     description: "Quantities, weights, prices.",
     icon: FIELD_TYPE_ICONS.number,
+  },
+  {
+    fieldType: "currency",
+    label: "Currency",
+    description: "Freight costs, fees, invoices.",
+    icon: FIELD_TYPE_ICONS.currency,
   },
   {
     fieldType: "single_select",
@@ -62,6 +72,18 @@ export const DEFAULT_DATE_SETTINGS: ModuleFieldDateSettings = {
   displayTime: false,
   timeFormat: "hh:mm a",
 };
+
+/** Each preset is shown by formatting its sample with the preset's settings and the chosen symbol. */
+export const NUMBER_PRESETS: {
+  sample: number;
+  settings: Omit<NumberSettings, "symbol">;
+}[] = [
+  { sample: 23.23, settings: { decimalPlaces: 2, abbreviation: "none" } },
+  { sample: 2323, settings: { decimalPlaces: 0, abbreviation: "none" } },
+  { sample: 34_000_000, settings: { decimalPlaces: 1, abbreviation: "million" } },
+];
+
+export const NUMBER_DECIMAL_PLACES = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 /** Moves a dragged item up and down only, and never past the list that holds it, so the list can't grow while dragging. */
 export const lockToVerticalAxis: Modifier = ({
@@ -129,6 +151,19 @@ export function cleanDropDownValues(
     .map((option, index) => ({ ...option, displayOrder: index }));
 }
 
+function toNumberSettings(type: IField["type"], settings: NumberSettings) {
+  if (type === "currency") {
+    return { ...settings, symbol: settings?.symbol?.trim() ?? "" };
+  }
+  if (type === "number") {
+    return {
+      decimalPlaces: settings?.decimalPlaces,
+      abbreviation: settings?.abbreviation,
+    };
+  }
+  return undefined;
+}
+
 export function toField({
   type,
   name,
@@ -137,9 +172,10 @@ export function toField({
   displayTime = DEFAULT_DATE_SETTINGS.displayTime,
   timeFormat = DEFAULT_DATE_SETTINGS.timeFormat,
   memberSettings,
+  numberSettings = DEFAULT_NUMBER_SETTINGS,
 }: Pick<IField, "type" | "name" | "dropDownValues"> &
   Partial<ModuleFieldDateSettings> &
-  Pick<IField, "memberSettings">): IField {
+  Pick<IField, "memberSettings" | "numberSettings">): IField {
   return {
     name,
     type,
@@ -150,7 +186,7 @@ export function toField({
     isMultiSelectField: false,
     isDateField: type === "date",
     isUserField: type === "member",
-    isNumeric: type === "number",
+    isNumeric: type === "number" || type === "currency",
     isVirtualField: false,
     isForeignField: false,
     isPlainField: true,
@@ -163,5 +199,6 @@ export function toField({
     timeFormat,
     memberSettings:
       type === "member" ? { multiple: !!memberSettings?.multiple } : undefined,
+    numberSettings: toNumberSettings(type, numberSettings),
   };
 }

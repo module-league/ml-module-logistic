@@ -29,6 +29,15 @@ namespace LogisticApi.MVVM
         public bool multiple { get; set; }
     }
 
+    public class SidebarNumberSettingsResponse
+    {
+        /// <summary>Only set for currency fields.</summary>
+        public string? symbol { get; set; }
+        /// <summary>Null shows the decimals as typed.</summary>
+        public int? decimalPlaces { get; set; }
+        public string abbreviation { get; set; } = string.Empty;
+    }
+
     public class SidebarFieldResponse
     {
         public Guid objId { get; set; }
@@ -56,6 +65,8 @@ namespace LogisticApi.MVVM
         public string? color { get; set; }
         /// <summary>Only set for member fields.</summary>
         public SidebarMemberSettingsResponse? memberSettings { get; set; }
+        /// <summary>Only set for number and currency fields.</summary>
+        public SidebarNumberSettingsResponse? numberSettings { get; set; }
 
         public List<SidebarFieldOptionResponse> dropDownValues { get; set; } = [];
 
@@ -90,6 +101,14 @@ namespace LogisticApi.MVVM
                 timeFormat = settings.timeFormat,
                 color = settings.color,
                 memberSettings = field.type == "member" ? new() { multiple = settings.multipleMembers } : null,
+                numberSettings = field.type is "number" or "currency"
+                    ? new()
+                    {
+                        symbol = field.type == "currency" ? settings.currencySymbol : null,
+                        decimalPlaces = settings.decimalPlaces ?? (field.type == "currency" ? 2 : null),
+                        abbreviation = settings.abbreviation,
+                    }
+                    : null,
                 dropDownValues = field.options
                     .Where(option => !option.IsDeleted)
                     .OrderBy(option => option.displayOrder)

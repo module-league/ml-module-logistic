@@ -4,6 +4,10 @@ import {
   Button,
   Checkbox,
   Input,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
   Select,
   SelectContent,
   SelectGroup,
@@ -237,6 +241,34 @@ export function RecordInputControl(props: RecordInputControlProps) {
     );
   }
 
+  if (field.type === "number" || field.type === "currency") {
+    const symbol = field.type === "currency" && field.numberSettings?.symbol;
+    return (
+      <InputGroup className={props.className} style={props.style}>
+        {!!symbol && (
+          <InputGroupAddon>
+            <InputGroupText>{symbol}</InputGroupText>
+          </InputGroupAddon>
+        )}
+        <InputGroupInput
+          id={id}
+          value={value}
+          onChange={(ev) => onChange?.(ev.target.value)}
+          name={name}
+          onBlur={onBlur}
+          type="number"
+          inputMode="decimal"
+          step="any"
+          required={required}
+          disabled={disabled}
+          placeholder={placeholder}
+          autoFocus={autoFocus}
+          className="tabular-nums"
+        />
+      </InputGroup>
+    );
+  }
+
   if (field.type === "text" && multiline) {
     return (
       <AutosizeTextarea
@@ -269,9 +301,6 @@ export function RecordInputControl(props: RecordInputControlProps) {
       name={name}
       onBlur={onBlur}
       maxLength={250}
-      type={field.type === "number" ? "number" : "text"}
-      min={field.type === "number" ? Number.MIN_SAFE_INTEGER : undefined}
-      max={field.type === "number" ? Number.MAX_SAFE_INTEGER : undefined}
       required={required}
       disabled={disabled}
       placeholder={placeholder}

@@ -38,6 +38,12 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { fieldDateFormat } from "@/lib/dateHelper";
+import {
+  NUMBER_ABBREVIATIONS,
+  DEFAULT_NUMBER_SETTINGS,
+  formatNumber,
+  type NumberSettings,
+} from "@/lib/numberHelper";
 import { format } from "date-fns";
 import {
   Popover,
@@ -48,6 +54,7 @@ import { toast } from "@/components/ui/sonner";
 import { errorParser } from "@/hooks/useErrorParser";
 import type {
   ModuleAddFieldStepsProps,
+  ModuleFieldNumberSettingsProps,
   ModuleFieldDateSettings,
   ModuleFieldDateSettingsProps,
   ModuleAddNewFieldDialogProps,
@@ -57,6 +64,8 @@ import type {
 } from "./moduleAddNewField.types";
 import {
   createDropDownValue,
+  NUMBER_DECIMAL_PLACES,
+  NUMBER_PRESETS,
   fieldTypeOption,
   isFieldNameTaken,
   lockToVerticalAxis,
@@ -137,6 +146,9 @@ function AddFieldSteps({
     DEFAULT_DATE_SETTINGS,
   );
   const [multipleMembers, setMultipleMembers] = useState(false);
+  const [numberSettings, setNumberSettings] = useState<NumberSettings>(
+    DEFAULT_NUMBER_SETTINGS,
+  );
   const option = useMemo(
     () => (type ? fieldTypeOption(type) : undefined),
     [type],
@@ -149,8 +161,9 @@ function AddFieldSteps({
       dropDownValues: options,
       ...dateSettings,
       memberSettings: { multiple: multipleMembers },
+      numberSettings,
     });
-  }, [type, name, options, dateSettings, multipleMembers]);
+  }, [type, name, options, dateSettings, multipleMembers, numberSettings]);
   const nameTaken = useMemo(
     () => isFieldNameTaken(name, takenNames),
     [name, takenNames],
@@ -257,6 +270,13 @@ function AddFieldSteps({
           {type === "date" && (
             <FieldDateSettings value={dateSettings} onChange={setDateSettings} />
           )}
+          {(type === "number" || type === "currency") && (
+            <FieldNumberSettings
+              value={numberSettings}
+              onChange={setNumberSettings}
+              withSymbol={type === "currency"}
+            />
+          )}
           {type === "member" && (
             <label className="flex items-start justify-between gap-3 text-sm">
               <span className="flex flex-col gap-0.5">
@@ -362,6 +382,131 @@ function FieldDateSettings({ value, onChange }: ModuleFieldDateSettingsProps) {
       )}
       <p className="text-xs text-muted-foreground">
         Shows as <span className="font-medium text-foreground">{preview}</span>
+      </p>
+    </div>
+  );
+}
+
+function FieldNumberSettings({
+  value,
+  onChange,
+  withSymbol = false,
+}: ModuleFieldNumberSettingsProps) {
+  const symbol = withSymbol ? value.symbol : "";
+  const preview = useMemo(
+    () => formatNumber(1234567.89, { ...value, symbol }),
+    [value, symbol],
+  );
+  const presetLabels = useMemo(
+    () =>
+      NUMBER_PRESETS.map((preset) =>
+        formatNumber(preset.sample, { ...preset.settings, symbol }),
+      ),
+    [symbol],
+  );
+  const selectedPreset = useMemo(() => {
+    const index = NUMBER_PRESETS.findIndex(
+      (preset) =>
+        preset.settings.decimalPlaces === value.decimalPlaces &&
+        preset.settings.abbreviation === value.abbreviation,
+    );
+    return index < 0 ? "" : String(index);
+  }, [value.decimalPlaces, value.abbreviation]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Field>
+        <FieldLabel htmlFor="field-number-presets">Presets</FieldLabel>
+        <Select
+          value={selectedPreset}
+          onValueChange={(index) =>
+            onChange({ ...value, ...NUMBER_PRESETS[Number(index)]?.settings })
+          }
+        >
+          <SelectTrigger id="field-number-presets" className="w-full">
+            <SelectValue placeholder="Custom" />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            {presetLabels.map((label, index) => (
+              <SelectItem key={label} value={String(index)}>
+                <span className="tabular-nums">{label}</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+      {withSymbol && (
+        <Field>
+          <FieldLabel htmlFor="field-currency-symbol">Currency symbol</FieldLabel>
+          <Input
+            id="field-currency-symbol"
+            maxLength={5}
+            value={value.symbol}
+            placeholder="e.g. $ or RM"
+            onChange={(e) => onChange({ ...value, symbol: e.target.value })}
+          />
+        </Field>
+      )}
+      <Field>
+        <FieldLabel htmlFor="field-number-decimals">Decimal places</FieldLabel>
+        <Select
+          value={String(value.decimalPlaces)}
+          onValueChange={(decimalPlaces) =>
+            onChange({ ...value, decimalPlaces: Number(decimalPlaces) })
+          }
+        >
+          <SelectTrigger id="field-number-decimals" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            {NUMBER_DECIMAL_PLACES.map((decimalPlaces) => (
+              <SelectItem key={decimalPlaces} value={String(decimalPlaces)}>
+                {decimalPlaces}
+                <span className="ml-auto text-muted-foreground tabular-nums">
+                  {formatNumber(1, { symbol, decimalPlaces })}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="field-number-abbreviation">
+          Large number abbreviation
+        </FieldLabel>
+        <Select
+          value={value.abbreviation}
+          onValueChange={(abbreviation) =>
+            onChange({
+              ...value,
+              abbreviation: abbreviation as NumberSettings["abbreviation"],
+            })
+          }
+        >
+          <SelectTrigger id="field-number-abbreviation" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            {Object.entries(NUMBER_ABBREVIATIONS).map(
+              ([abbreviation, { label, suffix }]) => (
+                <SelectItem key={abbreviation} value={abbreviation}>
+                  {label}
+                  {suffix && (
+                    <span className="ml-auto text-muted-foreground">
+                      {suffix}
+                    </span>
+                  )}
+                </SelectItem>
+              ),
+            )}
+          </SelectContent>
+        </Select>
+      </Field>
+      <p className="text-xs text-muted-foreground">
+        Shows as{" "}
+        <span className="font-medium text-foreground tabular-nums">
+          {preview}
+        </span>
       </p>
     </div>
   );

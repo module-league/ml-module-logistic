@@ -266,7 +266,7 @@ namespace LogisticApi.Migrations
 
                             t.HasCheckConstraint("ck_lg_sidebar_field_settings_json", "ISJSON([settings]) = 1");
 
-                            t.HasCheckConstraint("ck_lg_sidebar_field_type", "[type] IN ('text', 'long_text', 'number', 'single_select', 'multi_select', 'checkbox', 'date', 'member', 'lookup', 'mirror', 'templating', 'associate', 'attachment', 'record_attachment', 'sys_creator_id', 'sys_create_time', 'sys_updater_id', 'sys_update_time', 'sys_running_number')");
+                            t.HasCheckConstraint("ck_lg_sidebar_field_type", "[type] IN ('text', 'long_text', 'number', 'single_select', 'multi_select', 'checkbox', 'date', 'member', 'lookup', 'mirror', 'templating', 'currency', 'associate', 'attachment', 'record_attachment', 'sys_creator_id', 'sys_create_time', 'sys_updater_id', 'sys_update_time', 'sys_running_number')");
                         });
                 });
 

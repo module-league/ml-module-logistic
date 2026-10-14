@@ -17,6 +17,7 @@ declare global {
         | "lookup"
         | "mirror"
         | "templating"
+        | "currency"
         | "associate"
         | "attachment"
         | "record_attachment"
@@ -62,6 +63,15 @@ declare global {
       memberSettings?: {
         /** Several people can be picked; the value is then a JSON array of user ids. */
         multiple?: boolean;
+      };
+      /** Settings for number and currency fields. The value is stored as a plain number; these only change how it shows. */
+      numberSettings?: {
+        /** Currency field only. Shown before the number, e.g. "$" or "RM". */
+        symbol?: string;
+        /** 0 to 8. Left out, the decimals show as typed. */
+        decimalPlaces?: number;
+        /** Shows 34000000 as 34.0M when "million". */
+        abbreviation: "none" | "thousand" | "million" | "billion";
       };
       /** Settings for sys_running_number field only */
       autoNumberSettings?: {
@@ -148,7 +158,7 @@ declare global {
   };
 
   type ISidebarFieldCreate = Pick<IField, "name" | "type" | "description"> &
-    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat" | "memberSettings">> & {
+    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat" | "memberSettings" | "numberSettings">> & {
     isPrimaryField?: boolean;
     dropDownValues?: ISidebarFieldOptionInput[];
   };

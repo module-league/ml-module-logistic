@@ -180,6 +180,17 @@ namespace LogisticApi.Services
             }
             if (request.displayTime is not null) settings.displayTime = request.displayTime.Value;
             if (request.memberSettings?.multiple is not null) settings.multipleMembers = request.memberSettings.multiple.Value;
+            if (request.numberSettings is { } number)
+            {
+                if (number.abbreviation is not null)
+                {
+                    if (!FieldSettings.Abbreviations.Contains(number.abbreviation))
+                        throw ApiProblemException.BadRequest("Unknown abbreviation.", $"Use one of: {string.Join(", ", FieldSettings.Abbreviations)}.");
+                    settings.abbreviation = number.abbreviation;
+                }
+                if (number.symbol is not null) settings.currencySymbol = number.symbol.Trim();
+                if (number.decimalPlaces is not null) settings.decimalPlaces = number.decimalPlaces.Value;
+            }
             if (request.color is not null) settings.color = request.color.ToUpperInvariant();
             return settings;
         }

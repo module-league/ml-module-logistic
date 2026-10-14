@@ -8,7 +8,7 @@ namespace LogisticApi.Models
         public static readonly string[] All =
         [
             "text", "long_text", "number", "single_select", "multi_select", "checkbox",
-            "date", "member", "lookup", "mirror", "templating", "associate", "attachment",
+            "date", "member", "lookup", "mirror", "templating", "currency", "associate", "attachment",
             "record_attachment", "sys_creator_id", "sys_create_time", "sys_updater_id",
             "sys_update_time", "sys_running_number",
         ];
@@ -25,13 +25,13 @@ namespace LogisticApi.Models
 
         public static bool IsUser(string type) => type is "member" or "sys_creator_id" or "sys_updater_id";
 
-        public static bool IsNumeric(string type) => type is "number" or "sys_running_number";
+        public static bool IsNumeric(string type) => type is "number" or "currency" or "sys_running_number";
 
         public static bool IsVirtual(string type) => type is "lookup" or "mirror" or "templating";
 
         public static bool IsForeign(string type) => type is "lookup" or "mirror";
 
         public static bool IsPlain(string type) =>
-            type is "text" or "long_text" or "number" or "single_select" or "multi_select" or "checkbox" or "date" or "member";
+            type is "text" or "long_text" or "number" or "single_select" or "multi_select" or "checkbox" or "date" or "member" or "currency";
     }
 }

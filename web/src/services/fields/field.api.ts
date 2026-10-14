@@ -39,6 +39,7 @@ export function toFieldCreate(field: IField): ISidebarFieldCreate {
     description: field?.description,
     dropDownValues: toOptionInputs(field),
     ...(field?.isUserField && { memberSettings: field.memberSettings }),
+    ...(field?.numberSettings && { numberSettings: field.numberSettings }),
     ...(field?.isDateField && {
       dateFormat: field.dateFormat,
       displayTime: field.displayTime,

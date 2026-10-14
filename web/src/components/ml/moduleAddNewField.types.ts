@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { NumberSettings } from "@/lib/numberHelper";
 
 export interface ModuleFieldTypeOption {
   fieldType: IField["type"];
@@ -28,6 +29,13 @@ export type ModuleFieldDateSettings = Pick<
 export interface ModuleFieldDateSettingsProps {
   value: ModuleFieldDateSettings;
   onChange: (value: ModuleFieldDateSettings) => void;
+}
+
+export interface ModuleFieldNumberSettingsProps {
+  value: NumberSettings;
+  onChange: (value: NumberSettings) => void;
+  /** Currency fields also pick the symbol shown before the number. */
+  withSymbol?: boolean;
 }
 
 export interface ModuleAddFieldStepsProps

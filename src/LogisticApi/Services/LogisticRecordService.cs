@@ -96,6 +96,7 @@ namespace LogisticApi.Services
             switch (field.type)
             {
                 case "number":
+                case "currency":
                     if (!decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var number))
                         throw ApiProblemException.BadRequest("Invalid number.", $"'{field.sidebarName}' needs a number.");
                     return number.ToString(CultureInfo.InvariantCulture);

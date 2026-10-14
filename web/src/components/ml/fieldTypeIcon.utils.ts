@@ -1,5 +1,6 @@
 import {
   AlignLeft,
+  Banknote,
   Braces,
   Calendar,
   CalendarClock,
@@ -33,6 +34,7 @@ export const FIELD_TYPE_ICONS: Record<IField["type"], LucideIcon> = {
   lookup: Link2,
   mirror: Copy,
   templating: Braces,
+  currency: Banknote,
   associate: Network,
   attachment: Paperclip,
   record_attachment: FileArchive,
