@@ -43,7 +43,7 @@ export function RecordGridHeaderCell<T>({
         style={style}
         {...(sortable ? listeners : {})}
         className={cn(
-          "group/head relative border-r select-none last:border-r-0 h-4",
+          "group/head relative border-r select-none last:border-r-0 h-4 font-[family-name:Calibri]",
           "border-r-foreground/15 bg-table-head hover:bg-primary-10 data-[state=open]:bg-primary-10",
           sortable && "cursor-grab active:cursor-grabbing",
           pin && "sticky z-20",
