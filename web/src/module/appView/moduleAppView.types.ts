@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import type { Header } from "@tanstack/react-table";
 import type { ModuleQueryState } from "@/module/shell/module.types";
 import type { ModuleAddFieldHandler } from "@/components/ml/moduleAddNewField.types";
@@ -57,6 +57,13 @@ export interface ModuleAppColumnLayout {
   onColumnPinToggle?: (key: string) => void;
 }
 
+/** The header's right-click menu; each item shows only when its handler is set. */
+export interface ModuleAppColumnMenu {
+  onColumnEdit?: (key: string) => void;
+  onColumnHide?: (key: string) => void;
+  onColumnDelete?: (key: string) => void;
+}
+
 export interface ModuleAppEmptyState {
   /** @default "No records yet" */
   title?: string;
@@ -69,6 +76,7 @@ export interface ModuleAppEmptyState {
 /** Pinned rows come first in records, then the rows of the current page. */
 export interface RecordGridProps<T>
   extends ModuleAppColumnLayout,
+    ModuleAppColumnMenu,
     ModuleAppAddAction,
     ModuleAppSelection,
     ModuleAppRowOrder,
@@ -95,7 +103,8 @@ export interface ModuleAppViewProps<T>
 export type GridViewProps<T> = Omit<ModuleAppViewProps<T>, "appView">;
 
 export interface RecordGridHeaderCellProps<T>
-  extends Pick<ModuleAppColumnLayout, "onColumnPinToggle"> {
+  extends Pick<ModuleAppColumnLayout, "onColumnPinToggle">,
+    ModuleAppColumnMenu {
   header: Header<T, unknown>;
   column?: ModuleAppColumn<T>;
   sortable: boolean;
@@ -109,7 +118,23 @@ export interface ModuleColumnPin {
   last: boolean;
 }
 
-export interface ModuleSortableRowProps
+export interface RecordGridHeaderContextMenuProps extends ModuleAppColumnMenu {
+  columnKey: string;
+  /** The header cell the menu opens on. */
+  children: ReactElement;
+}
+
+export interface RecordGridRowContextMenuProps
+  extends Pick<
+    RecordGridRowProps,
+    "rowKey" | "selected" | "onRowPinToggle" | "onRowDelete" | "onSelectToggle"
+  > {
+  pinned: boolean;
+  /** The row the menu opens on. */
+  children: ReactElement;
+}
+
+export interface RecordGridRowProps
   extends Pick<ModuleAppRowMenu, "onRowPinToggle" | "onRowDelete"> {
   rowId: string;
   rowKey: string;

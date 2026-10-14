@@ -4,7 +4,9 @@ import type { ModuleDataApi } from "@/module/page/modulePage.types";
 import { useCurrentNavItem } from "@/module/shell/navItem.context";
 import {
   createLogisticField,
+  deleteLogisticField,
   getLogisticFields,
+  updateLogisticField,
 } from "@/services/fields/field.api";
 import {
   createLogisticRecord,
@@ -21,6 +23,8 @@ const recordTestApi: ModuleDataApi = {
   createRecord: createLogisticRecord,
   updateRecord: updateLogisticRecord,
   createField: createLogisticField,
+  updateField: updateLogisticField,
+  deleteField: deleteLogisticField,
   getMembers: getLogisticMembers,
 };
 

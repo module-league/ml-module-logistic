@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toFieldCreate } from "@/services/fields/field.api";
+import { toFieldCreate, toFieldUpdate } from "@/services/fields/field.api";
 import { fieldKeys, putInLists } from "@/services/fields/field.utils";
 import { recordKeys } from "@/services/records/record.api";
 import { memberKeys } from "@/services/user/user.api";
@@ -88,6 +88,34 @@ export function useModuleData(
       putInLists(queryClient, id, (fields) => [...fields, created]),
   });
 
+  const { mutateAsync: updateField } = useMutation({
+    mutationFn: ({ objId, body }: { objId: string; body: ISidebarFieldUpdate }) =>
+      api.updateField(objId, body),
+    onSuccess: (updated) =>
+      putInLists(queryClient, id, (fields) =>
+        fields.map((field) =>
+          field?.objId === updated.objId ? updated : field,
+        ),
+      ),
+  });
+  const onUpdateField = useCallback(
+    (objId: string, edited: IField) => {
+      const saved = queryClient
+        .getQueryData<ISidebarField[]>(fieldKeys.list(id))
+        ?.find((field) => field?.objId === objId);
+      if (!saved) return Promise.reject(new Error("Field not found."));
+      return updateField({ objId, body: toFieldUpdate(saved, edited) });
+    },
+    [id, queryClient, updateField],
+  );
+  const { mutateAsync: onDeleteField } = useMutation({
+    mutationFn: (objId: string) => api.deleteField(objId),
+    onSuccess: (_, objId) =>
+      putInLists(queryClient, id, (fields) =>
+        fields.filter((field) => field?.objId !== objId),
+      ),
+  });
+
   const refetchFields = fieldsQuery.refetch;
   const refetchRecords = recordsQuery.refetch;
   const refetchRecord = recordQuery.refetch;
@@ -150,6 +178,8 @@ export function useModuleData(
       onCloseRecord,
       onUpdateRecord,
       onAddField,
+      onUpdateField,
+      onDeleteField,
     }),
     [
       openedRecordId,
@@ -165,6 +195,8 @@ export function useModuleData(
       onRefreshFields,
       onAddRecord,
       onAddField,
+      onUpdateField,
+      onDeleteField,
     ],
   );
 }

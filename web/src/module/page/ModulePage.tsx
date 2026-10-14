@@ -5,6 +5,8 @@ import {
   ModulePageToolbar,
   toast,
   FieldTypeIcon,
+  ModuleDeleteFieldDialog,
+  ModuleEditFieldDialog,
 } from "@moduleleague/ui";
 import type { PageToolbarProps } from "@/components/ml/pageToolbar.types";
 import { useCurrentUser } from "@/services/user/current.user";
@@ -16,7 +18,7 @@ import { ModuleOpenRecord } from "@/module/record/ModuleOpenRecord";
 import { RecordValueNode } from "@/components/custom/RecordValueNode";
 import { toRecordText } from "@/module/record/moduleRecord.utils";
 import { ModulePageFooter } from "./ModulePageFooter";
-import type { ModulePageProps } from "./modulePage.types";
+import type { ModuleFieldAction, ModulePageProps } from "./modulePage.types";
 
 const ADD_LABEL = "New record";
 const getRecordKey = (record: ISidebarRecord) => record?.objId;
@@ -36,6 +38,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [rowOrder, setRowOrder] = useState<string[]>([]);
   const [pinnedRows, setPinnedRows] = useState<string[]>([]);
+  const [fieldAction, setFieldAction] = useState<ModuleFieldAction>();
 
   const onRefreshFields = data.onRefreshFields;
   const openNewRecord = useCallback(() => {
@@ -194,6 +197,57 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [orderedColumns, hiddenColumns],
   );
 
+  const hideColumn = useCallback(
+    (key: string) =>
+      setHiddenColumns((current) =>
+        current.includes(key) ? current : [...current, key],
+      ),
+    [],
+  );
+  const editColumn = useCallback(
+    (key: string) => {
+      onRefreshFields();
+      setFieldAction({ kind: "edit", fieldId: key, open: true });
+    },
+    [onRefreshFields],
+  );
+  const deleteColumn = useCallback(
+    (key: string) => setFieldAction({ kind: "delete", fieldId: key, open: true }),
+    [],
+  );
+  const changeFieldActionOpen = useCallback(
+    (open: boolean) =>
+      setFieldAction((current) => (current ? { ...current, open } : current)),
+    [],
+  );
+  const actionField = useMemo(
+    () => fields?.find((field) => field?.objId === fieldAction?.fieldId),
+    [fields, fieldAction?.fieldId],
+  );
+  const otherFieldNames = useMemo(
+    () =>
+      fields
+        ?.filter((field) => field?.objId !== fieldAction?.fieldId)
+        .map((field) => field?.name) ?? [],
+    [fields, fieldAction?.fieldId],
+  );
+  const onUpdateField = data.onUpdateField;
+  const saveField = useCallback(
+    (edited: IField) =>
+      actionField
+        ? onUpdateField(actionField.objId, edited)
+        : Promise.reject(new Error("The field no longer exists.")),
+    [actionField, onUpdateField],
+  );
+  const onDeleteField = data.onDeleteField;
+  const deleteField = useCallback(
+    () =>
+      actionField
+        ? onDeleteField(actionField.objId)
+        : Promise.reject(new Error("The field no longer exists.")),
+    [actionField, onDeleteField],
+  );
+
   const empty = useMemo(
     () =>
       records?.length
@@ -256,6 +310,9 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           onColumnReorder={reorderVisibleColumns}
           pinnedColumns={pinnedColumns}
           onColumnPinToggle={togglePinnedColumn}
+          onColumnEdit={editColumn}
+          onColumnHide={hideColumn}
+          onColumnDelete={deleteColumn}
           selectedKeys={selectedKeys}
           onSelectionChange={setSelectedKeys}
           onRowReorder={reorderRow}
@@ -296,6 +353,20 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
         error={data.openedRecordState?.error ?? data.fieldsState?.error}
         onRetry={data.openedRecordState?.onRetry}
         onSave={data.onUpdateRecord}
+      />
+      <ModuleEditFieldDialog
+        key={actionField?.objId}
+        field={fieldAction?.kind === "edit" ? actionField : undefined}
+        open={fieldAction?.kind === "edit" && fieldAction.open}
+        onOpenChange={changeFieldActionOpen}
+        onSave={saveField}
+        takenNames={otherFieldNames}
+      />
+      <ModuleDeleteFieldDialog
+        field={fieldAction?.kind === "delete" ? actionField : undefined}
+        open={fieldAction?.kind === "delete" && fieldAction.open}
+        onOpenChange={changeFieldActionOpen}
+        onDelete={deleteField}
       />
     </div>
   );

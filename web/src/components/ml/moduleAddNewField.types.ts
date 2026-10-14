@@ -20,6 +20,14 @@ export interface ModuleAddNewFieldDialogProps {
   takenNames?: string[];
 }
 
+export interface ModuleEditFieldDialogProps
+  extends Omit<ModuleAddNewFieldDialogProps, "onAdd"> {
+  /** The field to edit; its type can't change. Nothing renders without it. */
+  field?: IField;
+  /** Called with the edited field. A rejection shows its message and keeps the input. */
+  onSave: ModuleAddFieldHandler;
+}
+
 /** The date field settings picked in the Add field dialog. */
 export type ModuleFieldDateSettings = Pick<
   IField,
@@ -38,8 +46,16 @@ export interface ModuleFieldNumberSettingsProps {
   withSymbol?: boolean;
 }
 
+export interface ModuleDeleteFieldDialogProps
+  extends Pick<ModuleAddNewFieldDialogProps, "open" | "onOpenChange"> {
+  /** Nothing renders without it. */
+  field?: Pick<IField, "name">;
+  /** A rejection shows its message and keeps the dialog open. */
+  onDelete: () => Promise<unknown>;
+}
+
 export interface ModuleAddFieldStepsProps
-  extends Pick<ModuleAddNewFieldDialogProps, "takenNames"> {
+  extends Pick<ModuleEditFieldDialogProps, "takenNames" | "field"> {
   onAdd: (field: IField) => void;
   onCancel: () => void;
   /** The field is being saved; Add is disabled. */

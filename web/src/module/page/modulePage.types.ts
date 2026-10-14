@@ -19,6 +19,11 @@ export interface ModuleDataApi {
     sidebarId: string,
     body: ISidebarFieldCreate,
   ) => Promise<ISidebarField>;
+  updateField: (
+    objId: string,
+    body: ISidebarFieldUpdate,
+  ) => Promise<ISidebarField>;
+  deleteField: (objId: string) => Promise<unknown>;
   /** People member fields can pick from. */
   getMembers: () => Promise<IUserInfo[]>;
 }
@@ -43,6 +48,16 @@ export interface ModuleData {
   /** Saves the open record with its latest versionNo, so back-to-back auto-saves don't conflict. */
   onUpdateRecord: (values: ISidebarRecordValues) => Promise<unknown>;
   onAddField: (field: IField) => Promise<unknown>;
+  /** Saves a field edited in ModuleEditFieldDialog with its latest versionNo. */
+  onUpdateField: (objId: string, field: IField) => Promise<unknown>;
+  onDeleteField: (objId: string) => Promise<unknown>;
+}
+
+/** The field the header menu is editing or deleting; kept after open turns false so its dialog can animate out. */
+export interface ModuleFieldAction {
+  kind: "edit" | "delete";
+  fieldId: string;
+  open: boolean;
 }
 
 export interface ModulePageProps {

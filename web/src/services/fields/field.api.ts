@@ -31,13 +31,23 @@ export async function createLogisticField(
   return data;
 }
 
-/** The create body for a field built by ModuleAddNewFieldDialog; the server makes the ids. */
-export function toFieldCreate(field: IField): ISidebarFieldCreate {
+export async function updateLogisticField(
+  objId: string,
+  body: ISidebarFieldUpdate,
+) {
+  const { data } = await apiClient.put<ISidebarField>(
+    `/fields/${encodeURIComponent(objId)}`,
+    body,
+  );
+  return data;
+}
+
+export async function deleteLogisticField(objId: string) {
+  await apiClient.delete(`/fields/${encodeURIComponent(objId)}`);
+}
+
+function toFieldSettings(field: IField) {
   return {
-    name: field?.name,
-    type: field?.type,
-    description: field?.description,
-    dropDownValues: toOptionInputs(field),
     ...(field?.isUserField && { memberSettings: field.memberSettings }),
     ...(field?.numberSettings && { numberSettings: field.numberSettings }),
     ...(field?.isDateField && {
@@ -45,6 +55,34 @@ export function toFieldCreate(field: IField): ISidebarFieldCreate {
       displayTime: field.displayTime,
       timeFormat: field.timeFormat,
     }),
+  };
+}
+
+/** The create body for a field built by ModuleAddNewFieldDialog; the server makes the ids. */
+export function toFieldCreate(field: IField): ISidebarFieldCreate {
+  return {
+    name: field?.name,
+    type: field?.type,
+    description: field?.description,
+    dropDownValues: toOptionInputs(field),
+    ...toFieldSettings(field),
+  };
+}
+
+/** The update body for a field edited in ModuleEditFieldDialog. Keeps the saved description and the ids of options that already exist. */
+export function toFieldUpdate(
+  saved: ISidebarField,
+  edited: IField,
+): ISidebarFieldUpdate {
+  return {
+    name: edited?.name,
+    description: saved?.description,
+    versionNo: saved?.versionNo,
+    dropDownValues: toOptionInputs(
+      edited,
+      new Set(saved?.dropDownValues?.map((option) => option?.id)),
+    ),
+    ...toFieldSettings(edited),
   };
 }
 
@@ -81,19 +119,8 @@ export function useCreateField(sidebarId: string) {
 export function useUpdateField() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      objId,
-      body,
-    }: {
-      objId: string;
-      body: ISidebarFieldUpdate;
-    }) => {
-      const { data } = await apiClient.put<ISidebarField>(
-        `/fields/${encodeURIComponent(objId)}`,
-        body,
-      );
-      return data;
-    },
+    mutationFn: ({ objId, body }: { objId: string; body: ISidebarFieldUpdate }) =>
+      updateLogisticField(objId, body),
     onSuccess: (updated) => {
       queryClient.setQueryData(fieldKeys.detail(updated.objId), updated);
       putInLists(queryClient, updated.sidebarId, (fields) =>
@@ -109,7 +136,7 @@ export function useDeleteField() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (field: Pick<ISidebarField, "objId" | "sidebarId">) => {
-      await apiClient.delete(`/fields/${encodeURIComponent(field.objId)}`);
+      await deleteLogisticField(field.objId);
       return field;
     },
     onSuccess: (deleted) => {

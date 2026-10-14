@@ -10,7 +10,6 @@ import {
   arrayMove,
   horizontalListSortingStrategy,
   SortableContext,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import {
@@ -18,31 +17,16 @@ import {
   functionalUpdate,
   getCoreRowModel,
   useReactTable,
-  type ColumnDef,
   type ColumnPinningState,
   type ColumnSizingState,
   type RowSelectionState,
   type Updater,
 } from "@tanstack/react-table";
-import type { CheckedState } from "@radix-ui/react-checkbox";
-import {
-  Maximize2,
-  Pin,
-  Plus,
-  PinOff,
-  Square,
-  SquareCheck,
-  Trash2,
-} from "lucide-react";
+import { Maximize2, Pin, Plus } from "lucide-react";
 import {
   Button,
   Checkbox,
   cn,
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
   ModuleAddNewButton,
   ModuleAddNewFieldDialog,
   Table,
@@ -52,20 +36,28 @@ import {
   TableHeader,
   TableRow,
 } from "@moduleleague/ui";
-import type {
-  ModuleColumnPin,
-  ModuleSortableRowProps,
-  RecordGridHeaderCellProps,
-  RecordGridProps,
-} from "../moduleAppView.types";
+import type { RecordGridProps } from "../moduleAppView.types";
 import { RecordGridEmpty } from "./RecordGridEmpty";
+import { RecordGridHeaderCell } from "./RecordGridHeaderCell";
+import { RecordGridRow } from "./RecordGridRow";
 import {
   COLUMN_WIDTH,
+  columnLabel,
+  columnPinsOf,
+  columnWidthsOf,
+  fillerRowKeys,
   lockToDragAxis,
+  pageSelectionState,
   pinClass,
+  pinnedRowIndex,
   pinStyle,
+  recordRowClass,
   sameKindCollision,
+  selectedKeysOf,
+  tableMinWidth,
+  toColumnDefs,
   toRowId,
+  toRowSelection,
 } from "./RecordGrid.utils";
 
 export function RecordGrid<T>({
@@ -81,6 +73,9 @@ export function RecordGrid<T>({
   onColumnReorder,
   pinnedColumns,
   onColumnPinToggle,
+  onColumnEdit,
+  onColumnHide,
+  onColumnDelete,
   selectedKeys,
   onSelectionChange,
   onRowReorder,
@@ -95,10 +90,7 @@ export function RecordGrid<T>({
   const [addingField, setAddingField] = useState(false);
   const openAddField = useCallback(() => setAddingField(true), []);
   const fieldNames = useMemo(
-    () =>
-      columns?.map((column) =>
-        typeof column?.header === "string" ? column.header : column?.key,
-      ) ?? [],
+    () => columns?.map((column) => columnLabel(column)) ?? [],
     [columns],
   );
   const data = useMemo(() => records ?? [], [records]);
@@ -106,20 +98,12 @@ export function RecordGrid<T>({
     () => new Map(columns?.map((column) => [column?.key, column])),
     [columns],
   );
-  const columnDefs = useMemo<ColumnDef<T>[]>(
-    () =>
-      columns?.map((column, index) => ({
-        id: column?.key,
-        header: () => column?.header,
-        cell: ({ row }) => column?.cell(row.original),
-        size: column?.width ?? COLUMN_WIDTH.default,
-        minSize: COLUMN_WIDTH.min,
-        enableResizing: hasAddField || index < columns.length - 1,
-      })) ?? [],
+  const columnDefs = useMemo(
+    () => toColumnDefs(columns, hasAddField),
     [columns, hasAddField],
   );
   const rowSelection = useMemo<RowSelectionState>(
-    () => Object.fromEntries(selectedKeys?.map((key) => [key, true]) ?? []),
+    () => toRowSelection(selectedKeys),
     [selectedKeys],
   );
   const columnSizing = useMemo<ColumnSizingState>(
@@ -133,10 +117,10 @@ export function RecordGrid<T>({
     [pinnedColumns, columnByKey],
   );
   const changeRowSelection = useCallback(
-    (updater: Updater<RowSelectionState>) => {
-      const next = functionalUpdate(updater, rowSelection);
-      onSelectionChange?.(Object.keys(next).filter((key) => next[key]));
-    },
+    (updater: Updater<RowSelectionState>) =>
+      onSelectionChange?.(
+        selectedKeysOf(functionalUpdate(updater, rowSelection)),
+      ),
     [rowSelection, onSelectionChange],
   );
   const changeColumnSizing = useCallback(
@@ -167,11 +151,7 @@ export function RecordGrid<T>({
   const rows = table.getRowModel().rows;
 
   const pageKeys = useMemo(() => rows.map((row) => row.id), [rows]);
-  const pageSelection: CheckedState = table.getIsAllPageRowsSelected()
-    ? true
-    : table.getIsSomePageRowsSelected()
-      ? "indeterminate"
-      : false;
+  const pageSelection = pageSelectionState(table);
   const togglePage = useCallback(
     () => table.toggleAllPageRowsSelected(),
     [table],
@@ -192,54 +172,25 @@ export function RecordGrid<T>({
     if (node) setHeaderHeight(node.getBoundingClientRect().height);
   }, []);
   const pinnedIndex = useMemo(
-    () =>
-      new Map(
-        pinnedRows
-          ?.filter((key) => pageKeys.includes(key))
-          .map((key, index) => [key, index]),
-      ),
+    () => pinnedRowIndex(pinnedRows, pageKeys),
     [pinnedRows, pageKeys],
   );
   const fillerStyle = useMemo(() => ({ height: rowHeight }), [rowHeight]);
   const fillerRows = useMemo(
-    () =>
-      rows.length
-        ? Array.from(
-            {
-              length: Math.max(0, pageSize - (rows.length - pinnedIndex.size)),
-            },
-            (_, i) => i,
-          )
-        : [],
-    [rows.length, pageSize, pinnedIndex],
+    () => fillerRowKeys(rows.length, pinnedIndex.size, pageSize),
+    [rows.length, pinnedIndex.size, pageSize],
   );
   const keys = useMemo(() => headers.map((header) => header.id), [headers]);
   const widths = useMemo(
-    () =>
-      headers.map((header, index) =>
-        !hasAddField && index === headers.length - 1
-          ? undefined
-          : (columnSizing[header.id] ?? header.getSize()),
-      ),
+    () => columnWidthsOf(headers, columnSizing, hasAddField),
     [headers, columnSizing, hasAddField],
   );
-  const pins = useMemo(() => {
-    let left = selectable ? COLUMN_WIDTH.select : 0;
-    return headers.map((header, index): ModuleColumnPin | undefined => {
-      if (!header.column.getIsPinned()) return undefined;
-      const pin = { left, last: header.column.getIsLastColumn("left") };
-      left += widths[index] ?? COLUMN_WIDTH.last;
-      return pin;
-    });
-  }, [headers, widths, selectable]);
+  const pins = useMemo(
+    () => columnPinsOf(headers, widths, selectable ? COLUMN_WIDTH.select : 0),
+    [headers, widths, selectable],
+  );
   const tableStyle = useMemo(
-    () => ({
-      minWidth: widths.reduce<number>(
-        (sum, width) => sum + (width ?? COLUMN_WIDTH.last),
-        (selectable ? COLUMN_WIDTH.select : 0) +
-          (hasAddField ? COLUMN_WIDTH.addField : 0),
-      ),
-    }),
+    () => ({ minWidth: tableMinWidth(widths, selectable, hasAddField) }),
     [widths, selectable, hasAddField],
   );
   const rowIds = useMemo(
@@ -313,6 +264,9 @@ export function RecordGrid<T>({
                     sortable={!!onColumnReorder}
                     pin={pins[index]}
                     onColumnPinToggle={onColumnPinToggle}
+                    onColumnEdit={onColumnEdit}
+                    onColumnHide={onColumnHide}
+                    onColumnDelete={onColumnDelete}
                   />
                 ))}
                 {hasAddField && (
@@ -355,7 +309,7 @@ export function RecordGrid<T>({
                 const pinnedAt = pinnedIndex.get(key);
                 const pinned = pinnedAt !== undefined;
                 return (
-                  <SortableRow
+                  <RecordGridRow
                     key={key}
                     rowId={toRowId(key)}
                     rowKey={key}
@@ -371,14 +325,7 @@ export function RecordGrid<T>({
                     onSelectToggle={selectable ? toggleRow : undefined}
                     onRowDelete={onRowDelete}
                     className={cn(
-                      "group/row [&>td]:h-8",
-                      selected
-                        ? "bg-primary-10 hover:bg-primary-10"
-                        : "bg-background even:bg-table-stripe hover:bg-primary-10 data-[state=open]:bg-primary-10",
-                      pinned && "sticky z-[5]",
-                      pinned &&
-                        pinnedAt === pinnedIndex.size - 1 &&
-                        "sticky-row-edge",
+                      recordRowClass(selected, pinnedAt, pinnedIndex.size),
                     )}
                   >
                     {selectable && (
@@ -435,7 +382,7 @@ export function RecordGrid<T>({
                       </TableCell>
                     ))}
                     {hasAddField && <TableCell className="p-0" />}
-                  </SortableRow>
+                  </RecordGridRow>
                 );
               })}
             </SortableContext>
@@ -480,173 +427,5 @@ export function RecordGrid<T>({
         />
       )}
     </div>
-  );
-}
-
-function SortableRow({
-  rowId,
-  rowKey,
-  sortable,
-  measureRef,
-  selected,
-  pinnedTop,
-  className,
-  children,
-  onRowPinToggle,
-  onSelectToggle,
-  onRowDelete,
-}: ModuleSortableRowProps) {
-  const { setNodeRef, listeners, transform, transition, isDragging } =
-    useSortable({
-      id: rowId,
-      data: { type: "row", key: rowKey },
-      disabled: !sortable,
-    });
-  const setRefs = useCallback(
-    (node: HTMLTableRowElement | null) => {
-      setNodeRef(node);
-      measureRef?.(node);
-    },
-    [setNodeRef, measureRef],
-  );
-  const style = useMemo(
-    () => ({
-      top: pinnedTop,
-      transform: transform ? `translate3d(0, ${transform.y}px, 0)` : undefined,
-      transition,
-    }),
-    [pinnedTop, transform, transition],
-  );
-  const pinned = pinnedTop !== undefined;
-
-  const row = (
-    <TableRow
-      ref={setRefs}
-      style={style}
-      aria-selected={selected}
-      {...(sortable ? listeners : {})}
-      className={cn(
-        className,
-        sortable && "cursor-grab active:cursor-grabbing",
-        isDragging && "relative z-10 bg-background shadow-md",
-      )}
-    >
-      {children}
-    </TableRow>
-  );
-
-  if (!onRowPinToggle && !onSelectToggle && !onRowDelete) return row;
-
-  return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>{row}</ContextMenuTrigger>
-      <ContextMenuContent className="min-w-40">
-        {onRowPinToggle && (
-          <ContextMenuItem onSelect={() => onRowPinToggle(rowKey)}>
-            {pinned ? <PinOff /> : <Pin />}
-            {pinned ? "Unpin from top" : "Pin to top"}
-          </ContextMenuItem>
-        )}
-        {onSelectToggle && (
-          <ContextMenuItem onSelect={() => onSelectToggle(rowKey)}>
-            {selected ? <Square /> : <SquareCheck />}
-            {selected ? "Deselect" : "Select"}
-          </ContextMenuItem>
-        )}
-        {onRowDelete && (
-          <>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              variant="destructive"
-              onSelect={() => onRowDelete(rowKey)}
-            >
-              <Trash2 />
-              Delete
-            </ContextMenuItem>
-          </>
-        )}
-      </ContextMenuContent>
-    </ContextMenu>
-  );
-}
-
-function RecordGridHeaderCell<T>({
-  header,
-  column,
-  sortable,
-  pin,
-  onColumnPinToggle,
-}: RecordGridHeaderCellProps<T>) {
-  const { setNodeRef, listeners, transform, transition, isDragging } =
-    useSortable({
-      id: header.id,
-      data: { type: "column" },
-      disabled: !sortable,
-    });
-  const style = useMemo(
-    () => ({
-      ...pinStyle(pin),
-      transform: transform ? `translate3d(${transform.x}px, 0, 0)` : undefined,
-      transition,
-    }),
-    [pin, transform, transition],
-  );
-  const label = typeof column?.header === "string" ? column.header : header.id;
-  const resizable = header.column.getCanResize();
-
-  return (
-    <TableHead
-      ref={setNodeRef}
-      style={style}
-      {...(sortable ? listeners : {})}
-      className={cn(
-        "group/head relative border-r select-none last:border-r-0 h-4",
-        "border-r-foreground/15 bg-table-head hover:bg-primary-10",
-        sortable && "cursor-grab active:cursor-grabbing",
-        pin && "sticky z-20",
-        pinClass(pin),
-        isDragging && "z-30 bg-primary-10 shadow-sm",
-        column?.headerClassName,
-      )}
-    >
-      <span className="flex items-center gap-1">
-        {column?.icon}
-        <span className="min-w-0 flex-1 truncate">
-          {flexRender(header.column.columnDef.header, header.getContext())}
-        </span>
-        {onColumnPinToggle && (
-          <button
-            type="button"
-            aria-label={pin ? `Unpin ${label}` : `Pin ${label}`}
-            aria-pressed={!!pin}
-            title={pin ? "Unpin column" : "Pin column"}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => onColumnPinToggle(header.id)}
-            className={cn(
-              "flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground hover:bg-foreground/10 hover:text-foreground",
-              pin
-                ? "text-primary"
-                : "opacity-0 group-hover/head:opacity-100 focus-visible:opacity-100",
-            )}
-          >
-            <Pin className={cn("size-3.5", pin && "fill-current")} />
-          </button>
-        )}
-      </span>
-      {resizable && (
-        <span
-          role="separator"
-          aria-orientation="vertical"
-          aria-label={`Resize ${label}`}
-          onPointerDown={(e) => e.stopPropagation()}
-          onMouseDown={header.getResizeHandler()}
-          onTouchStart={header.getResizeHandler()}
-          className={cn(
-            "absolute top-0 -right-1 z-10 h-full w-2 cursor-col-resize touch-none after:absolute after:inset-y-1 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:rounded-full hover:after:bg-primary",
-            header.column.getIsResizing() && "after:bg-primary",
-          )}
-        />
-      )}
-    </TableHead>
   );
 }

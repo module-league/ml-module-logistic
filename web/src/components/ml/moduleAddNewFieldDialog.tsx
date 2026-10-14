@@ -20,6 +20,14 @@ import { cn } from "@/lib/utils";
 import { getContrastColor, presetColors } from "@/lib/colorUtils";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -40,7 +48,6 @@ import { Switch } from "@/components/ui/switch";
 import { fieldDateFormat } from "@/lib/dateHelper";
 import {
   NUMBER_ABBREVIATIONS,
-  DEFAULT_NUMBER_SETTINGS,
   formatNumber,
   type NumberSettings,
 } from "@/lib/numberHelper";
@@ -58,6 +65,8 @@ import type {
   ModuleFieldDateSettings,
   ModuleFieldDateSettingsProps,
   ModuleAddNewFieldDialogProps,
+  ModuleDeleteFieldDialogProps,
+  ModuleEditFieldDialogProps,
   ModuleFieldOptionColorPickerProps,
   ModuleFieldOptionRowProps,
   ModuleFieldOptionsEditorProps,
@@ -72,7 +81,8 @@ import {
   MODULE_FIELD_TYPES,
   nextOptionValue,
   toField,
-  DEFAULT_DATE_SETTINGS,
+  fieldDateDraft,
+  fieldNumberDraft,
   FIELD_DATE_FORMATS,
   FIELD_TIME_FORMATS,
 } from "./moduleAddNewField.utils";
@@ -83,11 +93,103 @@ import {
  * <ModuleAddNewFieldDialog open={open} onOpenChange={setOpen} onAdd={addColumn} />
  */
 export function ModuleAddNewFieldDialog({
+  onAdd,
+  ...props
+}: ModuleAddNewFieldDialogProps) {
+  return <FieldDialog {...props} onSave={onAdd} />;
+}
+
+/**
+ * The Add field dialog opened on an existing field: no type step, the type stays.
+ * @example
+ * <ModuleEditFieldDialog field={field} open={open} onOpenChange={setOpen} onSave={(edited) => onUpdateField(field.objId, edited)} />
+ */
+export function ModuleEditFieldDialog(props: ModuleEditFieldDialogProps) {
+  if (!props.field) return null;
+  return <FieldDialog {...props} />;
+}
+
+/**
+ * Asks before deleting a field, since its values go from every record.
+ * @example
+ * <ModuleDeleteFieldDialog field={field} open={open} onOpenChange={setOpen} onDelete={() => onDeleteField(field.objId)} />
+ */
+export function ModuleDeleteFieldDialog({
   open,
   onOpenChange,
-  onAdd,
+  field,
+  onDelete,
+}: ModuleDeleteFieldDialogProps) {
+  const [deleting, setDeleting] = useState(false);
+  const changeOpen = useCallback(
+    (next: boolean) => {
+      if (!deleting) onOpenChange(next);
+    },
+    [deleting, onOpenChange],
+  );
+  const confirm = useCallback(
+    async (event: SyntheticEvent) => {
+      event.preventDefault();
+      setDeleting(true);
+      try {
+        await onDelete();
+        onOpenChange(false);
+        toast.success("Field deleted", {
+          description: `${field?.name} was removed from every record.`,
+        });
+      } catch (error) {
+        toast.error("Couldn't delete field", {
+          description: errorParser(error)?.message,
+        });
+      } finally {
+        setDeleting(false);
+      }
+    },
+    [field, onDelete, onOpenChange],
+  );
+
+  if (!field) return null;
+
+  return (
+    <AlertDialog open={open} onOpenChange={changeOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete “{field.name}”?</AlertDialogTitle>
+          <AlertDialogDescription>
+            The field and its values are removed from every record. This can't
+            be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <Button
+            variant="outline"
+            size="xs"
+            disabled={deleting}
+            onClick={() => changeOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            size="xs"
+            disabled={deleting}
+            onClick={confirm}
+          >
+            {deleting ? "Deleting…" : "Delete field"}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function FieldDialog({
+  open,
+  onOpenChange,
+  field,
+  onSave,
   takenNames,
-}: ModuleAddNewFieldDialogProps) {
+}: ModuleEditFieldDialogProps) {
   const [saving, setSaving] = useState(false);
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
   const changeOpen = useCallback(
@@ -96,31 +198,34 @@ export function ModuleAddNewFieldDialog({
     },
     [saving, onOpenChange],
   );
-  const add = useCallback(
-    async (field: IField) => {
+  const save = useCallback(
+    async (built: IField) => {
       setSaving(true);
       try {
-        await onAdd(field);
+        await onSave(built);
         onOpenChange(false);
-        toast.success("Field added", {
-          description: `${field.name} was added as a ${fieldTypeOption(field.type)?.label.toLowerCase()} field.`,
+        toast.success(field ? "Field updated" : "Field added", {
+          description: field
+            ? `Changes to ${built.name} were saved.`
+            : `${built.name} was added as a ${fieldTypeOption(built.type)?.label.toLowerCase()} field.`,
         });
       } catch (error) {
-        toast.error("Couldn't add field", {
+        toast.error(field ? "Couldn't save field" : "Couldn't add field", {
           description: errorParser(error)?.message,
         });
       } finally {
         setSaving(false);
       }
     },
-    [onAdd, onOpenChange],
+    [field, onSave, onOpenChange],
   );
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogContent className="flex h-[min(620px,90dvh)] flex-col gap-0 p-0 sm:max-w-lg">
         <AddFieldSteps
-          onAdd={add}
+          field={field}
+          onAdd={save}
           onCancel={close}
           takenNames={takenNames}
           saving={saving}
@@ -131,23 +236,28 @@ export function ModuleAddNewFieldDialog({
 }
 
 function AddFieldSteps({
+  field,
   onAdd,
   onCancel,
   takenNames,
   saving = false,
 }: ModuleAddFieldStepsProps) {
-  const [type, setType] = useState<IField["type"] | null>(null);
-  const [name, setName] = useState("");
-  const [options, setOptions] = useState<IFieldDropDownValue[]>(() => [
-    createDropDownValue(0),
-    createDropDownValue(1),
-  ]);
-  const [dateSettings, setDateSettings] = useState<ModuleFieldDateSettings>(
-    DEFAULT_DATE_SETTINGS,
+  const editing = !!field;
+  const [type, setType] = useState<IField["type"] | null>(field?.type ?? null);
+  const [name, setName] = useState(field?.name ?? "");
+  const [options, setOptions] = useState<IFieldDropDownValue[]>(() =>
+    field?.dropDownValues?.length
+      ? field.dropDownValues
+      : [createDropDownValue(0), createDropDownValue(1)],
   );
-  const [multipleMembers, setMultipleMembers] = useState(false);
-  const [numberSettings, setNumberSettings] = useState<NumberSettings>(
-    DEFAULT_NUMBER_SETTINGS,
+  const [dateSettings, setDateSettings] = useState<ModuleFieldDateSettings>(
+    () => fieldDateDraft(field),
+  );
+  const [multipleMembers, setMultipleMembers] = useState(
+    !!field?.memberSettings?.multiple,
+  );
+  const [numberSettings, setNumberSettings] = useState<NumberSettings>(() =>
+    fieldNumberDraft(field),
   );
   const option = useMemo(
     () => (type ? fieldTypeOption(type) : undefined),
@@ -233,10 +343,12 @@ function AddFieldSteps({
               <Icon className="size-4" />
             </span>
           )}
-          New {option?.label.toLowerCase()} field
+          {editing ? "Edit" : "New"} {option?.label.toLowerCase()} field
         </DialogTitle>
         <DialogDescription>
-          Name the field as it should appear in the table and forms.
+          {editing
+            ? "The field type can't change. Changes show in the table and forms."
+            : "Name the field as it should appear in the table and forms."}
         </DialogDescription>
       </DialogHeader>
 
@@ -268,7 +380,10 @@ function AddFieldSteps({
             </Field>
           )}
           {type === "date" && (
-            <FieldDateSettings value={dateSettings} onChange={setDateSettings} />
+            <FieldDateSettings
+              value={dateSettings}
+              onChange={setDateSettings}
+            />
           )}
           {(type === "number" || type === "currency") && (
             <FieldNumberSettings
@@ -296,21 +411,34 @@ function AddFieldSteps({
         </div>
       </div>
 
-      <DialogFooter className="m-0 shrink-0 items-center sm:justify-between">
-        <Button
-          variant="outline"
-          size="xs"
-          onClick={() => setType(null)}
-          startIcon={<ChevronLeft size={14} />}
-        >
-          Field type
-        </Button>
+      <DialogFooter
+        className={cn(
+          "m-0 shrink-0 items-center",
+          editing ? "sm:justify-end" : "sm:justify-between",
+        )}
+      >
+        {!editing && (
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => setType(null)}
+            startIcon={<ChevronLeft size={14} />}
+          >
+            Field type
+          </Button>
+        )}
         <div className="flex gap-2">
           <Button variant="outline" size="xs" onClick={onCancel}>
             Cancel
           </Button>
           <Button type="submit" size="xs" disabled={!canAdd || saving}>
-            {saving ? "Adding…" : "Add field"}
+            {editing
+              ? saving
+                ? "Saving…"
+                : "Save"
+              : saving
+                ? "Adding…"
+                : "Add field"}
           </Button>
         </div>
       </DialogFooter>
@@ -332,7 +460,10 @@ function FieldDateSettings({ value, onChange }: ModuleFieldDateSettingsProps) {
         <Select
           value={value.dateFormat}
           onValueChange={(dateFormat) =>
-            onChange({ ...value, dateFormat: dateFormat as IField["dateFormat"] })
+            onChange({
+              ...value,
+              dateFormat: dateFormat as IField["dateFormat"],
+            })
           }
         >
           <SelectTrigger id="field-date-format" className="w-full">
@@ -361,7 +492,10 @@ function FieldDateSettings({ value, onChange }: ModuleFieldDateSettingsProps) {
           <Select
             value={value.timeFormat}
             onValueChange={(timeFormat) =>
-              onChange({ ...value, timeFormat: timeFormat as IField["timeFormat"] })
+              onChange({
+                ...value,
+                timeFormat: timeFormat as IField["timeFormat"],
+              })
             }
           >
             <SelectTrigger id="field-time-format" className="w-full">
@@ -424,7 +558,7 @@ function FieldNumberSettings({
           }
         >
           <SelectTrigger id="field-number-presets" className="w-full">
-            <SelectValue placeholder="Custom" />
+            <SelectValue placeholder="Select presets" />
           </SelectTrigger>
           <SelectContent position="popper">
             {presetLabels.map((label, index) => (
@@ -437,7 +571,9 @@ function FieldNumberSettings({
       </Field>
       {withSymbol && (
         <Field>
-          <FieldLabel htmlFor="field-currency-symbol">Currency symbol</FieldLabel>
+          <FieldLabel htmlFor="field-currency-symbol">
+            Currency symbol
+          </FieldLabel>
           <Input
             id="field-currency-symbol"
             maxLength={5}
@@ -450,13 +586,15 @@ function FieldNumberSettings({
       <Field>
         <FieldLabel htmlFor="field-number-decimals">Decimal places</FieldLabel>
         <Select
-          value={String(value.decimalPlaces)}
+          value={
+            value.decimalPlaces === undefined ? "" : String(value.decimalPlaces)
+          }
           onValueChange={(decimalPlaces) =>
             onChange({ ...value, decimalPlaces: Number(decimalPlaces) })
           }
         >
           <SelectTrigger id="field-number-decimals" className="w-full">
-            <SelectValue />
+            <SelectValue placeholder="Select decimal places" />
           </SelectTrigger>
           <SelectContent position="popper">
             {NUMBER_DECIMAL_PLACES.map((decimalPlaces) => (

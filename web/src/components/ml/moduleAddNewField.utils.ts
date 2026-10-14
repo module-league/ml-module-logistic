@@ -151,6 +151,26 @@ export function cleanDropDownValues(
     .map((option, index) => ({ ...option, displayOrder: index }));
 }
 
+/** The date settings the dialog starts with: the field's own, or the defaults. */
+export function fieldDateDraft(field?: IField): ModuleFieldDateSettings {
+  return {
+    dateFormat: field?.dateFormat ?? DEFAULT_DATE_SETTINGS.dateFormat,
+    displayTime: field?.displayTime ?? DEFAULT_DATE_SETTINGS.displayTime,
+    timeFormat: field?.timeFormat ?? DEFAULT_DATE_SETTINGS.timeFormat,
+  };
+}
+
+/** The number settings the dialog starts with; a saved field without decimal places keeps showing decimals as typed. */
+export function fieldNumberDraft(field?: IField): NumberSettings {
+  const settings = field?.numberSettings;
+  if (!settings) return DEFAULT_NUMBER_SETTINGS;
+  return {
+    symbol: settings?.symbol ?? DEFAULT_NUMBER_SETTINGS.symbol,
+    decimalPlaces: settings?.decimalPlaces ?? undefined,
+    abbreviation: settings?.abbreviation ?? DEFAULT_NUMBER_SETTINGS.abbreviation,
+  };
+}
+
 function toNumberSettings(type: IField["type"], settings: NumberSettings) {
   if (type === "currency") {
     return { ...settings, symbol: settings?.symbol?.trim() ?? "" };

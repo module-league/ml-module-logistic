@@ -164,7 +164,8 @@ declare global {
   };
 
   /** The type can't change once a field exists. Options left out of dropDownValues are deleted. */
-  type ISidebarFieldUpdate = Pick<IField, "name" | "description"> & {
+  type ISidebarFieldUpdate = Pick<IField, "name" | "description"> &
+    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat" | "memberSettings" | "numberSettings">> & {
     versionNo: number;
     isPrimaryField?: boolean;
     dropDownValues?: ISidebarFieldOptionInput[];
