@@ -7,6 +7,8 @@ export interface PageToolbarColumnOption {
   label: string;
   /** Picks the icon beside the label. */
   type?: IField["type"];
+  /** A system column such as Create time; it doesn't reserve its name for new fields. */
+  system?: boolean;
 }
 
 export interface PageToolbarProps {

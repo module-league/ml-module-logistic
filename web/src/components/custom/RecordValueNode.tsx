@@ -77,7 +77,7 @@ export function RecordValueNode({
       <span className="tabular-nums">{formatFieldNumber(field, value)}</span>
     );
   }
-  if (field?.type === "date") {
+  if (field?.isDateField) {
     return (
       <span className="tabular-nums">{formatFieldDate(field, value)}</span>
     );

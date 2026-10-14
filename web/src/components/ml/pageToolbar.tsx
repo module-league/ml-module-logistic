@@ -180,7 +180,9 @@ function FieldsDropdown({
 }: FieldsDropdownProps) {
   const [addingField, setAddingField] = useState(false);
   const fieldNames = useMemo(
-    () => fields?.map((field) => field?.label) ?? [],
+    () =>
+      fields?.filter((field) => !field?.system).map((field) => field?.label) ??
+      [],
     [fields],
   );
   const sensors = useSensors(

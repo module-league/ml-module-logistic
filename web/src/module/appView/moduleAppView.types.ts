@@ -18,6 +18,8 @@ export interface ModuleAppColumn<T> {
   headerClassName?: string;
   /** Starting width in px. @default 160 */
   width?: number;
+  /** A system column, e.g. Create time: it can be hidden, moved and pinned, but its field can't be edited or deleted. */
+  system?: boolean;
 }
 
 export interface ModuleAppAddAction {

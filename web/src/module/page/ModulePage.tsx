@@ -18,6 +18,7 @@ import { ModuleOpenRecord } from "@/module/record/ModuleOpenRecord";
 import { RecordValueNode } from "@/components/custom/RecordValueNode";
 import { toRecordText } from "@/module/record/moduleRecord.utils";
 import { ModulePageFooter } from "./ModulePageFooter";
+import { recordFieldValue, SYSTEM_FIELDS } from "./modulePage.utils";
 import type { ModuleFieldAction, ModulePageProps } from "./modulePage.types";
 
 const ADD_LABEL = "New record";
@@ -64,19 +65,24 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [onAddRecord],
   );
 
+  const gridFields = useMemo(
+    () => [...(fields ?? []), ...SYSTEM_FIELDS],
+    [fields],
+  );
+
   const filteredRecords = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return records ?? [];
     return (
       records?.filter((record) =>
-        fields?.some((field) =>
-          toRecordText(field, record?.values?.[field.objId], members)
+        gridFields.some((field) =>
+          toRecordText(field, recordFieldValue(field, record), members)
             .toLowerCase()
             .includes(term),
         ),
       ) ?? []
     );
-  }, [records, fields, search, members]);
+  }, [records, gridFields, search, members]);
 
   const orderedRecords = useMemo(() => {
     if (!rowOrder.length) return filteredRecords;
@@ -128,26 +134,27 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
       return index < 0 ? Number.MAX_SAFE_INTEGER : index;
     };
     return (
-      fields
-        ?.map((field) => ({
+      gridFields
+        .map((field) => ({
           key: field.objId,
           header: field.name,
           icon: <FieldTypeIcon type={field.type} />,
           className: field.type === "checkbox" ? "text-center" : undefined,
+          system: field.isSystemField,
           cell: (record: ISidebarRecord) => (
             <RecordValueNode
               field={field}
-              value={record?.values?.[field.objId]}
+              value={recordFieldValue(field, record)}
               members={members}
             />
           ),
         }))
-        .sort((a, b) => position(a.key) - position(b.key)) ?? []
+        .sort((a, b) => position(a.key) - position(b.key))
     );
-  }, [fields, columnOrder, members]);
+  }, [gridFields, columnOrder, members]);
   const fieldTypeById = useMemo(
-    () => new Map(fields?.map((field) => [field?.objId, field?.type])),
-    [fields],
+    () => new Map(gridFields.map((field) => [field?.objId, field?.type])),
+    [gridFields],
   );
   const columnOptions = useMemo(
     () =>
@@ -155,6 +162,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
         key: column.key,
         label: String(column.header),
         type: fieldTypeById.get(column.key),
+        system: column.system,
       })),
     [orderedColumns, fieldTypeById],
   );

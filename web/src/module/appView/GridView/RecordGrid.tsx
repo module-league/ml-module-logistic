@@ -90,7 +90,10 @@ export function RecordGrid<T>({
   const [addingField, setAddingField] = useState(false);
   const openAddField = useCallback(() => setAddingField(true), []);
   const fieldNames = useMemo(
-    () => columns?.map((column) => columnLabel(column)) ?? [],
+    () =>
+      columns
+        ?.filter((column) => !column?.system)
+        .map((column) => columnLabel(column)) ?? [],
     [columns],
   );
   const data = useMemo(() => records ?? [], [records]);

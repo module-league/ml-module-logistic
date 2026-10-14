@@ -225,7 +225,8 @@ namespace LogisticApi.Services
                 sidebarId = record.sidebarId,
                 values = values.ToDictionary(v => v.fieldId, v => v.value),
                 versionNo = record.VersionNo,
-                createTime = record.CreateTime,
+                // Saved as UTC (SYSUTCDATETIME) but read back without a kind; mark it so it serializes with a Z
+                createTime = DateTime.SpecifyKind(record.CreateTime, DateTimeKind.Utc),
             };
         }
 
