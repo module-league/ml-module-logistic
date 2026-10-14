@@ -6,21 +6,21 @@ import {
 import { fieldKeys, putInLists, toOptionInputs } from "./field.utils";
 import { apiClient } from "@/lib/apiClient";
 
-export async function getLogisticFields(sidebarId: string) {
+export async function getFields(sidebarId: string) {
   const { data } = await apiClient.get<ISidebarField[]>(
     `/sidebars/${encodeURIComponent(sidebarId)}/fields`,
   );
   return data;
 }
 
-export async function getLogisticField(objId: string) {
+export async function getField(objId: string) {
   const { data } = await apiClient.get<ISidebarField>(
     `/fields/${encodeURIComponent(objId)}`,
   );
   return data;
 }
 
-export async function createLogisticField(
+export async function createField(
   sidebarId: string,
   body: ISidebarFieldCreate,
 ) {
@@ -31,7 +31,7 @@ export async function createLogisticField(
   return data;
 }
 
-export async function updateLogisticField(
+export async function updateField(
   objId: string,
   body: ISidebarFieldUpdate,
 ) {
@@ -42,7 +42,7 @@ export async function updateLogisticField(
   return data;
 }
 
-export async function deleteLogisticField(objId: string) {
+export async function deleteField(objId: string) {
   await apiClient.delete(`/fields/${encodeURIComponent(objId)}`);
 }
 
@@ -90,7 +90,7 @@ export function toFieldUpdate(
 export function useFields(sidebarId?: string) {
   return useQuery({
     queryKey: fieldKeys.list(sidebarId ?? ""),
-    queryFn: () => getLogisticFields(sidebarId ?? ""),
+    queryFn: () => getFields(sidebarId ?? ""),
     enabled: !!sidebarId,
   });
 }
@@ -99,7 +99,7 @@ export function useFields(sidebarId?: string) {
 export function useField(objId?: string) {
   return useQuery({
     queryKey: fieldKeys.detail(objId ?? ""),
-    queryFn: () => getLogisticField(objId ?? ""),
+    queryFn: () => getField(objId ?? ""),
     enabled: !!objId,
   });
 }
@@ -108,7 +108,7 @@ export function useCreateField(sidebarId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: ISidebarFieldCreate) =>
-      createLogisticField(sidebarId, body),
+      createField(sidebarId, body),
     onSuccess: (created) => {
       queryClient.setQueryData(fieldKeys.detail(created.objId), created);
       putInLists(queryClient, sidebarId, (fields) => [...fields, created]);
@@ -120,7 +120,7 @@ export function useUpdateField() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ objId, body }: { objId: string; body: ISidebarFieldUpdate }) =>
-      updateLogisticField(objId, body),
+      updateField(objId, body),
     onSuccess: (updated) => {
       queryClient.setQueryData(fieldKeys.detail(updated.objId), updated);
       putInLists(queryClient, updated.sidebarId, (fields) =>
@@ -136,7 +136,7 @@ export function useDeleteField() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (field: Pick<ISidebarField, "objId" | "sidebarId">) => {
-      await deleteLogisticField(field.objId);
+      await deleteField(field.objId);
       return field;
     },
     onSuccess: (deleted) => {

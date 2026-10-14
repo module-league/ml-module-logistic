@@ -7,21 +7,21 @@ export const recordKeys = {
     [...recordKeys.all, "detail", sidebarId, objId] as const,
 };
 
-export async function getLogisticRecords(sidebarId: string) {
+export async function getRecords(sidebarId: string) {
   const { data } = await apiClient.get<ISidebarRecord[]>(
     `/sidebars/${encodeURIComponent(sidebarId)}/records`,
   );
   return data;
 }
 
-export async function getLogisticRecord(sidebarId: string, objId: string) {
+export async function getRecord(sidebarId: string, objId: string) {
   const { data } = await apiClient.get<ISidebarRecord>(
     `/sidebars/${encodeURIComponent(sidebarId)}/records/${encodeURIComponent(objId)}`,
   );
   return data;
 }
 
-export async function createLogisticRecord(
+export async function createRecord(
   sidebarId: string,
   values: ISidebarRecordValues,
 ) {
@@ -32,7 +32,7 @@ export async function createLogisticRecord(
   return data;
 }
 
-export async function updateLogisticRecord(
+export async function updateRecord(
   sidebarId: string,
   objId: string,
   body: ISidebarRecordUpdate,

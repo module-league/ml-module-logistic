@@ -2,7 +2,7 @@
 
 namespace LogisticApi.Models
 {
-    public class Logistic: MLEntityBase
+    public class SidebarRecord : MLEntityBase
     {
         public string sidebarId { get; set; } = string.Empty;
        

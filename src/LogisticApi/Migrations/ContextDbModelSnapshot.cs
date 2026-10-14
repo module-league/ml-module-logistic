@@ -158,7 +158,7 @@ namespace LogisticApi.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LogisticApi.Models.Logistic", b =>
+            modelBuilder.Entity("LogisticApi.Models.SidebarRecord", b =>
                 {
                     b.Property<Guid>("ObjId")
                         .HasColumnType("uniqueidentifier")

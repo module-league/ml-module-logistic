@@ -15,7 +15,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 builder.Services.AddScoped<MLAuditFieldsInterceptor>();
-builder.Services.AddScoped<LogisticRecordService>();
+builder.Services.AddScoped<SidebarRecordService>();
 
 
 // Database

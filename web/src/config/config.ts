@@ -6,7 +6,7 @@ export const moduleConfig: IModuleConfig = {
   code: "logistic",
   title: "Logistic",
   icon: Truck,
-  homeKey: "logistics", // switch to "dashboard" once that page is built
+  homeKey: "shipment", // switch to "dashboard" once that page is built
   groups: [
     // {
     //   label: "Overview",
@@ -24,35 +24,53 @@ export const moduleConfig: IModuleConfig = {
       label: "Operations",
       items: [
         {
-          sidebarId: "logistics",
-          sidebarText: "Logistics",
+          sidebarId: "shipment",
+          sidebarText: "Shipments",
           sidebarDesc: "Track shipments from origin to destination.",
           sidebarIcon: Truck,
-          page: lazy(() => import("@/pages/LogisticList")),
-        },
-        {
-          sidebarId: "awaiting-task",
-          sidebarText: "Awaiting Task",
-          sidebarDesc: "Pending shipments waiting to be dispatched.",
-          sidebarIcon: ClipboardClock,
-          className: "text-amber-700",
-          page: lazy(() => import("@/pages/AwaitingTask")),
-        },
-        {
-          sidebarId: "record-test",
-          sidebarText: "Record Test",
-          sidebarDesc: "",
-          sidebarIcon: PackageCheck,
-          hidePageSeparator: false,
-          page: lazy(() => import("@/pages/RecordTest")),
+          page: lazy(() => import("@/pages/Shipment")),
         },
         // {
-        //   sidebarId: "routes",
-        //   sidebarText: "Routes",
-        //   sidebarDesc: "Origins, destinations and transit times.",
-        //   sidebarIcon: MapPin,
-        //   page: ComingSoon,
+        //   sidebarId: "dispatch",
+        //   sidebarText: "Dispatch",
+        //   sidebarDesc: "Pending shipments waiting to be dispatched.",
+        //   sidebarIcon: ClipboardClock,
+        //   className: "text-amber-700",
+        //   page: lazy(() => import("@/pages/AwaitingTask")),
         // },
+        // {
+        //   sidebarId: "exeptions",
+        //   sidebarText: "Exeptions",
+        //   sidebarDesc: "",
+        //   sidebarIcon: PackageCheck,
+        //   hidePageSeparator: false,
+        //   page: lazy(() => import("@/pages/Shipment")),
+        // },
+        // {
+        //   sidebarId: "documents",
+        //   sidebarText: "Documents",
+        //   sidebarDesc: "",
+        //   sidebarIcon: PackageCheck,
+        //   hidePageSeparator: false,
+        //   page: lazy(() => import("@/pages/Shipment")),
+        // },
+        // {
+        //   sidebarId: "billing",
+        //   sidebarText: "Billing",
+        //   sidebarDesc: "",
+        //   sidebarIcon: PackageCheck,
+        //   hidePageSeparator: false,
+        //   page: lazy(() => import("@/pages/Shipment")),
+        // },
+        //  {
+        //   sidebarId: "master-data",
+        //   sidebarText: "Master Data",
+        //   sidebarDesc: "",
+        //   sidebarIcon: PackageCheck,
+        //   hidePageSeparator: false,
+        //   page: lazy(() => import("@/pages/Shipment")),
+        // },
+       
       ],
     },
     // {

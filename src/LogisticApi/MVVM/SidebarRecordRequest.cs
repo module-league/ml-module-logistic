@@ -1,24 +1,24 @@
 namespace LogisticApi.MVVM
 {
-    public class LogisticRecordCreateRequest 
+    public class SidebarRecordCreateRequest 
     {
         public Dictionary<Guid, string?> values { get; set; } = [];
     }
 
-    public class LogisticRecordUpdateRequest
+    public class SidebarRecordUpdateRequest
     {
         public Dictionary<Guid, string?> values { get; set; } = [];
         public int versionNo { get; set; }
     }
 
-    public class LogisticRecordValue
+    public class SidebarRecordValue
     {
         public Guid fieldId { get; set; }
         public string type { get; set; } = string.Empty;
         public string? value { get; set; }
     }
 
-    public class LogisticRecordResponse
+    public class SidebarRecordResponse
     {
         public Guid objId { get; set; }
         public int docId { get; set; }

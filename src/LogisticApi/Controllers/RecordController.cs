@@ -8,22 +8,22 @@ namespace LogisticApi.Controllers
     [ApiController]
     [Route("api/sidebars/{sidebarId}/records")]
     [Produces("application/json")]
-    public class RecordController(LogisticRecordService records) : ControllerBase
+    public class RecordController(SidebarRecordService records) : ControllerBase
     {
         private const string SidebarIdPattern = "^[a-z0-9]+(-[a-z0-9]+)*$";
 
         [HttpGet]
-        public Task<List<LogisticRecordResponse>> GetRecords(
+        public Task<List<SidebarRecordResponse>> GetRecords(
             [FromRoute, MaxLength(100), RegularExpression(SidebarIdPattern)] string sidebarId,
             CancellationToken ct) =>
             records.ListAsync(sidebarId, ct);
 
         [HttpPost]
-        [ProducesResponseType<LogisticRecordResponse>(StatusCodes.Status201Created)]
+        [ProducesResponseType<SidebarRecordResponse>(StatusCodes.Status201Created)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<LogisticRecordResponse>> CreateRecord(
+        public async Task<ActionResult<SidebarRecordResponse>> CreateRecord(
             [FromRoute, MaxLength(100), RegularExpression(SidebarIdPattern)] string sidebarId,
-            [FromBody] LogisticRecordCreateRequest request,
+            [FromBody] SidebarRecordCreateRequest request,
             CancellationToken ct)
         {
             var created = await records.CreateAsync(sidebarId, request, ct);
@@ -31,9 +31,9 @@ namespace LogisticApi.Controllers
         }
 
         [HttpGet("{objId:guid}")]
-        [ProducesResponseType<LogisticRecordResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<SidebarRecordResponse>(StatusCodes.Status200OK)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-        public Task<LogisticRecordResponse> GetRecord(
+        public Task<SidebarRecordResponse> GetRecord(
     [FromRoute, MaxLength(100), RegularExpression(SidebarIdPattern)] string sidebarId,
     Guid objId,
     CancellationToken ct) =>
@@ -41,14 +41,14 @@ namespace LogisticApi.Controllers
 
         /// <summary>Replaces the record's values. Send the versionNo you last read; a stale one is rejected with 409.</summary>
         [HttpPut("{objId:guid}")]
-        [ProducesResponseType<LogisticRecordResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<SidebarRecordResponse>(StatusCodes.Status200OK)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-        public Task<LogisticRecordResponse> UpdateRecord(
+        public Task<SidebarRecordResponse> UpdateRecord(
             [FromRoute, MaxLength(100), RegularExpression(SidebarIdPattern)] string sidebarId,
             Guid objId,
-            [FromBody] LogisticRecordUpdateRequest request,
+            [FromBody] SidebarRecordUpdateRequest request,
             CancellationToken ct) =>
             records.UpdateAsync(sidebarId, objId, request, ct);
 

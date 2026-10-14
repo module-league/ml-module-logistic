@@ -5,12 +5,12 @@ using ModuleLeague.Core.Context;
 
 namespace LogisticApi.Context.Configurations
 {
-    public class LogisticDbConfig : MLEntityConfig<Logistic>
+    public class SidebarRecordDbConfig : MLEntityConfig<SidebarRecord>
     {
         protected override string TablePrefix => "lg_";
         protected override string TableName => "logistic";  
 
-        protected override void ConfigureEntity(EntityTypeBuilder<Logistic> b)
+        protected override void ConfigureEntity(EntityTypeBuilder<SidebarRecord> b)
         {
             // Columns
             b.Property(e => e.sidebarId)

@@ -7,13 +7,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LogisticApi.Services
 {
-    public class LogisticRecordService(ContextDb db)
+    public class SidebarRecordService(ContextDb db)
     {
         private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-        public async Task<List<LogisticRecordResponse>> ListAsync(string sidebarId, CancellationToken ct)
+        public async Task<List<SidebarRecordResponse>> ListAsync(string sidebarId, CancellationToken ct)
         {
-            var records = await db.Logistics
+            var records = await db.SidebarRecords
                 .AsNoTracking()
                 .Where(r => r.sidebarId == sidebarId)
                 .OrderByDescending(r => r.DocId)
@@ -21,10 +21,10 @@ namespace LogisticApi.Services
             return records.Select(ToResponse).ToList();
         }
 
-        public async Task<LogisticRecordResponse> CreateAsync(string sidebarId, LogisticRecordCreateRequest request, CancellationToken ct)
+        public async Task<SidebarRecordResponse> CreateAsync(string sidebarId, SidebarRecordCreateRequest request, CancellationToken ct)
         {
             var metadata = await BuildMetadataAsync(sidebarId, request.values, ct);
-            var record = new Logistic
+            var record = new SidebarRecord
             {
                 ObjId = Guid.CreateVersion7(),
                 sidebarId = sidebarId,
@@ -32,15 +32,15 @@ namespace LogisticApi.Services
                 RawMetadata = JsonSerializer.Serialize(request.values, Json),
                 Metadata = JsonSerializer.Serialize(metadata, Json),
             };
-            db.Logistics.Add(record);
+            db.SidebarRecords.Add(record);
             await db.SaveChangesAsync(ct);
             return ToResponse(record);
         }
 
         /// <summary>Replaces every value of the record; fields left out become empty. Send the versionNo you last read.</summary>
-        public async Task<LogisticRecordResponse> UpdateAsync(string sidebarId, Guid objId, LogisticRecordUpdateRequest request, CancellationToken ct)
+        public async Task<SidebarRecordResponse> UpdateAsync(string sidebarId, Guid objId, SidebarRecordUpdateRequest request, CancellationToken ct)
         {
-            var record = await db.Logistics
+            var record = await db.SidebarRecords
                 .FirstOrDefaultAsync(r => r.ObjId == objId && r.sidebarId == sidebarId, ct)
                 ?? throw ApiProblemException.NotFound("Record not found.");
 
@@ -63,7 +63,7 @@ namespace LogisticApi.Services
             return ToResponse(record);
         }
 
-        private async Task<List<LogisticRecordValue>> BuildMetadataAsync(string sidebarId, Dictionary<Guid, string?> values, CancellationToken ct)
+        private async Task<List<SidebarRecordValue>> BuildMetadataAsync(string sidebarId, Dictionary<Guid, string?> values, CancellationToken ct)
         {
             var fields = await db.SidebarFields
                 .AsNoTracking()
@@ -88,7 +88,7 @@ namespace LogisticApi.Services
                     .Where(a => a.refId == sidebarId && wanted.Contains(a.ObjId))
                     .ToDictionaryAsync(a => a.ObjId, ct);
 
-            return fields.Select(f => new LogisticRecordValue
+            return fields.Select(f => new SidebarRecordValue
             {
                 fieldId = f.ObjId,
                 type = f.type,
@@ -243,11 +243,11 @@ namespace LogisticApi.Services
             return ids;
         }
 
-        private static LogisticRecordResponse ToResponse(Logistic record)
+        private static SidebarRecordResponse ToResponse(SidebarRecord record)
         {
             var values = string.IsNullOrWhiteSpace(record.Metadata)
                 ? []
-                : JsonSerializer.Deserialize<List<LogisticRecordValue>>(record.Metadata, Json) ?? [];
+                : JsonSerializer.Deserialize<List<SidebarRecordValue>>(record.Metadata, Json) ?? [];
             return new()
             {
                 objId = record.ObjId,
@@ -260,9 +260,9 @@ namespace LogisticApi.Services
             };
         }
 
-        public async Task<LogisticRecordResponse> GetAsync(string sidebarId, Guid objId, CancellationToken ct)
+        public async Task<SidebarRecordResponse> GetAsync(string sidebarId, Guid objId, CancellationToken ct)
         {
-            var record = await db.Logistics
+            var record = await db.SidebarRecords
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.ObjId == objId && r.sidebarId == sidebarId, ct)
                 ?? throw ApiProblemException.NotFound("Record not found.");

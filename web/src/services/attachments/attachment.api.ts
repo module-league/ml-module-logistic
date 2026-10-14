@@ -4,7 +4,7 @@ import { apiClient } from "@/lib/apiClient";
 export const ATTACHMENT_MAX_BYTES = 15 * 1024 * 1024;
 
 /** Uploads one file for refId; a record only takes attachments whose refId is its sidebar id. */
-export async function uploadLogisticAttachment(refId: string, file: File) {
+export async function uploadAttachment(refId: string, file: File) {
   const body = new FormData();
   body.append("refId", refId);
   body.append("file", file);
