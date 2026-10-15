@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
   DialogFooter,
@@ -8,6 +9,7 @@ import {
   FormField2,
 } from "@moduleleague/ui";
 import { RecordInputControl } from "@/components/custom/RecordInputControl";
+import { recordValuesSchema } from "@/lib/validationHelper";
 import type {
   ModuleLookupFormInputProps,
   ModuleRecordFormProps,
@@ -35,7 +37,11 @@ export function ModuleRecordForm({
     }),
     [fields, values],
   );
-  const form = useForm<ModuleRecordFormValues>({ defaultValues });
+  const schema = useMemo(() => recordValuesSchema(fields), [fields]);
+  const form = useForm<ModuleRecordFormValues>({
+    defaultValues,
+    resolver: zodResolver(schema),
+  });
   const indexById = useMemo(
     () => new Map(fields?.map((field, index) => [field?.objId, index])),
     [fields],
@@ -59,10 +65,11 @@ export function ModuleRecordForm({
     },
     [saving, readOnly, onSave, toRecordValues],
   );
-  const emitChange = useCallback(
-    () => onValuesChange?.(toRecordValues(form.getValues())),
-    [onValuesChange, toRecordValues, form],
-  );
+  // Autosave only values the API accepts; the failing input shows why
+  const emitChange = useCallback(async () => {
+    if (!onValuesChange || !(await form.trigger())) return;
+    onValuesChange(toRecordValues(form.getValues()));
+  }, [onValuesChange, toRecordValues, form]);
   const unchanged = !!values && !form.formState.isDirty;
 
   if (!fields?.length) {
@@ -92,7 +99,7 @@ export function ModuleRecordForm({
                 </span>
               }
               labelProps={{ size: "sm" }}
-              className="grid grid-cols-[minmax(0,12rem)_1fr] items-start gap-x-4"
+              className="grid grid-cols-[minmax(0,12rem)_1fr] items-start gap-x-4 [&>[data-slot=form-field-message]]:col-start-2 [&>[data-slot=form-field-message]]:row-start-2 [&>[data-slot=form-field-message]]:pt-1 [&>[data-slot=form-field-message]]:pb-0"
               render={({ field: input }) =>
                 field?.type === "lookup" ? (
                   <LookupFormInput

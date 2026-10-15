@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "@/components/ui/sonner";
 import { errorParser } from "@/hooks/useErrorParser";
+import { zodErrors } from "@/lib/validationHelper";
 import {
   LOOKUP_CREATE_TIME_ID,
   previewableLookupFields,
@@ -66,7 +67,7 @@ import {
   NUMBER_DECIMAL_PLACES,
   NUMBER_PRESETS,
   fieldTypeOption,
-  isFieldNameTaken,
+  fieldDraftSchema,
   MODULE_FIELD_TYPES,
   nextOptionValue,
   toField,
@@ -234,24 +235,31 @@ function AddFieldSteps({
     numberSettings,
     lookupSettings,
   ]);
-  const nameTaken = useMemo(
-    () => isFieldNameTaken(name, takenNames),
-    [name, takenNames],
+  const [submitted, setSubmitted] = useState(false);
+  const errors = useMemo(
+    () =>
+      zodErrors(fieldDraftSchema(takenNames), {
+        type,
+        name,
+        options,
+        numberSettings,
+        lookupSettings,
+      }),
+    [type, name, options, numberSettings, lookupSettings, takenNames],
   );
-  const canAdd =
-    !!draft?.name &&
-    !nameTaken &&
-    (!draft.isSelectionField || draft.dropDownValues.length > 0) &&
-    (type !== "link_table" || !!lookupSettings.categoryId) &&
-    (type !== "lookup" ||
-      (!!lookupSettings.linkFieldId && !!lookupSettings.lookupFieldId));
+  // Before the first save, only a typed name that can't be used is flagged
+  const nameError = submitted || name.trim() ? errors?.name : undefined;
+  const settingsError = submitted
+    ? Object.entries(errors).find(([path]) => path !== "name")?.[1]
+    : undefined;
   const submit = useCallback(
     (event: SyntheticEvent) => {
       event.preventDefault();
-      if (!draft || !canAdd || saving) return;
+      setSubmitted(true);
+      if (!draft || saving || Object.keys(errors).length) return;
       onAdd(draft);
     },
-    [draft, canAdd, saving, onAdd],
+    [draft, errors, saving, onAdd],
   );
 
   if (!type || !draft) {
@@ -326,15 +334,13 @@ function AddFieldSteps({
               maxLength={40}
               value={name}
               placeholder="e.g. Carrier"
-              aria-invalid={nameTaken || undefined}
-              aria-describedby={nameTaken ? "field-label-error" : undefined}
+              aria-invalid={!!nameError || undefined}
+              aria-describedby={nameError ? "field-label-error" : undefined}
               onChange={(e) => setName(e.target.value)}
             />
-            {nameTaken && (
-              <p id="field-label-error" className="text-xs text-destructive">
-                A field named “{name.trim()}” already exists.
-              </p>
-            )}
+            <FieldError id="field-label-error" className="text-xs">
+              {nameError}
+            </FieldError>
           </Field>
           {hasFieldOptions(type) && (
             <Field>
@@ -391,6 +397,7 @@ function AddFieldSteps({
               />
             </label>
           )}
+          <FieldError className="text-xs">{settingsError}</FieldError>
         </div>
       </div>
 
@@ -414,7 +421,7 @@ function AddFieldSteps({
           <Button variant="outline" size="xs" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" size="xs" disabled={!canAdd || saving}>
+          <Button type="submit" size="xs" disabled={saving}>
             {editing
               ? saving
                 ? "Saving…"

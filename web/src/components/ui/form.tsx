@@ -221,7 +221,7 @@ export function FormField2<
       render={(renderProps) => (
         <FormItem className={className}>
           {!!label && <FormLabel {...labelProps}>{label}</FormLabel>}
-          <div className="pb-2 empty:hidden">
+          <div data-slot="form-field-message" className="pb-2 empty:hidden">
             {!!helperText && (
               <p className="text-sm font-medium text-muted-foreground">
                 {helperText}

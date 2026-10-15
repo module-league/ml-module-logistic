@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { z } from "zod";
 import {
   EyeOff,
   FileText,
@@ -24,6 +25,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  FieldError,
   FieldTypeIcon,
   Input,
   Separator,
@@ -36,6 +38,7 @@ import { ConfirmDeleteDialog } from "@/components/custom/ConfirmDeleteDialog";
 import { SortableHandle, SortableList } from "@/components/custom/SortableList";
 import { useSortableRow } from "@/hooks/useSortableRow";
 import { errorParser } from "@/hooks/useErrorParser";
+import { zodErrors } from "@/lib/validationHelper";
 import type {
   ModuleFormDialogProps,
   ModuleFormEditorProps,
@@ -265,6 +268,18 @@ const ANSWER_HINTS: Partial<Record<IField["type"], string>> = {
   attachment: "Drop files here or browse",
 };
 
+/** What a form is saved with, matching the API's limits. */
+const FORM_SCHEMA = z.object({
+  formTitle: z
+    .string()
+    .trim()
+    .min(1, "Give the form a title.")
+    .max(80, "Use up to 80 characters."),
+  formDescription: z.string().max(500, "Use up to 500 characters.").optional(),
+  submitLabel: z.string().max(40, "Use up to 40 characters.").optional(),
+  clearLabel: z.string().max(40, "Use up to 40 characters.").optional(),
+});
+
 /** The picked form, laid out as people will see it; nothing is saved until Save. */
 function FormEditor({
   form,
@@ -280,6 +295,7 @@ function FormEditor({
     () => JSON.stringify(draft) !== JSON.stringify(saved),
     [draft, saved],
   );
+  const errors = useMemo(() => zodErrors(FORM_SCHEMA, draft), [draft]);
   const fieldById = useMemo(
     () => new Map(fillableFields?.map((field) => [field?.objId, field])),
     [fillableFields],
@@ -381,9 +397,11 @@ function FormEditor({
               maxLength={80}
               placeholder="Form title"
               value={draft.formTitle}
+              aria-invalid={!!errors?.formTitle || undefined}
               onChange={(event) => change({ formTitle: event.target.value })}
               className="w-full rounded-md bg-transparent text-2xl font-semibold outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/20"
             />
+            <FieldError className="text-xs">{errors?.formTitle}</FieldError>
             <textarea
               aria-label="Form description"
               maxLength={500}
@@ -499,7 +517,7 @@ function FormEditor({
           </Button>
           <Button
             size="xs"
-            disabled={!dirty || saving || !draft.formTitle.trim()}
+            disabled={!dirty || saving || !!Object.keys(errors).length}
             onClick={save}
           >
             {saving ? "Saving…" : "Save form"}

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { FIELD_TYPE_ICONS } from "./fieldTypeIcon.utils";
 import { presetColors } from "@/lib/colorUtils";
 import {
@@ -127,6 +128,60 @@ export function isFieldNameTaken(name: string, takenNames?: string[]) {
   return (
     !!wanted && !!takenNames?.some((taken) => taken?.toLowerCase() === wanted)
   );
+}
+
+/**
+ * What the field dialog checks before saving, matching the API's rules.
+ * @example
+ * zodErrors(fieldDraftSchema(takenNames), { type, name, options, numberSettings, lookupSettings })
+ */
+export function fieldDraftSchema(takenNames?: string[]) {
+  return z
+    .object({
+      type: z.string(),
+      name: z
+        .string()
+        .trim()
+        .min(1, "Name the field.")
+        .max(40, "Use up to 40 characters."),
+      options: z.array(z.object({ value: z.string() })),
+      numberSettings: z.object({
+        symbol: z.string().max(5, "Use up to 5 characters.").optional(),
+      }),
+      lookupSettings: z.object({
+        categoryId: z.string().optional(),
+        linkFieldId: z.string().optional(),
+        lookupFieldId: z.string().optional(),
+      }),
+    })
+    .superRefine(({ type, name, options, lookupSettings }, ctx) => {
+      const issue = (path: string[], message: string) =>
+        ctx.addIssue({ code: "custom", path, message });
+      if (isFieldNameTaken(name, takenNames))
+        issue(["name"], `A field named “${name}” already exists.`);
+      if (hasFieldOptions(type as IField["type"])) {
+        const values = options
+          ?.map((option) => option?.value?.trim())
+          .filter(Boolean);
+        const duplicate = values?.find(
+          (value, index) =>
+            values.findIndex(
+              (other) => other.toLowerCase() === value.toLowerCase(),
+            ) !== index,
+        );
+        if (!values?.length) issue(["options"], "Add at least one option.");
+        else if (duplicate)
+          issue(["options"], `“${duplicate}” is listed more than once.`);
+      }
+      if (type === "link_table" && !lookupSettings?.categoryId)
+        issue(["lookupSettings", "categoryId"], "Pick the sidebar to link to.");
+      if (type === "lookup") {
+        if (!lookupSettings?.linkFieldId)
+          issue(["lookupSettings", "linkFieldId"], "Pick a link field.");
+        else if (!lookupSettings?.lookupFieldId)
+          issue(["lookupSettings", "lookupFieldId"], "Pick the field to show.");
+      }
+    });
 }
 
 export function createDropDownValue(
