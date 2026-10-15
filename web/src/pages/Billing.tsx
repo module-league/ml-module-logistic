@@ -15,6 +15,13 @@ import {
   updateRecord,
   deleteRecords,
 } from "@/services/records/record.api";
+import {
+  createForm,
+  deleteForm,
+  getForms,
+  reorderForms,
+  updateForm,
+} from "@/services/forms/form.api";
 import { getMembers } from "@/services/user/user.api";
 import { uploadAttachment } from "@/services/attachments/attachment.api";
 
@@ -28,6 +35,11 @@ const pageApi: ModuleDataApi = {
   createField,
   updateField,
   deleteField,
+  getForms,
+  createForm,
+  updateForm,
+  deleteForm,
+  reorderForms,
   getMembers,
   uploadAttachment,
 };

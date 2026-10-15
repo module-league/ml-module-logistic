@@ -9,6 +9,7 @@ import {
 import { toFieldCreate, toFieldUpdate } from "@/services/fields/field.api";
 import { fieldKeys, putInLists } from "@/services/fields/field.utils";
 import { recordKeys } from "@/services/records/record.api";
+import { formKeys } from "@/services/forms/form.api";
 import { memberKeys } from "@/services/user/user.api";
 import { useWorkspaceContext } from "@/module/workspace/workspace.context";
 import {
@@ -21,6 +22,7 @@ import type { ModuleData, ModuleDataApi } from "./modulePage.types";
 const NO_FIELDS: ISidebarField[] = [];
 const NO_RECORDS: ISidebarRecord[] = [];
 const NO_MEMBERS: IUserInfo[] = [];
+const NO_FORMS: ISidebarForm[] = [];
 
 function dataOf<T>(results: UseQueryResult<T>[]) {
   return results.map((result) => result.data);
@@ -266,6 +268,86 @@ export function useModuleData(
     ],
   );
 
+  const formsQuery = useQuery({
+    queryKey: formKeys.list(id),
+    queryFn: () => api.getForms(id),
+    enabled: !!sidebarId,
+  });
+  const setForms = useCallback(
+    (update: (forms: ISidebarForm[]) => ISidebarForm[]) =>
+      queryClient.setQueryData<ISidebarForm[]>(formKeys.list(id), (current) =>
+        update(current ?? NO_FORMS),
+      ),
+    [queryClient, id],
+  );
+  // A new default clears the old one on the server, so the cached list does the same
+  const putForm = useCallback(
+    (saved: ISidebarForm) =>
+      setForms((forms) => {
+        const next = forms.some((form) => form?.objId === saved.objId)
+          ? forms.map((form) => (form?.objId === saved.objId ? saved : form))
+          : [...forms, saved];
+        return saved.isDefault
+          ? next.map((form) =>
+              form?.objId === saved.objId
+                ? form
+                : { ...form, isDefault: false },
+            )
+          : next;
+      }),
+    [setForms],
+  );
+  const { mutateAsync: onAddForm } = useMutation({
+    mutationFn: (form: ISidebarFormInput) => api.createForm(id, form),
+    onSuccess: putForm,
+  });
+  const { mutateAsync: updateForm } = useMutation({
+    mutationFn: ({ objId, form }: { objId: string; form: ISidebarFormInput }) =>
+      api.updateForm(objId, form),
+    onSuccess: putForm,
+  });
+  const onUpdateForm = useCallback(
+    (objId: string, form: ISidebarFormInput) => {
+      const latest = queryClient
+        .getQueryData<ISidebarForm[]>(formKeys.list(id))
+        ?.find((saved) => saved?.objId === objId);
+      return updateForm({
+        objId,
+        form: { ...form, versionNo: latest?.versionNo },
+      });
+    },
+    [id, queryClient, updateForm],
+  );
+  const { mutateAsync: onDeleteForm } = useMutation({
+    mutationFn: (objId: string) => api.deleteForm(objId),
+    onSuccess: (_, objId) =>
+      setForms((forms) => forms.filter((form) => form?.objId !== objId)),
+  });
+  const { mutateAsync: onReorderForms } = useMutation({
+    mutationFn: (formIds: string[]) => api.reorderForms(id, formIds),
+    onMutate: (formIds) =>
+      setForms((forms) =>
+        formIds.flatMap((formId) =>
+          forms.filter((form) => form?.objId === formId),
+        ),
+      ),
+    onSuccess: (forms) => queryClient.setQueryData(formKeys.list(id), forms),
+    onError: () =>
+      queryClient.invalidateQueries({ queryKey: formKeys.list(id) }),
+  });
+  const refetchForms = formsQuery.refetch;
+  const onRetryForms = useCallback(() => {
+    refetchForms();
+  }, [refetchForms]);
+  const formsState = useMemo(
+    () => ({
+      isLoading: formsQuery.isLoading,
+      error: formsQuery.error,
+      onRetry: onRetryForms,
+    }),
+    [formsQuery.isLoading, formsQuery.error, onRetryForms],
+  );
+
   const openedRecordState = useMemo(
     () => ({
       isLoading: recordQuery.isLoading,
@@ -297,8 +379,20 @@ export function useModuleData(
       onUploadAttachment,
       lookupSources,
       lookups,
+      forms: formsQuery.data ?? NO_FORMS,
+      formsState,
+      onAddForm,
+      onUpdateForm,
+      onDeleteForm,
+      onReorderForms,
     }),
     [
+      formsQuery.data,
+      formsState,
+      onAddForm,
+      onUpdateForm,
+      onDeleteForm,
+      onReorderForms,
       lookupSources,
       lookups,
       openedRecordId,

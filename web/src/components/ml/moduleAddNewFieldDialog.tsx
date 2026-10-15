@@ -1,32 +1,10 @@
 import { useCallback, useMemo, useState, type SyntheticEvent } from "react";
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { Check, ChevronLeft, GripVertical, Link2, Plus, X } from "lucide-react";
+import { Check, ChevronLeft, Link2, Plus, X } from "lucide-react";
+import { SortableHandle, SortableList } from "@/components/custom/SortableList";
+import { useSortableRow } from "@/hooks/useSortableRow";
 import { cn } from "@/lib/utils";
 import { getContrastColor, presetColors } from "@/lib/colorUtils";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -67,6 +45,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRecordLookups } from "@/components/custom/RecordLookup.context";
 import { FieldTypeIcon } from "./fieldTypeIcon";
+import { ConfirmDeleteDialog } from "@/components/custom/ConfirmDeleteDialog";
 import type {
   ModuleAddFieldStepsProps,
   ModuleFieldNumberSettingsProps,
@@ -88,7 +67,6 @@ import {
   NUMBER_PRESETS,
   fieldTypeOption,
   isFieldNameTaken,
-  lockToVerticalAxis,
   MODULE_FIELD_TYPES,
   nextOptionValue,
   toField,
@@ -132,66 +110,17 @@ export function ModuleDeleteFieldDialog({
   field,
   onDelete,
 }: ModuleDeleteFieldDialogProps) {
-  const [deleting, setDeleting] = useState(false);
-  const changeOpen = useCallback(
-    (next: boolean) => {
-      if (!deleting) onOpenChange(next);
-    },
-    [deleting, onOpenChange],
-  );
-  const confirm = useCallback(
-    async (event: SyntheticEvent) => {
-      event.preventDefault();
-      setDeleting(true);
-      try {
-        await onDelete();
-        onOpenChange(false);
-        toast.success("Field deleted", {
-          description: `${field?.name} was removed from every record.`,
-        });
-      } catch (error) {
-        toast.error("Couldn't delete field", {
-          description: errorParser(error)?.message,
-        });
-      } finally {
-        setDeleting(false);
-      }
-    },
-    [field, onDelete, onOpenChange],
-  );
-
   if (!field) return null;
-
   return (
-    <AlertDialog open={open} onOpenChange={changeOpen}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete “{field.name}”?</AlertDialogTitle>
-          <AlertDialogDescription>
-            The field and its values are removed from every record. This can't
-            be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <Button
-            variant="outline"
-            size="xs"
-            disabled={deleting}
-            onClick={() => changeOpen(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            size="xs"
-            disabled={deleting}
-            onClick={confirm}
-          >
-            {deleting ? "Deleting…" : "Delete field"}
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDeleteDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={`Delete “${field.name}”?`}
+      description="The field and its values are removed from every record. This can't be undone."
+      confirmLabel="Delete field"
+      successMessage={`${field.name} was removed from every record.`}
+      onConfirm={onDelete}
+    />
   );
 }
 
@@ -1030,12 +959,6 @@ function FieldOptionsEditor({
   onChange,
 }: ModuleFieldOptionsEditorProps) {
   const [focusId, setFocusId] = useState<string>();
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
   const ids = useMemo(() => options?.map((option) => option?.id), [options]);
   const addOption = useCallback(() => {
     const next = createDropDownValue(
@@ -1056,43 +979,30 @@ function FieldOptionsEditor({
     (id: string) => onChange(options.filter((option) => option.id !== id)),
     [options, onChange],
   );
-  const handleDragEnd = useCallback(
-    ({ active, over }: DragEndEvent) => {
-      if (!over || active?.id === over?.id) return;
+  const reorder = useCallback(
+    (ordered: string[]) =>
       onChange(
-        arrayMove(
-          options,
-          ids.indexOf(String(active.id)),
-          ids.indexOf(String(over.id)),
-        ),
-      );
-    },
-    [options, ids, onChange],
+        ordered.flatMap((id) => options.filter((option) => option.id === id)),
+      ),
+    [options, onChange],
   );
 
   return (
     <div className="flex flex-col gap-2 justify-end w-full">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        modifiers={[lockToVerticalAxis]}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-          {options?.map((option, index) => (
-            <FieldOptionRow
-              key={option.id}
-              option={option}
-              index={index}
-              removable={options.length > 1}
-              autoFocus={option.id === focusId}
-              onChange={changeOption}
-              onRemove={removeOption}
-              onEnter={addOption}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
+      <SortableList ids={ids} onReorder={reorder}>
+        {options?.map((option, index) => (
+          <FieldOptionRow
+            key={option.id}
+            option={option}
+            index={index}
+            removable={options.length > 1}
+            autoFocus={option.id === focusId}
+            onChange={changeOption}
+            onRemove={removeOption}
+            onEnter={addOption}
+          />
+        ))}
+      </SortableList>
       <div className="flex justify-end">
         <Button
           variant="outline"
@@ -1117,43 +1027,19 @@ function FieldOptionRow({
   onRemove,
   onEnter,
 }: ModuleFieldOptionRowProps) {
-  const {
-    setNodeRef,
-    setActivatorNodeRef,
-    attributes,
-    listeners,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: option?.id });
-  const style = useMemo(
-    () => ({
-      transform: transform ? `translate3d(0, ${transform.y}px, 0)` : undefined,
-      transition,
-    }),
-    [transform, transition],
-  );
+  const { ref, style, isDragging, handle } = useSortableRow(option?.id);
   const label = option?.value?.trim() || `option ${index + 1}`;
 
   return (
     <div
-      ref={setNodeRef}
+      ref={ref}
       style={style}
       className={cn(
         "flex items-center gap-1.5 rounded-lg",
         isDragging && "relative z-10 bg-popover shadow-md",
       )}
     >
-      <button
-        type="button"
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        aria-label={`Drag to reorder ${label}`}
-        className="flex size-6 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-foreground/10 active:cursor-grabbing"
-      >
-        <GripVertical className="size-3.5" />
-      </button>
+      <SortableHandle handle={handle} label={label} />
       <FieldOptionColorPicker
         value={option?.colorCode}
         label={`Color for ${label}`}

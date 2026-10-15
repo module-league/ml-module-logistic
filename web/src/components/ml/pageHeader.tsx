@@ -1,11 +1,8 @@
-import { useMemo } from "react";
 import { HouseCogIcon, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/custom/UserAvatar";
 import { PageHeaderSettings } from "./pageHeaderSettings";
-import type { PageHeaderProps, PeopleStackProps } from "./pageHeader.types";
+import type { PageHeaderProps } from "./pageHeader.types";
 
 /**
  * Standard header at the top of every module page.
@@ -21,8 +18,8 @@ export function PageHeader({
   actionClassName,
   hidePageSeparator = false,
   people,
-  maxPeople = 4,
   onInvitePeople,
+  onOpenForms,
 }: PageHeaderProps) {
   return (
     <div
@@ -54,14 +51,16 @@ export function PageHeader({
           )}
         </div>
 
-        <Button
-          variant="secondary"
-          size="xs"
-          startIcon={<HouseCogIcon size={13} />}
-          className=""
-        >
-          Create {title} Form
-        </Button>
+        {onOpenForms && (
+          <Button
+            variant="secondary"
+            size="xs"
+            startIcon={<HouseCogIcon size={13} />}
+            onClick={onOpenForms}
+          >
+            Create {title} Form
+          </Button>
+        )}
         {(people?.length || onInvitePeople) && (
           <div className="flex shrink-0 items-center gap-3">
             {onInvitePeople && (

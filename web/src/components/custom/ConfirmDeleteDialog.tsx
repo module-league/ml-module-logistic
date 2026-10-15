@@ -6,25 +6,36 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  Button,
-  toast,
-} from "@moduleleague/ui";
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
 import { errorParser } from "@/hooks/useErrorParser";
-import type { ModuleDeleteRecordsDialogProps } from "./moduleRecord.types";
 
 /**
- * Asks before deleting records, since links to them are removed too.
+ * Asks before deleting something. Stays open with the error when onConfirm rejects, and shows successMessage once it resolves.
  * @example
- * <ModuleDeleteRecordsDialog count={keys.length} open={open} onOpenChange={setOpen} onDelete={() => onDeleteRecords(keys)} />
+ * <ConfirmDeleteDialog open={open} onOpenChange={setOpen} title="Delete “Carrier”?" description="…" confirmLabel="Delete field" successMessage="Field deleted" onConfirm={remove} />
  */
-export function ModuleDeleteRecordsDialog({
+export function ConfirmDeleteDialog({
   open,
   onOpenChange,
-  count,
-  onDelete,
-}: ModuleDeleteRecordsDialogProps) {
+  title,
+  description,
+  confirmLabel = "Delete",
+  successMessage,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  /** @default "Delete" */
+  confirmLabel?: string;
+  /** The toast after a successful delete. */
+  successMessage: string;
+  onConfirm: () => Promise<unknown>;
+}) {
   const [deleting, setDeleting] = useState(false);
-  const what = count === 1 ? "this record" : `${count} records`;
   const changeOpen = useCallback(
     (next: boolean) => {
       if (!deleting) onOpenChange(next);
@@ -36,11 +47,9 @@ export function ModuleDeleteRecordsDialog({
       event.preventDefault();
       setDeleting(true);
       try {
-        await onDelete();
+        await onConfirm();
         onOpenChange(false);
-        toast.success(
-          count === 1 ? "Record deleted" : `${count} records deleted`,
-        );
+        toast.success(successMessage);
       } catch (error) {
         toast.error("Couldn't delete", {
           description: errorParser(error)?.message,
@@ -49,21 +58,15 @@ export function ModuleDeleteRecordsDialog({
         setDeleting(false);
       }
     },
-    [count, onDelete, onOpenChange],
+    [onConfirm, onOpenChange, successMessage],
   );
-
-  if (!count) return null;
 
   return (
     <AlertDialog open={open} onOpenChange={changeOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete {what}?</AlertDialogTitle>
-          <AlertDialogDescription>
-            {count === 1 ? "It is" : "They are"} also removed from every link to
-            another record field that links to {count === 1 ? "it" : "them"}.
-            This can't be undone.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <Button
@@ -80,11 +83,7 @@ export function ModuleDeleteRecordsDialog({
             disabled={deleting}
             onClick={confirm}
           >
-            {deleting
-              ? "Deleting…"
-              : count === 1
-                ? "Delete record"
-                : `Delete ${count} records`}
+            {deleting ? "Deleting…" : confirmLabel}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

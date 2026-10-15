@@ -18,6 +18,8 @@ export interface PageHeaderProps {
   maxPeople?: number;
   /** Shows an Invite button next to the people. */
   onInvitePeople?: () => void;
+  /** Shows the "Create {title} Form" button, which opens the page's forms. */
+  onOpenForms?: () => void;
 }
 
 export interface PeopleStackProps {

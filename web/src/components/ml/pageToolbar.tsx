@@ -1,21 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import {
-  closestCenter,
-  DndContext,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import {
   Columns3,
-  GripVertical,
   Download,
   Search,
   Trash2,
@@ -25,7 +10,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModuleAddNewFieldDialog } from "./moduleAddNewFieldDialog";
-import { lockToVerticalAxis } from "./moduleAddNewField.utils";
+import { SortableHandle, SortableList } from "@/components/custom/SortableList";
+import { useSortableRow } from "@/hooks/useSortableRow";
 import { FieldTypeIcon } from "./fieldTypeIcon";
 import { Button } from "@/components/ui/button";
 import {
@@ -189,9 +175,6 @@ function FieldsDropdown({
       [],
     [fields],
   );
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-  );
   const keys = useMemo(() => fields?.map((field) => field?.key), [fields]);
   const visibleCount = useMemo(
     () => fields?.filter((field) => !hidden?.includes(field?.key)).length,
@@ -206,18 +189,9 @@ function FieldsDropdown({
       ),
     [hidden, onChange],
   );
-  const handleDragEnd = useCallback(
-    ({ active, over }: DragEndEvent) => {
-      if (!over || active?.id === over?.id) return;
-      onReorder?.(
-        arrayMove(
-          keys,
-          keys.indexOf(String(active.id)),
-          keys.indexOf(String(over.id)),
-        ),
-      );
-    },
-    [keys, onReorder],
+  const reorder = useCallback(
+    (ordered: string[]) => onReorder?.(ordered),
+    [onReorder],
   );
   const editField = useCallback(
     (key: string) => {
@@ -256,36 +230,26 @@ function FieldsDropdown({
               <DropdownMenuSeparator />
             </>
           )}
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            modifiers={[lockToVerticalAxis]}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={keys}
-              strategy={verticalListSortingStrategy}
-            >
-              <DropdownMenuGroup>
-                {fields?.map((field) => {
-                  const shown = !hidden?.includes(field?.key);
-                  return (
-                    <FieldsDropdownItem
-                      key={field?.key}
-                      field={field}
-                      shown={shown}
-                      locked={shown && visibleCount <= 1}
-                      sortable={!!onReorder}
-                      onToggle={toggle}
-                      onEdit={
-                        field?.system || !onEditField ? undefined : editField
-                      }
-                    />
-                  );
-                })}
-              </DropdownMenuGroup>
-            </SortableContext>
-          </DndContext>
+          <SortableList ids={keys} onReorder={reorder}>
+            <DropdownMenuGroup>
+              {fields?.map((field) => {
+                const shown = !hidden?.includes(field?.key);
+                return (
+                  <FieldsDropdownItem
+                    key={field?.key}
+                    field={field}
+                    shown={shown}
+                    locked={shown && visibleCount <= 1}
+                    sortable={!!onReorder}
+                    onToggle={toggle}
+                    onEdit={
+                      field?.system || !onEditField ? undefined : editField
+                    }
+                  />
+                );
+              })}
+            </DropdownMenuGroup>
+          </SortableList>
           {!fields?.length && (
             <p className="px-2 py-1.5 text-xs text-muted-foreground">
               No fields yet.
@@ -313,25 +277,14 @@ function FieldsDropdownItem({
   onToggle,
   onEdit,
 }: FieldsDropdownItemProps) {
-  const {
-    setNodeRef,
-    setActivatorNodeRef,
-    listeners,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: field?.key, disabled: !sortable });
-  const style = useMemo(
-    () => ({
-      transform: transform ? `translate3d(0, ${transform.y}px, 0)` : undefined,
-      transition,
-    }),
-    [transform, transition],
+  const { ref, style, isDragging, handle } = useSortableRow(
+    field?.key,
+    !sortable,
   );
 
   return (
     <DropdownMenuItem
-      ref={setNodeRef}
+      ref={ref}
       style={style}
       className={cn(
         "group/field gap-2 pl-1",
@@ -343,17 +296,12 @@ function FieldsDropdownItem({
       }}
     >
       {sortable && (
-        <button
-          type="button"
-          ref={setActivatorNodeRef}
-          {...listeners}
+        <SortableHandle
+          handle={handle}
+          label={field?.label}
           tabIndex={-1}
-          aria-label={`Drag to reorder ${field?.label}`}
-          onClick={(e) => e.stopPropagation()}
-          className="flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-foreground/10 active:cursor-grabbing"
-        >
-          <GripVertical className="size-3.5" />
-        </button>
+          className="size-5"
+        />
       )}
 
       <FieldTypeIcon type={field?.type} size={11} />

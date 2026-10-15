@@ -26,6 +26,17 @@ export interface ModuleDataApi {
     body: ISidebarFieldUpdate,
   ) => Promise<ISidebarField>;
   deleteField: (objId: string) => Promise<unknown>;
+  getForms: (sidebarId: string) => Promise<ISidebarForm[]>;
+  createForm: (
+    sidebarId: string,
+    body: ISidebarFormInput,
+  ) => Promise<ISidebarForm>;
+  updateForm: (objId: string, body: ISidebarFormInput) => Promise<ISidebarForm>;
+  deleteForm: (objId: string) => Promise<unknown>;
+  reorderForms: (
+    sidebarId: string,
+    formIds: string[],
+  ) => Promise<ISidebarForm[]>;
   /** People member fields can pick from. */
   getMembers: () => Promise<IUserInfo[]>;
   /** useModuleData passes the sidebar id as refId. */
@@ -57,6 +68,18 @@ export interface ModuleData {
   /** Saves a field edited in ModuleEditFieldDialog with its latest versionNo. */
   onUpdateField: (objId: string, field: IField) => Promise<unknown>;
   onDeleteField: (objId: string) => Promise<unknown>;
+  /** The sidebar's forms in display order. */
+  forms: ISidebarForm[];
+  formsState: ModuleQueryState;
+  onAddForm: (form: ISidebarFormInput) => Promise<ISidebarForm>;
+  /** Saves with the form's latest versionNo; a new default clears the old one. */
+  onUpdateForm: (
+    objId: string,
+    form: ISidebarFormInput,
+  ) => Promise<ISidebarForm>;
+  onDeleteForm: (objId: string) => Promise<unknown>;
+  /** Every form's objId in the new order; the list moves at once and settles when the API answers. */
+  onReorderForms: (formIds: string[]) => Promise<unknown>;
   /** Uploads one file for an attachment field of this sidebar. */
   onUploadAttachment: (file: File) => Promise<IAttachment>;
   /** Every sidebar of the module, this one included; a new link field links to one of them. */

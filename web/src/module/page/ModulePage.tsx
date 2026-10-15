@@ -15,7 +15,8 @@ import type { ModuleAppColumn } from "@/module/appView/moduleAppView.types";
 import { ModuleAppView } from "@/module/appView/ModuleAppView";
 import { ModuleNewRecordForm } from "@/module/record/ModuleNewRecordForm";
 import { ModuleOpenRecord } from "@/module/record/ModuleOpenRecord";
-import { ModuleDeleteRecordsDialog } from "@/module/record/ModuleDeleteRecordsDialog";
+import { ConfirmDeleteDialog } from "@/components/custom/ConfirmDeleteDialog";
+import { ModuleFormDialog } from "@/module/form/ModuleFormDialog";
 import { RecordValueNode } from "@/components/custom/RecordValueNode";
 import { RecordLookupContext } from "@/components/custom/RecordLookup.context";
 import { toRecordText } from "@/module/record/moduleRecord.utils";
@@ -47,6 +48,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
   const [pinnedRows, setPinnedRows] = useState<string[]>([]);
   const [fieldAction, setFieldAction] = useState<ModuleFieldAction>();
   const [recordDeletion, setRecordDeletion] = useState<ModuleRecordDeletion>();
+  const [formsOpen, setFormsOpen] = useState(false);
 
   const onRefreshFields = data.onRefreshFields;
   const openNewRecord = useCallback(() => {
@@ -140,6 +142,10 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
       Math.min(page, Math.max(1, Math.ceil((total - pinnedCount) / pageSize))),
     [page, total, pinnedCount, pageSize],
   );
+  const openForms = useCallback(() => {
+    setFormsOpen(true);
+    onRefreshFields();
+  }, [onRefreshFields]);
   const invitePeople = useCallback(
     () => toast.info("Inviting people comes with the API step."),
     [],
@@ -213,6 +219,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
       ),
     [],
   );
+  const deletingCount = recordDeletion?.keys?.length ?? 0;
   const onDeleteRecords = data.onDeleteRecords;
   const confirmDeleteRecords = useCallback(async () => {
     const keys = recordDeletion?.keys ?? [];
@@ -369,6 +376,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
               actions={actions}
               people={people}
               onInvitePeople={invitePeople}
+              onOpenForms={openForms}
             />
           )}
           <ModulePageToolbar {...pageToolbar} />
@@ -409,6 +417,18 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           onClearSelection={clearSelection}
           pinnedCount={pinnedCount}
         />
+        <ModuleFormDialog
+          {...data.formsState}
+          open={formsOpen}
+          onOpenChange={setFormsOpen}
+          title={item?.sidebarText ?? ""}
+          fields={fields}
+          forms={data.forms}
+          onAddForm={data.onAddForm}
+          onUpdateForm={data.onUpdateForm}
+          onDeleteForm={data.onDeleteForm}
+          onReorderForms={data.onReorderForms}
+        />
         <ModuleNewRecordForm
           {...data.fieldsState}
           open={newRecordOpen}
@@ -446,11 +466,26 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           onOpenChange={changeFieldActionOpen}
           onDelete={deleteField}
         />
-        <ModuleDeleteRecordsDialog
-          count={recordDeletion?.keys?.length ?? 0}
+        <ConfirmDeleteDialog
           open={!!recordDeletion?.open}
           onOpenChange={changeRecordDeletionOpen}
-          onDelete={confirmDeleteRecords}
+          title={
+            deletingCount === 1
+              ? "Delete this record?"
+              : `Delete ${deletingCount} records?`
+          }
+          description="Links to them from link to another record fields are removed too. This can't be undone."
+          confirmLabel={
+            deletingCount === 1
+              ? "Delete record"
+              : `Delete ${deletingCount} records`
+          }
+          successMessage={
+            deletingCount === 1
+              ? "Record deleted"
+              : `${deletingCount} records deleted`
+          }
+          onConfirm={confirmDeleteRecords}
         />
       </div>
     </RecordLookupContext.Provider>

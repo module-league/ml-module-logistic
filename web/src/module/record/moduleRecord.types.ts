@@ -36,19 +36,17 @@ export interface ModuleRecordFormProps {
   previewFieldId?: string;
 }
 
-export interface ModuleLookupFormInputProps
-  extends Pick<
-    RecordInputControlProps,
-    "field" | "members" | "onPreview" | "previewActive" | "className"
-  > {
+export interface ModuleLookupFormInputProps extends Pick<
+  RecordInputControlProps,
+  "field" | "members" | "onPreview" | "previewActive" | "className"
+> {
   control: Control<ModuleRecordFormValues>;
   /** Form index of the lookup's link field; undefined when it isn't in the form. */
   linkIndex?: number;
 }
 
 export interface ModuleNewRecordFormProps
-  extends ModuleQueryState,
-    Pick<ModuleRecordFormProps, "onUploadAttachment"> {
+  extends ModuleQueryState, Pick<ModuleRecordFormProps, "onUploadAttachment"> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fields: ISidebarField[];
@@ -58,8 +56,7 @@ export interface ModuleNewRecordFormProps
 }
 
 export interface ModuleOpenRecordProps
-  extends ModuleQueryState,
-    Pick<ModuleRecordFormProps, "onUploadAttachment"> {
+  extends ModuleQueryState, Pick<ModuleRecordFormProps, "onUploadAttachment"> {
   /** objId of the record to show; undefined keeps the dialog closed. */
   recordKey?: string;
   onClose: () => void;
@@ -99,13 +96,4 @@ export interface ModuleLinkedRecordCardProps {
 
 export interface ModuleAutoSaveStatusProps {
   status: AutoSaveStatus;
-}
-
-export interface ModuleDeleteRecordsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  /** How many records will be deleted; nothing renders at 0. */
-  count: number;
-  /** A rejection shows its message and keeps the dialog open. */
-  onDelete: () => Promise<unknown>;
 }

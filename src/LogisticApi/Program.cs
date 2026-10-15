@@ -26,6 +26,7 @@ builder.Services.AddDbContext<ContextDb>((sp, options) =>
 
 // Field templates per sidebar
 builder.Services.AddScoped<SidebarFieldService>();
+builder.Services.AddScoped<SidebarFormService>();
 
 // Files for attachment fields, saved on disk
 builder.Services.Configure<AttachmentStorageOptions>(builder.Configuration.GetSection(AttachmentStorageOptions.Section));

@@ -1,4 +1,3 @@
-import type { Modifier } from "@dnd-kit/core";
 import { FIELD_TYPE_ICONS } from "./fieldTypeIcon.utils";
 import { presetColors } from "@/lib/colorUtils";
 import {
@@ -86,7 +85,10 @@ export const FIELD_DATE_FORMATS: IField["dateFormat"][] = [
   "yyyy-MM-dd",
 ];
 
-export const FIELD_TIME_FORMATS: { value: IField["timeFormat"]; label: string }[] = [
+export const FIELD_TIME_FORMATS: {
+  value: IField["timeFormat"];
+  label: string;
+}[] = [
   { value: "hh:mm a", label: "12-hour" },
   { value: "HH:mm", label: "24-hour" },
 ];
@@ -104,27 +106,13 @@ export const NUMBER_PRESETS: {
 }[] = [
   { sample: 23.23, settings: { decimalPlaces: 2, abbreviation: "none" } },
   { sample: 2323, settings: { decimalPlaces: 0, abbreviation: "none" } },
-  { sample: 34_000_000, settings: { decimalPlaces: 1, abbreviation: "million" } },
+  {
+    sample: 34_000_000,
+    settings: { decimalPlaces: 1, abbreviation: "million" },
+  },
 ];
 
 export const NUMBER_DECIMAL_PLACES = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-
-/** Moves a dragged item up and down only, and never past the list that holds it, so the list can't grow while dragging. */
-export const lockToVerticalAxis: Modifier = ({
-  transform,
-  draggingNodeRect,
-  containerNodeRect,
-}) => {
-  if (!draggingNodeRect || !containerNodeRect) return { ...transform, x: 0 };
-  return {
-    ...transform,
-    x: 0,
-    y: Math.min(
-      Math.max(transform.y, containerNodeRect.top - draggingNodeRect.top),
-      containerNodeRect.bottom - draggingNodeRect.bottom,
-    ),
-  };
-};
 
 export function fieldTypeOption(type: IField["type"]) {
   return MODULE_FIELD_TYPES.find((option) => option.fieldType === type);
@@ -195,7 +183,8 @@ export function fieldNumberDraft(field?: IField): NumberSettings {
   return {
     symbol: settings?.symbol ?? DEFAULT_NUMBER_SETTINGS.symbol,
     decimalPlaces: settings?.decimalPlaces ?? undefined,
-    abbreviation: settings?.abbreviation ?? DEFAULT_NUMBER_SETTINGS.abbreviation,
+    abbreviation:
+      settings?.abbreviation ?? DEFAULT_NUMBER_SETTINGS.abbreviation,
   };
 }
 
@@ -247,7 +236,10 @@ export function toField({
   lookupSettings,
 }: Pick<IField, "type" | "name" | "dropDownValues"> &
   Partial<ModuleFieldDateSettings> &
-  Pick<IField, "memberSettings" | "numberSettings" | "lookupSettings">): IField {
+  Pick<
+    IField,
+    "memberSettings" | "numberSettings" | "lookupSettings"
+  >): IField {
   return {
     name,
     type,
