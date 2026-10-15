@@ -35,6 +35,12 @@ namespace LogisticApi.Context.Configurations
             b.Property(e => e.displayOrder)
              .HasColumnName("display_order");
 
+            b.Property(e => e.coverImageId)
+             .HasColumnName("cover_image_id");
+
+            b.Property(e => e.logoId)
+             .HasColumnName("logo_id");
+
             b.Property(e => e.fields)
              .HasColumnName("fields")
              .IsRequired();

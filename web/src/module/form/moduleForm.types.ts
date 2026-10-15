@@ -6,7 +6,12 @@ export interface ModuleFormDialogProps
     ModuleQueryState,
     Pick<
       ModuleData,
-      "forms" | "onAddForm" | "onUpdateForm" | "onDeleteForm" | "onReorderForms"
+      | "forms"
+      | "onAddForm"
+      | "onUpdateForm"
+      | "onDeleteForm"
+      | "onReorderForms"
+      | "onUploadAttachment"
     > {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -18,7 +23,7 @@ export interface ModuleFormDialogProps
 
 export interface ModuleFormEditorProps extends Pick<
   ModuleFormDialogProps,
-  "onUpdateForm"
+  "onUpdateForm" | "onUploadAttachment"
 > {
   form: ISidebarForm;
   /** The fields that can go on a form, in display order. */

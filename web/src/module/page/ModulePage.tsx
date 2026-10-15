@@ -428,6 +428,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           onUpdateForm={data.onUpdateForm}
           onDeleteForm={data.onDeleteForm}
           onReorderForms={data.onReorderForms}
+          onUploadAttachment={data.onUploadAttachment}
         />
         <ModuleNewRecordForm
           {...data.fieldsState}

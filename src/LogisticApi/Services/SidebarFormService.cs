@@ -100,6 +100,23 @@ namespace LogisticApi.Services
             form.isHidden = request.isHidden;
             form.isDefault = request.isDefault;
             form.fields = JsonSerializer.Serialize(await CleanFieldIdsAsync(form.sidebarId, request.fieldIds, ct), Json);
+            form.coverImageId = await CheckImageAsync(form.sidebarId, request.coverImageId, "cover image", ct);
+            form.logoId = await CheckImageAsync(form.sidebarId, request.logoId, "logo", ct);
+        }
+
+        /// <summary>The image must be an attachment uploaded for this sidebar.</summary>
+        private async Task<Guid?> CheckImageAsync(string sidebarId, Guid? id, string what, CancellationToken ct)
+        {
+            if (id is not { } attachmentId) return null;
+            var fileType = await db.Attachments
+                .AsNoTracking()
+                .Where(a => a.ObjId == attachmentId && a.refId == sidebarId)
+                .Select(a => a.fileType)
+                .FirstOrDefaultAsync(ct)
+                ?? throw ApiProblemException.BadRequest($"Unknown {what}.", $"'{sidebarId}' has no uploaded attachment '{attachmentId}'.");
+            if (!fileType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                throw ApiProblemException.BadRequest($"The {what} must be an image.", $"'{attachmentId}' is a {fileType} file.");
+            return attachmentId;
         }
 
         /// <summary>Each field must belong to the sidebar and be one people fill in: not a system or lookup field. Repeats are dropped.</summary>

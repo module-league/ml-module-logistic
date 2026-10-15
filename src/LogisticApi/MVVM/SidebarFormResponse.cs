@@ -15,6 +15,8 @@ namespace LogisticApi.MVVM
         public bool isHidden { get; set; }
         public bool isDefault { get; set; }
         public int displayOrder { get; set; }
+        public Guid? coverImageId { get; set; }
+        public Guid? logoId { get; set; }
         /// <summary>Fields deleted since the form was saved are left out.</summary>
         public List<Guid> fieldIds { get; set; } = [];
         public int versionNo { get; set; }
@@ -30,6 +32,8 @@ namespace LogisticApi.MVVM
             isHidden = form.isHidden,
             isDefault = form.isDefault,
             displayOrder = form.displayOrder,
+            coverImageId = form.coverImageId,
+            logoId = form.logoId,
             fieldIds = (JsonSerializer.Deserialize<List<Guid>>(form.fields, Json) ?? []).Where(liveFieldIds.Contains).ToList(),
             versionNo = form.VersionNo,
             createTime = DateTime.SpecifyKind(form.CreateTime, DateTimeKind.Utc),

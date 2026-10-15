@@ -500,6 +500,10 @@ namespace LogisticApi.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ds_version_no");
 
+                    b.Property<Guid?>("coverImageId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("cover_image_id");
+
                     b.Property<int>("displayOrder")
                         .HasColumnType("int")
                         .HasColumnName("display_order");
@@ -527,6 +531,10 @@ namespace LogisticApi.Migrations
                     b.Property<bool>("isHidden")
                         .HasColumnType("bit")
                         .HasColumnName("is_hidden");
+
+                    b.Property<Guid?>("logoId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("logo_id");
 
                     b.Property<string>("sidebarId")
                         .IsRequired()

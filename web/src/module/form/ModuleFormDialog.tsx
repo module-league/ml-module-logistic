@@ -1,5 +1,13 @@
-import { useCallback, useMemo, useState } from "react";
-import { EyeOff, FileText, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  EyeOff,
+  FileText,
+  ImagePlus,
+  ListPlus,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import {
   Button,
   cn,
@@ -9,19 +17,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Field,
-  FieldLabel,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   FieldTypeIcon,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Switch,
-  Textarea,
   toast,
 } from "@moduleleague/ui";
+import { attachmentUrl } from "@/services/attachments/attachment.api";
 import QueryWrapper from "@/components/custom/QueryWrapper";
 import { ConfirmDeleteDialog } from "@/components/custom/ConfirmDeleteDialog";
 import { SortableHandle, SortableList } from "@/components/custom/SortableList";
@@ -50,6 +56,7 @@ export function ModuleFormDialog({
   onUpdateForm,
   onDeleteForm,
   onReorderForms,
+  onUploadAttachment,
 }: ModuleFormDialogProps) {
   const [selectedId, setSelectedId] = useState<string>();
   const [creating, setCreating] = useState(false);
@@ -105,7 +112,11 @@ export function ModuleFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[min(680px,90dvh)] flex-col gap-0 p-0 sm:max-w-4xl">
+      <DialogContent
+        className="flex h-[min(680px,90dvh)] flex-col gap-0 p-0 w-full"
+        overlayClassName="supports-backdrop-filter:backdrop-blur-none"
+        style={{ maxWidth: "90%" }}
+      >
         <DialogHeader className="shrink-0 border-b p-4 pr-10 pb-3">
           <DialogTitle>{title} forms</DialogTitle>
           <DialogDescription>
@@ -147,6 +158,7 @@ export function ModuleFormDialog({
                   form={selected}
                   fillableFields={fillableFields}
                   onUpdateForm={onUpdateForm}
+                  onUploadAttachment={onUploadAttachment}
                   onDelete={() => setDeleteOpen(true)}
                 />
               ) : (
@@ -236,11 +248,26 @@ function FormListItem({
   );
 }
 
-/** The picked form's settings and fields; nothing is saved until Save. */
+/** What each field's answer box says on the form preview. */
+const ANSWER_HINTS: Partial<Record<IField["type"], string>> = {
+  text: "Short answer",
+  long_text: "Long answer",
+  number: "Number",
+  currency: "Amount",
+  single_select: "Pick one option",
+  multi_select: "Pick any options",
+  date: "Pick a date",
+  member: "Pick people",
+  link_table: "Link records",
+  attachment: "Drop files here or browse",
+};
+
+/** The picked form, laid out as people will see it; nothing is saved until Save. */
 function FormEditor({
   form,
   fillableFields,
   onUpdateForm,
+  onUploadAttachment,
   onDelete,
 }: ModuleFormEditorProps) {
   const saved = useMemo(() => toFormInput(form), [form]);
@@ -296,132 +323,146 @@ function FormEditor({
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5">
-        <Field>
-          <FieldLabel htmlFor="form-title">Form title</FieldLabel>
-          <Input
-            id="form-title"
-            maxLength={80}
-            value={draft.formTitle}
-            onChange={(event) => change({ formTitle: event.target.value })}
+      <div className="flex shrink-0 items-center justify-end gap-5 border-b px-5 py-2 text-sm">
+        <label
+          className="flex cursor-pointer items-center gap-2"
+          title={
+            draft.isHidden
+              ? "A hidden form can't be the default."
+              : "The sidebar's main form; only one form is."
+          }
+        >
+          <Switch
+            size="sm"
+            checked={draft.isDefault}
+            disabled={draft.isHidden}
+            onCheckedChange={(isDefault) => change({ isDefault })}
           />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="form-description">Description</FieldLabel>
-          <Textarea
-            id="form-description"
-            maxLength={500}
-            placeholder="What this form is for"
-            className="min-h-16"
-            value={draft.formDescription ?? ""}
-            onChange={(event) =>
-              change({ formDescription: event.target.value })
+          Default form
+        </label>
+        <label
+          className="flex cursor-pointer items-center gap-2"
+          title="Kept, but not offered to people."
+        >
+          <Switch
+            size="sm"
+            checked={draft.isHidden}
+            onCheckedChange={(isHidden) =>
+              change({
+                isHidden,
+                isDefault: isHidden ? false : draft.isDefault,
+              })
             }
           />
-        </Field>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex items-start justify-between gap-3 rounded-lg border p-3 text-sm">
-            <span className="flex flex-col gap-0.5">
-              <span className="font-medium">Default form</span>
-              <span className="text-xs text-muted-foreground">
-                {draft.isHidden
-                  ? "A hidden form can't be the default."
-                  : "The sidebar's main form; only one form is."}
-              </span>
-            </span>
-            <Switch
-              checked={draft.isDefault}
-              disabled={draft.isHidden}
-              onCheckedChange={(isDefault) => change({ isDefault })}
-            />
-          </label>
-          <label className="flex items-start justify-between gap-3 rounded-lg border p-3 text-sm">
-            <span className="flex flex-col gap-0.5">
-              <span className="font-medium">Hidden</span>
-              <span className="text-xs text-muted-foreground">
-                Kept, but not offered to people.
-              </span>
-            </span>
-            <Switch
-              checked={draft.isHidden}
-              onCheckedChange={(isHidden) =>
-                change({
-                  isHidden,
-                  isDefault: isHidden ? false : draft.isDefault,
-                })
-              }
-            />
-          </label>
-        </div>
-
-        <section aria-labelledby="form-fields" className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-2">
-            <h3 id="form-fields" className="text-sm font-medium">
-              Fields{" "}
-              <span className="font-normal text-muted-foreground">
-                {shownIds.length} of {fillableFields?.length ?? 0}
-              </span>
-            </h3>
-            <Button
-              variant="ghost"
-              size="xs"
-              disabled={!availableFields?.length}
-              onClick={() =>
-                setFieldIds([
-                  ...shownIds,
-                  ...(availableFields?.map((field) => field?.objId) ?? []),
-                ])
-              }
-            >
-              Add all
-            </Button>
-          </div>
-          {shownIds.length ? (
-            <div className="flex flex-col gap-1 rounded-lg border p-1">
-              <SortableList ids={shownIds} onReorder={setFieldIds}>
-                {shownIds.map((id) => (
-                  <FormFieldRow
-                    key={id}
-                    field={fieldById.get(id)}
-                    onRemove={removeField}
-                  />
-                ))}
-              </SortableList>
-            </div>
-          ) : (
-            <p className="rounded-lg border border-dashed px-4 py-6 text-center text-xs text-muted-foreground">
-              No fields on this form yet. Add the fields people fill in.
-            </p>
-          )}
-          <Select
-            value=""
-            onValueChange={(id) => setFieldIds([...shownIds, id])}
-            disabled={!availableFields?.length}
-          >
-            <SelectTrigger aria-label="Add a field" className="w-full">
-              <SelectValue
-                placeholder={
-                  availableFields?.length
-                    ? "Add a field"
-                    : "Every field is on the form"
-                }
-              />
-            </SelectTrigger>
-            <SelectContent position="popper" searchable>
-              {availableFields?.map((field) => (
-                <SelectItem
-                  key={field.objId}
-                  value={field.objId}
-                  textValue={field.name}
-                >
-                  <FieldTypeIcon type={field.type} />
-                  {field.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </section>
+          Hidden
+        </label>
       </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto bg-muted/40 px-6 py-8">
+        <article className="mx-auto max-w-xl overflow-hidden rounded-xl border bg-background shadow-sm">
+          <FormImage
+            kind="cover"
+            imageId={draft.coverImageId}
+            onChange={(coverImageId) => change({ coverImageId })}
+            onUpload={onUploadAttachment}
+          />
+          <div className="px-8 pb-8">
+            <FormImage
+              kind="logo"
+              imageId={draft.logoId}
+              onChange={(logoId) => change({ logoId })}
+              onUpload={onUploadAttachment}
+            />
+            <input
+              aria-label="Form title"
+              maxLength={80}
+              placeholder="Form title"
+              value={draft.formTitle}
+              onChange={(event) => change({ formTitle: event.target.value })}
+              className="w-full rounded-md bg-transparent text-2xl font-semibold outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/20"
+            />
+            <textarea
+              aria-label="Form description"
+              maxLength={500}
+              rows={2}
+              placeholder="Add a description"
+              value={draft.formDescription ?? ""}
+              onChange={(event) =>
+                change({ formDescription: event.target.value })
+              }
+              className="mt-1 w-full resize-none rounded-md bg-transparent text-sm text-muted-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/20"
+            />
+
+            <div className="mt-6 flex flex-col gap-3">
+              {shownIds.length ? (
+                <SortableList ids={shownIds} onReorder={setFieldIds}>
+                  {shownIds.map((id) => (
+                    <FormFieldRow
+                      key={id}
+                      field={fieldById.get(id)}
+                      onRemove={removeField}
+                    />
+                  ))}
+                </SortableList>
+              ) : (
+                <p className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+                  No fields yet. Add the fields people fill in.
+                </p>
+              )}
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!availableFields?.length}
+                  startIcon={<Plus size={14} />}
+                  className="mt-3 w-full border-dashed"
+                >
+                  {availableFields?.length
+                    ? "Add field"
+                    : "Every field is on the form"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="max-h-72 w-(--radix-dropdown-menu-trigger-width)"
+              >
+                <DropdownMenuLabel>Add a field</DropdownMenuLabel>
+                {availableFields?.map((field) => (
+                  <DropdownMenuItem
+                    key={field.objId}
+                    onSelect={() => setFieldIds([...shownIds, field.objId])}
+                  >
+                    <FieldTypeIcon type={field.type} />
+                    {field.name}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() =>
+                    setFieldIds([
+                      ...shownIds,
+                      ...(availableFields?.map((field) => field?.objId) ?? []),
+                    ])
+                  }
+                >
+                  <ListPlus />
+                  Add all fields
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="mt-8 border-t pt-6">
+              <Button size="sm" disabled tabIndex={-1}>
+                Submit
+              </Button>
+            </div>
+          </div>
+        </article>
+      </div>
+
       <DialogFooter className="m-0 shrink-0 items-center sm:justify-between">
         <Button
           variant="ghost"
@@ -454,6 +495,121 @@ function FormEditor({
   );
 }
 
+/** The form's cover across the top, or its logo under it: an uploaded image that can be changed or removed. */
+function FormImage({
+  kind,
+  imageId,
+  onChange,
+  onUpload,
+}: {
+  kind: "cover" | "logo";
+  imageId?: string;
+  onChange: (imageId?: string) => void;
+  onUpload?: (file: File) => Promise<IAttachment>;
+}) {
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const name = kind === "cover" ? "cover image" : "logo";
+  const upload = useCallback(
+    async (file?: File) => {
+      if (!file || !onUpload) return;
+      if (!file.type.startsWith("image/")) {
+        toast.error(`The ${name} must be an image`);
+        return;
+      }
+      setUploading(true);
+      try {
+        onChange((await onUpload(file))?.id);
+      } catch (err) {
+        toast.error(`Couldn't upload the ${name}`, {
+          description: errorParser(err)?.message,
+        });
+      } finally {
+        setUploading(false);
+      }
+    },
+    [name, onUpload, onChange],
+  );
+  const pick = () => fileInput.current?.click();
+  const actions = (
+    <div className="absolute top-2 right-2 flex gap-1 opacity-0 transition-opacity group-hover/image:opacity-100 group-focus-within/image:opacity-100">
+      <Button
+        variant="outline"
+        size="xs"
+        disabled={uploading || !onUpload}
+        onClick={pick}
+      >
+        {uploading ? "Uploading…" : "Change"}
+      </Button>
+      <Button
+        variant="outline"
+        size="icon-xs"
+        aria-label={`Remove ${name}`}
+        startIcon={<X size={13} />}
+        onClick={() => onChange(undefined)}
+      />
+    </div>
+  );
+
+  return (
+    <div
+      className={cn(
+        "group/image relative overflow-hidden",
+        kind === "cover"
+          ? "h-40 bg-linear-to-br from-primary-10 to-primary/25"
+          : "-mt-10 mb-4 size-20 rounded-xl border-4 border-background bg-muted shadow-sm",
+      )}
+    >
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(event) => {
+          upload(event.target.files?.[0]);
+          event.target.value = "";
+        }}
+      />
+      {imageId ? (
+        <>
+          <img
+            src={attachmentUrl(imageId)}
+            alt={`Form ${name}`}
+            className="size-full object-cover"
+          />
+          {kind === "cover" ? (
+            actions
+          ) : (
+            <button
+              type="button"
+              aria-label="Change logo"
+              onClick={pick}
+              className="absolute inset-0 flex cursor-pointer items-center justify-center bg-foreground/40 text-background opacity-0 transition-opacity group-hover/image:opacity-100 focus-visible:opacity-100"
+            >
+              <ImagePlus className="size-5" />
+            </button>
+          )}
+        </>
+      ) : (
+        <button
+          type="button"
+          disabled={uploading || !onUpload}
+          onClick={pick}
+          aria-label={`Add ${name}`}
+          className={cn(
+            "flex size-full cursor-pointer items-center justify-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary disabled:cursor-not-allowed",
+            kind === "cover" &&
+              "opacity-0 group-hover/image:opacity-100 focus-visible:opacity-100",
+          )}
+        >
+          <ImagePlus className="size-5" />
+          {kind === "cover" && (uploading ? "Uploading…" : "Add cover image")}
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** What the editor edits: the saved form's title, description, flags and fields. */
 function toFormInput(form?: ISidebarForm): ISidebarFormInput {
   return {
@@ -462,10 +618,12 @@ function toFormInput(form?: ISidebarForm): ISidebarFormInput {
     isHidden: !!form?.isHidden,
     isDefault: !!form?.isDefault,
     fieldIds: form?.fieldIds ?? [],
+    coverImageId: form?.coverImageId ?? undefined,
+    logoId: form?.logoId ?? undefined,
   };
 }
 
-/** One field on the form: dragged by its grip, removed by its X. */
+/** One field on the form, with a preview of its answer box: dragged by its grip, removed by its X. */
 function FormFieldRow({
   field,
   onRemove,
@@ -481,22 +639,40 @@ function FormFieldRow({
       ref={ref}
       style={style}
       className={cn(
-        "flex items-center gap-2 rounded-md py-1 pr-1 text-sm hover:bg-muted/60",
-        isDragging && "relative z-10 bg-background shadow-md",
+        "group/field rounded-lg border bg-background p-3 transition-colors hover:border-primary/40",
+        isDragging && "relative z-10 shadow-md",
       )}
     >
-      <SortableHandle handle={handle} label={field.name} />
-      <FieldTypeIcon type={field.type} />
-      <span className="min-w-0 flex-1 truncate">{field.name}</span>
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        aria-label={`Remove ${field.name}`}
-        title="Remove from form"
-        className="text-muted-foreground hover:text-foreground"
-        startIcon={<X size={13} />}
-        onClick={() => onRemove(field.objId)}
-      />
+      <div className="flex items-center gap-2">
+        <SortableHandle
+          handle={handle}
+          label={field.name}
+          className="-ml-1 opacity-0 group-hover/field:opacity-100 focus-visible:opacity-100"
+        />
+        <FieldTypeIcon type={field.type} />
+        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+          {field.name}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          aria-label={`Remove ${field.name}`}
+          title="Remove from form"
+          className="text-muted-foreground opacity-0 group-hover/field:opacity-100 hover:text-foreground focus-visible:opacity-100"
+          startIcon={<X size={13} />}
+          onClick={() => onRemove(field.objId)}
+        />
+      </div>
+      {field.type === "checkbox" ? (
+        <div className="mt-2 flex items-center gap-2 pl-6 text-xs text-muted-foreground">
+          <span className="size-4 rounded border" />
+          Tick if yes
+        </div>
+      ) : (
+        <div className="mt-2 ml-6 flex h-9 items-center rounded-md border bg-muted/30 px-3 text-xs text-muted-foreground">
+          {ANSWER_HINTS[field.type] ?? "Answer"}
+        </div>
+      )}
     </div>
   );
 }

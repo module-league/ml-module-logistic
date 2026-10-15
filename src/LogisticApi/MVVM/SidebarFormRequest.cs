@@ -16,6 +16,12 @@ namespace LogisticApi.MVVM
         /// <summary>Makes this the sidebar's default form; the previous default stops being one.</summary>
         public bool isDefault { get; set; }
 
+        /// <summary>An image uploaded to /attachments with the sidebar as refId; null removes the cover.</summary>
+        public Guid? coverImageId { get; set; }
+
+        /// <summary>An image uploaded to /attachments with the sidebar as refId; null removes the logo.</summary>
+        public Guid? logoId { get; set; }
+
         /// <summary>The fields on the form, in order: field ObjIds of the sidebar that can be filled in.</summary>
         [MaxLength(200)]
         public List<Guid> fieldIds { get; set; } = [];
