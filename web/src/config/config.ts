@@ -6,7 +6,7 @@ export const moduleConfig: IModuleConfig = {
   code: "logistic",
   title: "Logistic",
   icon: Truck,
-  homeKey: "shipment", // switch to "dashboard" once that page is built
+  homeKey: "logistic", // switch to "dashboard" once that page is built
   groups: [
     // {
     //   label: "Overview",
