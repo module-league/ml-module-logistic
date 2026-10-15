@@ -41,6 +41,14 @@ namespace LogisticApi.Context.Configurations
             b.Property(e => e.logoId)
              .HasColumnName("logo_id");
 
+            b.Property(e => e.submitLabel)
+             .HasColumnName("submit_label")
+             .HasMaxLength(40);
+
+            b.Property(e => e.clearLabel)
+             .HasColumnName("clear_label")
+             .HasMaxLength(40);
+
             b.Property(e => e.fields)
              .HasColumnName("fields")
              .IsRequired();

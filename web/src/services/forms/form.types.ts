@@ -14,6 +14,10 @@ declare global {
     coverImageId?: string;
     /** An image attachment of the sidebar shown under the cover. */
     logoId?: string;
+    /** The submit button's text; "Submit" unless renamed. */
+    submitLabel: string;
+    /** The clear form button's text; "Clear form" unless renamed. */
+    clearLabel: string;
     /** objIds of the sidebar's fields on the form, in the order they show. */
     fieldIds: string[];
     /** Send back on update; a stale value is rejected with 409. */
@@ -32,5 +36,8 @@ declare global {
     | "fieldIds"
     | "coverImageId"
     | "logoId"
-  > & { versionNo?: number };
+  > &
+    Partial<Pick<ISidebarForm, "submitLabel" | "clearLabel">> & {
+      versionNo?: number;
+    };
 }

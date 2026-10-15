@@ -500,6 +500,11 @@ namespace LogisticApi.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ds_version_no");
 
+                    b.Property<string>("clearLabel")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("clear_label");
+
                     b.Property<Guid?>("coverImageId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("cover_image_id");
@@ -541,6 +546,11 @@ namespace LogisticApi.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("sidebar_id");
+
+                    b.Property<string>("submitLabel")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("submit_label");
 
                     b.HasKey("ObjId")
                         .HasName("pk_lg_sidebar_form");

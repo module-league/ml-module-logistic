@@ -97,12 +97,18 @@ namespace LogisticApi.Services
 
             form.formTitle = title;
             form.formDescription = string.IsNullOrWhiteSpace(request.formDescription) ? null : request.formDescription.Trim();
+            form.submitLabel = Label(request.submitLabel, SidebarForm.DefaultSubmitLabel);
+            form.clearLabel = Label(request.clearLabel, SidebarForm.DefaultClearLabel);
             form.isHidden = request.isHidden;
             form.isDefault = request.isDefault;
             form.fields = JsonSerializer.Serialize(await CleanFieldIdsAsync(form.sidebarId, request.fieldIds, ct), Json);
             form.coverImageId = await CheckImageAsync(form.sidebarId, request.coverImageId, "cover image", ct);
             form.logoId = await CheckImageAsync(form.sidebarId, request.logoId, "logo", ct);
         }
+
+        /// <summary>A blank or default button label is stored as null.</summary>
+        private static string? Label(string? label, string fallback) =>
+            string.IsNullOrWhiteSpace(label) || label.Trim() == fallback ? null : label.Trim();
 
         /// <summary>The image must be an attachment uploaded for this sidebar.</summary>
         private async Task<Guid?> CheckImageAsync(string sidebarId, Guid? id, string what, CancellationToken ct)

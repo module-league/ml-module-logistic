@@ -22,6 +22,14 @@ namespace LogisticApi.MVVM
         /// <summary>An image uploaded to /attachments with the sidebar as refId; null removes the logo.</summary>
         public Guid? logoId { get; set; }
 
+        /// <summary>The submit button's text; blank shows "Submit".</summary>
+        [MaxLength(40)]
+        public string? submitLabel { get; set; }
+
+        /// <summary>The clear form button's text; blank shows "Clear form".</summary>
+        [MaxLength(40)]
+        public string? clearLabel { get; set; }
+
         /// <summary>The fields on the form, in order: field ObjIds of the sidebar that can be filled in.</summary>
         [MaxLength(200)]
         public List<Guid> fieldIds { get; set; } = [];

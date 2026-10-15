@@ -5,6 +5,7 @@ import {
   ImagePlus,
   ListPlus,
   Plus,
+  SquarePen,
   Trash2,
   X,
 } from "lucide-react";
@@ -24,6 +25,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   FieldTypeIcon,
+  Input,
+  Separator,
   Switch,
   toast,
 } from "@moduleleague/ui";
@@ -373,7 +376,7 @@ function FormEditor({
               onChange={(logoId) => change({ logoId })}
               onUpload={onUploadAttachment}
             />
-            <input
+            <Input
               aria-label="Form title"
               maxLength={80}
               placeholder="Form title"
@@ -392,7 +395,7 @@ function FormEditor({
               }
               className="mt-1 w-full resize-none rounded-md bg-transparent text-sm text-muted-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/20"
             />
-
+            <Separator className="border-b" />
             <div className="mt-6 flex flex-col gap-3">
               {shownIds.length ? (
                 <SortableList ids={shownIds} onReorder={setFieldIds}>
@@ -454,10 +457,22 @@ function FormEditor({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <div className="mt-8 border-t pt-6">
-              <Button size="sm" disabled tabIndex={-1}>
-                Submit
-              </Button>
+            <div className="mt-8 flex items-center justify-between gap-3 border-t pt-6">
+              <ButtonLabelInput
+                aria-label="Clear form button label"
+                placeholder="Clear form"
+                value={draft.clearLabel ?? ""}
+                onChange={(clearLabel) => change({ clearLabel })}
+                className="text-muted-foreground hover:bg-muted"
+              />
+
+              <ButtonLabelInput
+                aria-label="Submit button label"
+                placeholder="Submit"
+                value={draft.submitLabel ?? ""}
+                onChange={(submitLabel) => change({ submitLabel })}
+                className="bg-primary text-primary-foreground"
+              />
             </div>
           </div>
         </article>
@@ -620,7 +635,45 @@ function toFormInput(form?: ISidebarForm): ISidebarFormInput {
     fieldIds: form?.fieldIds ?? [],
     coverImageId: form?.coverImageId ?? undefined,
     logoId: form?.logoId ?? undefined,
+    submitLabel: form?.submitLabel ?? "",
+    clearLabel: form?.clearLabel ?? "",
   };
+}
+
+/** A form button whose text is typed in place; a blank label falls back to the placeholder. */
+function ButtonLabelInput({
+  value,
+  placeholder = "",
+  onChange,
+  className,
+  "aria-label": ariaLabel,
+}: {
+  value: string;
+  placeholder?: string;
+  onChange: (value: string) => void;
+  className?: string;
+  "aria-label": string;
+}) {
+  return (
+    <label
+      title="Click to rename"
+      className={cn(
+        "group/label inline-flex h-9 cursor-text items-center gap-1.5 rounded-md px-4 text-sm font-medium transition-colors focus-within:ring-2 focus-within:ring-primary/30",
+        className,
+      )}
+    >
+      <input
+        aria-label={ariaLabel}
+        maxLength={40}
+        placeholder={placeholder}
+        size={Math.max(value?.length, placeholder?.length, 1)}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="field-sizing-content min-w-4 bg-transparent outline-none placeholder:text-current placeholder:opacity-60"
+      />
+      <SquarePen className="size-3.5 shrink-0 opacity-0 transition-opacity group-hover/label:opacity-70 group-focus-within/label:opacity-70" />
+    </label>
+  );
 }
 
 /** One field on the form, with a preview of its answer box: dragged by its grip, removed by its X. */

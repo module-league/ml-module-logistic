@@ -17,6 +17,8 @@ namespace LogisticApi.MVVM
         public int displayOrder { get; set; }
         public Guid? coverImageId { get; set; }
         public Guid? logoId { get; set; }
+        public string submitLabel { get; set; } = SidebarForm.DefaultSubmitLabel;
+        public string clearLabel { get; set; } = SidebarForm.DefaultClearLabel;
         /// <summary>Fields deleted since the form was saved are left out.</summary>
         public List<Guid> fieldIds { get; set; } = [];
         public int versionNo { get; set; }
@@ -34,6 +36,8 @@ namespace LogisticApi.MVVM
             displayOrder = form.displayOrder,
             coverImageId = form.coverImageId,
             logoId = form.logoId,
+            submitLabel = form.submitLabel ?? SidebarForm.DefaultSubmitLabel,
+            clearLabel = form.clearLabel ?? SidebarForm.DefaultClearLabel,
             fieldIds = (JsonSerializer.Deserialize<List<Guid>>(form.fields, Json) ?? []).Where(liveFieldIds.Contains).ToList(),
             versionNo = form.VersionNo,
             createTime = DateTime.SpecifyKind(form.CreateTime, DateTimeKind.Utc),
