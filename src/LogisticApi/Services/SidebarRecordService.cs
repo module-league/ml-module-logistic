@@ -282,6 +282,11 @@ namespace LogisticApi.Services
                         throw ApiProblemException.BadRequest("Invalid date.", $"'{field.sidebarName}' needs a date like 2026-10-13.");
                     return day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
+                case "time":
+                    if (!TimeOnly.TryParseExact(text, ["HH:mm", "HH:mm:ss"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var time))
+                        throw ApiProblemException.BadRequest("Invalid time.", $"'{field.sidebarName}' needs a 24-hour time like 14:30.");
+                    return time.ToString("HH:mm", CultureInfo.InvariantCulture);
+
                 case "member":
                     var memberIds = ReadMemberIds(field, text);
                     if (memberIds.Count == 0) return null;

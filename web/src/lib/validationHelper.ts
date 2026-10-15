@@ -22,6 +22,10 @@ export function recordValueSchema(field?: IField) {
           (value) => value.replace(/\D/g, "").length <= 28,
           "Use up to 28 digits.",
         );
+    case "time":
+      return z
+        .string()
+        .regex(/^(([01]\d|2[0-3]):[0-5]\d)?$/, "Enter a time like 14:30.");
     case "text":
     case "long_text":
       return z.string().trim().max(1000, "Use up to 1000 characters.");

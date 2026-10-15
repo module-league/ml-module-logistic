@@ -54,6 +54,12 @@ export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
     icon: FIELD_TYPE_ICONS.date,
   },
   {
+    fieldType: "time",
+    label: "Time",
+    description: "Opening hours, cut-offs, slots.",
+    icon: FIELD_TYPE_ICONS.time,
+  },
+  {
     fieldType: "member",
     label: "Member",
     description: "One person or a list of people.",

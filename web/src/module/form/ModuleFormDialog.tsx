@@ -268,6 +268,7 @@ const ANSWER_HINTS: Partial<Record<IField["type"], string>> = {
   single_select: "Pick one option",
   multi_select: "Pick any options",
   date: "Pick a date",
+  time: "Pick a time",
   member: "Pick people",
   link_table: "Link records",
   attachment: "Drop files here or browse",

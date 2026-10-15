@@ -21,8 +21,10 @@ export interface ModuleAddNewFieldDialogProps {
   takenNames?: string[];
 }
 
-export interface ModuleEditFieldDialogProps
-  extends Omit<ModuleAddNewFieldDialogProps, "onAdd"> {
+export interface ModuleEditFieldDialogProps extends Omit<
+  ModuleAddNewFieldDialogProps,
+  "onAdd"
+> {
   /** The field to edit; its type can't change. Nothing renders without it. */
   field?: IField;
   /** Called with the edited field. A rejection shows its message and keeps the input. */
@@ -38,6 +40,8 @@ export type ModuleFieldDateSettings = Pick<
 export interface ModuleFieldDateSettingsProps {
   value: ModuleFieldDateSettings;
   onChange: (value: ModuleFieldDateSettings) => void;
+  /** A time field: only the 12- or 24-hour format. */
+  timeOnly?: boolean;
 }
 
 export interface ModuleFieldNumberSettingsProps {
@@ -78,16 +82,20 @@ export interface ModuleFieldLookupSettingsProps {
   linkFields: ISidebarField[];
 }
 
-export interface ModuleDeleteFieldDialogProps
-  extends Pick<ModuleAddNewFieldDialogProps, "open" | "onOpenChange"> {
+export interface ModuleDeleteFieldDialogProps extends Pick<
+  ModuleAddNewFieldDialogProps,
+  "open" | "onOpenChange"
+> {
   /** Nothing renders without it. */
   field?: Pick<IField, "name">;
   /** A rejection shows its message and keeps the dialog open. */
   onDelete: () => Promise<unknown>;
 }
 
-export interface ModuleAddFieldStepsProps
-  extends Pick<ModuleEditFieldDialogProps, "takenNames" | "field"> {
+export interface ModuleAddFieldStepsProps extends Pick<
+  ModuleEditFieldDialogProps,
+  "takenNames" | "field"
+> {
   onAdd: (field: IField) => void;
   onCancel: () => void;
   /** The field is being saved; Add is disabled. */

@@ -1,7 +1,7 @@
 declare global {
-  type IField = 
-  // IEntityAuditable &
-  //   IPremiumEntity & 
+  type IField =
+    // IEntityAuditable &
+    //   IPremiumEntity &
     {
       name: string;
       description?: string;
@@ -13,6 +13,7 @@ declare global {
         | "multi_select"
         | "checkbox"
         | "date"
+        | "time"
         | "member"
         | "link_table"
         | "lookup"
@@ -53,7 +54,7 @@ declare global {
        */
       displayTime: boolean;
       /**
-       * Used when the field is date type.
+       * Used when the field is date type with time displayed, or time type (stored as "HH:mm").
        * Display the time value in 12-hour or 24-hour format. The format string is follow `date-fns` standard
        * @default 'hh:mm a'
        */
@@ -131,17 +132,17 @@ declare global {
       };
     };
 
-  type IFieldDropDownValue = 
-  //IPremiumEntity & 
-  {
-    id: string;
-    value: string;
-    fieldId: string;
-    /** Hex color string (Eg: #FF000000) */
-    colorCode?: string;
-    createDate: string;
-    displayOrder: number;
-  };
+  type IFieldDropDownValue =
+    //IPremiumEntity &
+    {
+      id: string;
+      value: string;
+      fieldId: string;
+      /** Hex color string (Eg: #FF000000) */
+      colorCode?: string;
+      createDate: string;
+      displayOrder: number;
+    };
 
   /** For link field only. Condition to match records */
   type ILinkMatchCondition = {
@@ -161,22 +162,45 @@ declare global {
     updateTime?: string;
   };
 
-  type ISidebarFieldOptionInput = Pick<IFieldDropDownValue, "value" | "colorCode" | "displayOrder"> & {
+  type ISidebarFieldOptionInput = Pick<
+    IFieldDropDownValue,
+    "value" | "colorCode" | "displayOrder"
+  > & {
     /** An existing option's id; omit for a new option. */
     id?: string;
   };
 
   type ISidebarFieldCreate = Pick<IField, "name" | "type" | "description"> &
-    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat" | "memberSettings" | "numberSettings" | "lookupSettings">> & {
-    isPrimaryField?: boolean;
-    dropDownValues?: ISidebarFieldOptionInput[];
-  };
+    Partial<
+      Pick<
+        IField,
+        | "dateFormat"
+        | "displayTime"
+        | "timeFormat"
+        | "memberSettings"
+        | "numberSettings"
+        | "lookupSettings"
+      >
+    > & {
+      isPrimaryField?: boolean;
+      dropDownValues?: ISidebarFieldOptionInput[];
+    };
 
   /** The type can't change once a field exists. Options left out of dropDownValues are deleted. */
   type ISidebarFieldUpdate = Pick<IField, "name" | "description"> &
-    Partial<Pick<IField, "dateFormat" | "displayTime" | "timeFormat" | "memberSettings" | "numberSettings" | "lookupSettings">> & {
-    versionNo: number;
-    isPrimaryField?: boolean;
-    dropDownValues?: ISidebarFieldOptionInput[];
-  };
+    Partial<
+      Pick<
+        IField,
+        | "dateFormat"
+        | "displayTime"
+        | "timeFormat"
+        | "memberSettings"
+        | "numberSettings"
+        | "lookupSettings"
+      >
+    > & {
+      versionNo: number;
+      isPrimaryField?: boolean;
+      dropDownValues?: ISidebarFieldOptionInput[];
+    };
 }

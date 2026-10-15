@@ -188,6 +188,7 @@ const TEXT_VALUE_TYPES: IField["type"][] = [
   "number",
   "currency",
   "date",
+  "time",
   "ds_create_time",
 ];
 

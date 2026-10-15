@@ -348,10 +348,11 @@ function AddFieldSteps({
               <FieldOptionsEditor options={options} onChange={setOptions} />
             </Field>
           )}
-          {type === "date" && (
+          {(type === "date" || type === "time") && (
             <FieldDateSettings
               value={dateSettings}
               onChange={setDateSettings}
+              timeOnly={type === "time"}
             />
           )}
           {(type === "number" || type === "currency") && (
@@ -757,47 +758,57 @@ function FieldLookupSettings({
   );
 }
 
-function FieldDateSettings({ value, onChange }: ModuleFieldDateSettingsProps) {
+function FieldDateSettings({
+  value,
+  onChange,
+  timeOnly = false,
+}: ModuleFieldDateSettingsProps) {
   const sample = useMemo(() => new Date(), []);
   const preview = useMemo(
-    () => format(sample, fieldDateFormat(value)),
-    [sample, value],
+    () => format(sample, timeOnly ? value.timeFormat : fieldDateFormat(value)),
+    [sample, value, timeOnly],
   );
 
   return (
     <div className="flex flex-col gap-4">
-      <Field>
-        <FieldLabel htmlFor="field-date-format">Date format</FieldLabel>
-        <Select
-          value={value.dateFormat}
-          onValueChange={(dateFormat) =>
-            onChange({
-              ...value,
-              dateFormat: dateFormat as IField["dateFormat"],
-            })
-          }
-        >
-          <SelectTrigger id="field-date-format" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            {FIELD_DATE_FORMATS.map((dateFormat) => (
-              <SelectItem key={dateFormat} value={dateFormat}>
-                {format(sample, dateFormat)}
-                <span className="text-muted-foreground">{dateFormat}</span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Field>
-      <label className="flex items-center justify-between gap-3 text-sm font-medium">
-        Include time
-        <Switch
-          checked={value.displayTime}
-          onCheckedChange={(displayTime) => onChange({ ...value, displayTime })}
-        />
-      </label>
-      {value.displayTime && (
+      {!timeOnly && (
+        <Field>
+          <FieldLabel htmlFor="field-date-format">Date format</FieldLabel>
+          <Select
+            value={value.dateFormat}
+            onValueChange={(dateFormat) =>
+              onChange({
+                ...value,
+                dateFormat: dateFormat as IField["dateFormat"],
+              })
+            }
+          >
+            <SelectTrigger id="field-date-format" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {FIELD_DATE_FORMATS.map((dateFormat) => (
+                <SelectItem key={dateFormat} value={dateFormat}>
+                  {format(sample, dateFormat)}
+                  <span className="text-muted-foreground">{dateFormat}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      )}
+      {!timeOnly && (
+        <label className="flex items-center justify-between gap-3 text-sm font-medium">
+          Include time
+          <Switch
+            checked={value.displayTime}
+            onCheckedChange={(displayTime) =>
+              onChange({ ...value, displayTime })
+            }
+          />
+        </label>
+      )}
+      {(timeOnly || value.displayTime) && (
         <Field>
           <FieldLabel htmlFor="field-time-format">Time format</FieldLabel>
           <Select

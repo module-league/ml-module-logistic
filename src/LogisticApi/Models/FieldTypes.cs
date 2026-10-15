@@ -8,7 +8,7 @@ namespace LogisticApi.Models
         public static readonly string[] All =
         [
             "text", "long_text", "number", "single_select", "multi_select", "checkbox",
-            "date", "member", "link_table", "lookup", "mirror", "templating", "currency", "associate", "attachment",
+            "date", "time", "member", "link_table", "lookup", "mirror", "templating", "currency", "associate", "attachment",
             "record_attachment", "sys_creator_id", "sys_create_time", "sys_updater_id",
             "sys_update_time", "sys_running_number",
         ];
@@ -41,6 +41,6 @@ namespace LogisticApi.Models
         public static bool IsForeign(string type) => type is "link_table" or "lookup" or "mirror";
 
         public static bool IsPlain(string type) =>
-            type is "text" or "long_text" or "number" or "single_select" or "multi_select" or "checkbox" or "date" or "member" or "currency" or "attachment";
+            type is "text" or "long_text" or "number" or "single_select" or "multi_select" or "checkbox" or "date" or "time" or "member" or "currency" or "attachment";
     }
 }

@@ -23,6 +23,7 @@ import { RecordAttachmentInput } from "./RecordAttachmentInput";
 import { RecordMultiSelectInput } from "./RecordMultiSelectInput";
 import { RecordLinkInput } from "./RecordLinkInput";
 import { RecordLookupInput } from "./RecordLookupInput";
+import { RecordTimeInput } from "./RecordTimeInput";
 import type { AttachmentUploadHandler } from "./RecordAttachmentInput.types";
 import { DateTimePicker } from "../ui/date-time-picker";
 import { parseFieldDate, toFieldDateValue } from "@/lib/dateHelper";
@@ -107,6 +108,22 @@ export function RecordInputControl(props: RecordInputControlProps) {
       <span className={props.className} style={props.style}>
         <em>-Field is not editable-</em>
       </span>
+    );
+  }
+
+  if (field.type === "time") {
+    return (
+      <RecordTimeInput
+        id={id}
+        field={field}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        defaultOpen={defaultOpen}
+        className={props.className}
+        style={props.style}
+      />
     );
   }
 

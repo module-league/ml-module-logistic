@@ -1,8 +1,4 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fieldKeys, putInLists, toOptionInputs } from "./field.utils";
 import { apiClient } from "@/lib/apiClient";
 
@@ -31,10 +27,7 @@ export async function createField(
   return data;
 }
 
-export async function updateField(
-  objId: string,
-  body: ISidebarFieldUpdate,
-) {
+export async function updateField(objId: string, body: ISidebarFieldUpdate) {
   const { data } = await apiClient.put<ISidebarField>(
     `/fields/${encodeURIComponent(objId)}`,
     body,
@@ -58,6 +51,7 @@ function toFieldSettings(field: IField) {
       displayTime: field.displayTime,
       timeFormat: field.timeFormat,
     }),
+    ...(field?.type === "time" && { timeFormat: field.timeFormat }),
   };
 }
 
@@ -110,8 +104,7 @@ export function useField(objId?: string) {
 export function useCreateField(sidebarId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: ISidebarFieldCreate) =>
-      createField(sidebarId, body),
+    mutationFn: (body: ISidebarFieldCreate) => createField(sidebarId, body),
     onSuccess: (created) => {
       queryClient.setQueryData(fieldKeys.detail(created.objId), created);
       putInLists(queryClient, sidebarId, (fields) => [...fields, created]);
@@ -122,8 +115,13 @@ export function useCreateField(sidebarId: string) {
 export function useUpdateField() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ objId, body }: { objId: string; body: ISidebarFieldUpdate }) =>
-      updateField(objId, body),
+    mutationFn: ({
+      objId,
+      body,
+    }: {
+      objId: string;
+      body: ISidebarFieldUpdate;
+    }) => updateField(objId, body),
     onSuccess: (updated) => {
       queryClient.setQueryData(fieldKeys.detail(updated.objId), updated);
       putInLists(queryClient, updated.sidebarId, (fields) =>

@@ -1,4 +1,4 @@
-import { formatFieldDate } from "./dateHelper";
+import { formatFieldDate, formatFieldTime } from "./dateHelper";
 import { memberNames } from "./memberHelper";
 import { attachmentNames } from "./attachmentHelper";
 import { formatFieldNumber } from "./numberHelper";
@@ -22,11 +22,14 @@ export function toRecordText(
   if (field?.type === "member") return memberNames(members, value);
   if (field?.type === "attachment") return attachmentNames(value);
   if (field?.isDateField) return formatFieldDate(field, value);
+  if (field?.type === "time") return formatFieldTime(field, value);
   if (field?.type === "number" || field?.type === "currency") {
     return formatFieldNumber(field, value);
   }
   if (field?.type === "single_select") {
-    return field?.dropDownValues?.find((option) => option?.id === value)?.value ?? "";
+    return (
+      field?.dropDownValues?.find((option) => option?.id === value)?.value ?? ""
+    );
   }
   if (field?.type === "multi_select") return optionNames(field, value);
   if (isLinkingField(field)) {

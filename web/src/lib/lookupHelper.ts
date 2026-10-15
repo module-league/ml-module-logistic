@@ -25,6 +25,7 @@ const SHOWN_TYPES: IField["type"][] = [
   "single_select",
   "multi_select",
   "date",
+  "time",
   "member",
 ];
 

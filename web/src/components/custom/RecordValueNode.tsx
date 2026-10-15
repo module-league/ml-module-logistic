@@ -1,7 +1,7 @@
 import { cn } from "@/ui-kit";
 import { Square, SquareCheck } from "lucide-react";
 import type { ReactNode } from "react";
-import { formatFieldDate } from "@/lib/dateHelper";
+import { formatFieldDate, formatFieldTime } from "@/lib/dateHelper";
 import { formatFieldNumber } from "@/lib/numberHelper";
 import { findMember, parseMemberIds } from "@/lib/memberHelper";
 import { MemberChip } from "./MemberChip";
@@ -86,6 +86,11 @@ export function RecordValueNode({
   if (field?.isDateField) {
     return (
       <span className="tabular-nums">{formatFieldDate(field, value)}</span>
+    );
+  }
+  if (field?.type === "time") {
+    return (
+      <span className="tabular-nums">{formatFieldTime(field, value)}</span>
     );
   }
   if (field?.type === "single_select") {

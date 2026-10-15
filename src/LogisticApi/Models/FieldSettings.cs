@@ -15,6 +15,7 @@ namespace LogisticApi.Models
 
         public string dateFormat { get; set; } = "dd/MM/yyyy";
         public bool displayTime { get; set; }
+        /// <summary>Date fields that display time, and time fields: 12-hour ("hh:mm a") or 24-hour ("HH:mm").</summary>
         public string timeFormat { get; set; } = "hh:mm a";
         public string? color { get; set; }
         /// <summary>Member fields only: several people can be picked.</summary>
