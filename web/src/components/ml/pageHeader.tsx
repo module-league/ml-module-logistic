@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/custom/UserAvatar";
+import { PageHeaderSettings } from "./pageHeaderSettings";
 import type { PageHeaderProps, PeopleStackProps } from "./pageHeader.types";
 
 /**
@@ -33,21 +34,17 @@ export function PageHeader({
     >
       <div
         className={cn(
-          "flex flex-row items-center justify-between w-full",
+          "flex flex-row items-center justify-between gap-2 w-full",
           headerClassName,
         )}
       >
-        <div className="flex flex-col w-full">
+        <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex flex-row gap-4 items-center">
             <h1 className="text-2xl font-semibold tracking-tight truncate">
               {title}
             </h1>
-            <Button
-              variant="ghost"
-              size="xs"
-              startIcon={<HouseCogIcon size={13} />}
-              className="text-black"
-            ></Button>
+
+            <PageHeaderSettings title={title} />
           </div>
 
           {description && (
@@ -56,11 +53,17 @@ export function PageHeader({
             </p>
           )}
         </div>
+
+        <Button
+          variant="secondary"
+          size="xs"
+          startIcon={<HouseCogIcon size={13} />}
+          className=""
+        >
+          Create Shipment Form
+        </Button>
         {(people?.length || onInvitePeople) && (
-          <div className="flex items-center gap-3">
-            {people?.length ? (
-              <PeopleStack people={people} max={maxPeople} />
-            ) : null}
+          <div className="flex shrink-0 items-center gap-3">
             {onInvitePeople && (
               <Button variant="outline" size="xs" onClick={onInvitePeople}>
                 <UserPlus size={13} />
@@ -77,31 +80,5 @@ export function PageHeader({
         </div>
       )}
     </div>
-  );
-}
-
-function PeopleStack({ people, max }: PeopleStackProps) {
-  const visible = useMemo(() => people?.slice(0, max), [people, max]);
-  const hidden = useMemo(() => people?.slice(max), [people, max]);
-
-  return (
-    <AvatarGroup>
-      {visible?.map((person) => (
-        <UserAvatar
-          key={person?.id}
-          userInfo={person}
-          title={person?.displayName}
-          avatarClassName="size-6"
-        />
-      ))}
-      {hidden?.length > 0 && (
-        <AvatarGroupCount
-          className="size-6"
-          title={hidden?.map((person) => person?.displayName).join(", ")}
-        >
-          +{hidden.length}
-        </AvatarGroupCount>
-      )}
-    </AvatarGroup>
   );
 }

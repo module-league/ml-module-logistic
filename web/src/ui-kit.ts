@@ -79,6 +79,7 @@ export * from "./components/ml/moduleAddNewField.utils";
 export * from "./components/ml/moduleAddNewFieldDialog";
 export * from "./components/ml/pageHeader";
 export * from "./components/ml/pageHeader.types";
+export * from "./components/ml/pageHeaderSettings";
 export * from "./components/ml/pageToolbar";
 export * from "./components/ml/pageToolbar.types";
 export * from "./components/ml/pageToolbar.utils";

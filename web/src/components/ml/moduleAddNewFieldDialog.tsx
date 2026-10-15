@@ -513,7 +513,7 @@ function FieldLinkSettings({
     [sources, value.categoryId],
   );
   const multiple = value.multiple ?? true;
-  const sourceText = source?.sidebarText ?? "that sidebar";
+  const sourceText = source?.sidebarText ?? "that table";
   const shownFields = useMemo(() => shownLookupFields(source), [source]);
   const pickSource = useCallback(
     (categoryId: string) =>
@@ -537,7 +537,7 @@ function FieldLinkSettings({
           disabled={sourceLocked}
         >
           <SelectTrigger id="field-link-source" className="w-full">
-            <SelectValue placeholder="Choose a sidebar">
+            <SelectValue placeholder="Choose a table">
               {source?.sidebarText ?? value.categoryId}
             </SelectValue>
           </SelectTrigger>
@@ -550,7 +550,7 @@ function FieldLinkSettings({
               >
                 {entry.sidebarText}
                 {entry.sidebarId === sidebarId && (
-                  <span className="text-muted-foreground">This sidebar</span>
+                  <span className="text-muted-foreground">current table</span>
                 )}
               </SelectItem>
             ))}
@@ -558,7 +558,7 @@ function FieldLinkSettings({
         </Select>
         {sourceLocked && (
           <p className="text-xs text-muted-foreground">
-            The sidebar can't change once the field exists.
+            The table can't change once the field exists.
           </p>
         )}
       </Field>
@@ -738,7 +738,7 @@ function FieldLookupSettings({
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Only link to another record fields of this sidebar are listed.
+          Only link to another record fields of this table are listed.
         </p>
       </Field>
       {ready && (
