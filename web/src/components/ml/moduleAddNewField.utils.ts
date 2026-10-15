@@ -152,12 +152,12 @@ export function fieldDraftSchema(takenNames?: string[]) {
         .max(40, "Use up to 40 characters."),
       options: z.array(z.object({ value: z.string() })),
       numberSettings: z.object({
-        symbol: z.string().max(5, "Use up to 5 characters.").optional(),
+        symbol: z.string().max(5, "Use up to 5 characters.").nullish(),
       }),
       lookupSettings: z.object({
-        categoryId: z.string().optional(),
-        linkFieldId: z.string().optional(),
-        lookupFieldId: z.string().optional(),
+        categoryId: z.string().nullish(),
+        linkFieldId: z.string().nullish(),
+        lookupFieldId: z.string().nullish(),
       }),
     })
     .superRefine(({ type, name, options, lookupSettings }, ctx) => {
@@ -271,6 +271,7 @@ function toLookupSettings(
       categoryId: settings?.categoryId,
       lookupFieldId: settings?.lookupFieldId,
       multiple: settings?.multiple ?? true,
+      previewFieldIds: settings?.previewFieldIds,
     };
   }
   if (type === "lookup") {

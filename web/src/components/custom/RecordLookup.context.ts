@@ -10,6 +10,11 @@ export interface RecordLookupContextValue {
   linkFields: ISidebarField[];
   /** The linked sidebars' fields and records, for showing and picking linked records. */
   lookups: RecordLookups;
+  /** Opens a New record dialog for a linked sidebar; onAdded gets the record once it's saved. */
+  onNewLinkedRecord?: (
+    sidebarId: string,
+    onAdded: (record: ISidebarRecord) => void,
+  ) => void;
 }
 
 const NO_LOOKUPS: RecordLookupContextValue = {

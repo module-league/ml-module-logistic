@@ -36,7 +36,7 @@ namespace LogisticApi.Models
         public Guid? lookupFieldId { get; set; }
         /// <summary>Lookup fields only: linked records can be previewed from an open record.</summary>
         public bool lookupPreview { get; set; } = true;
-        /// <summary>Lookup fields only: the looked-up fields shown in the preview; kept while the preview is off. Null shows every field.</summary>
+        /// <summary>Lookup fields: the looked-up fields shown in the preview, kept while the preview is off; null shows every field. Link fields: the up to three fields on each linked record's card; null shows the first ones.</summary>
         public List<string>? lookupPreviewFieldIds { get; set; }
 
         public static FieldSettings Read(string? json) =>

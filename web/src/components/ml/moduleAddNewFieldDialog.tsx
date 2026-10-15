@@ -39,10 +39,12 @@ import { toast } from "@/components/ui/sonner";
 import { errorParser } from "@/hooks/useErrorParser";
 import { zodErrors } from "@/lib/validationHelper";
 import {
+  LINK_CARD_FIELD_LIMIT,
   LOOKUP_CREATE_TIME_ID,
   previewableLookupFields,
   shownLookupFields,
 } from "@/lib/lookupHelper";
+import { RecordLinkCard } from "@/components/custom/RecordLinkCard";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRecordLookups } from "@/components/custom/RecordLookup.context";
 import { FieldTypeIcon } from "./fieldTypeIcon";
@@ -452,16 +454,55 @@ function FieldLinkSettings({
   const multiple = value.multiple ?? true;
   const sourceText = source?.sidebarText ?? "that table";
   const shownFields = useMemo(() => shownLookupFields(source), [source]);
+  const cardOptions = useMemo(
+    () => previewableLookupFields(source?.fields),
+    [source],
+  );
+  // Never picked means the first fields after the title, so the list starts with those ticked
+  const cardIds = useMemo(
+    () =>
+      value.previewFieldIds ??
+      firstCardFieldIds(cardOptions, value.lookupFieldId),
+    [value.previewFieldIds, value.lookupFieldId, cardOptions],
+  );
+  const cardFields = useMemo(
+    () =>
+      cardIds.flatMap(
+        (id) => cardOptions.find((option) => option.objId === id) ?? [],
+      ),
+    [cardIds, cardOptions],
+  );
+  const titleField = useMemo(
+    () =>
+      shownFields.find((shown) => shown.objId === value.lookupFieldId) ??
+      shownFields[0],
+    [shownFields, value.lookupFieldId],
+  );
   const pickSource = useCallback(
-    (categoryId: string) =>
+    (categoryId: string) => {
+      const picked = sources?.find((entry) => entry?.sidebarId === categoryId);
+      const lookupFieldId = shownLookupFields(picked)[0]?.objId;
       onChange({
         ...value,
         categoryId,
-        lookupFieldId: shownLookupFields(
-          sources?.find((entry) => entry?.sidebarId === categoryId),
-        )[0]?.objId,
-      }),
+        lookupFieldId,
+        previewFieldIds: firstCardFieldIds(
+          previewableLookupFields(picked?.fields),
+          lookupFieldId,
+        ),
+      });
+    },
     [value, sources, onChange],
+  );
+  const toggleCardField = useCallback(
+    (id: string, checked: boolean) =>
+      onChange({
+        ...value,
+        previewFieldIds: checked
+          ? [...cardIds, id]
+          : cardIds.filter((cardId) => cardId !== id),
+      }),
+    [value, cardIds, onChange],
   );
 
   return (
@@ -501,7 +542,7 @@ function FieldLinkSettings({
       </Field>
       {!!source && (
         <Field>
-          <FieldLabel htmlFor="field-link-shown">Field to show</FieldLabel>
+          <FieldLabel htmlFor="field-link-shown">Card title</FieldLabel>
           <Select
             value={value.lookupFieldId ?? ""}
             onValueChange={(lookupFieldId) =>
@@ -527,9 +568,64 @@ function FieldLinkSettings({
           </Select>
           <p className="text-xs text-muted-foreground">
             {shownFields.length
-              ? `Each linked ${sourceText} record shows as this field.`
+              ? `Each linked ${sourceText} record's card is titled with this field.`
               : `${sourceText} has no text, number, select, date or member field to show yet, so records show as “Untitled record”.`}
           </p>
+        </Field>
+      )}
+      {!!source && (
+        <Field>
+          <FieldLabel>Fields on each card</FieldLabel>
+          <p className="text-xs text-muted-foreground">
+            Up to {LINK_CARD_FIELD_LIMIT}, shown under the title in the order
+            you tick them. {cardIds.length} of {LINK_CARD_FIELD_LIMIT} picked.
+          </p>
+          {cardOptions.length ? (
+            <div className="flex max-h-48 flex-col gap-0.5 overflow-y-auto rounded-md border p-1.5">
+              {cardOptions.map((option) => {
+                const order = cardIds.indexOf(option.objId) + 1;
+                return (
+                  <label
+                    key={option.objId}
+                    className={cn(
+                      "flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-muted",
+                      !order &&
+                        cardIds.length >= LINK_CARD_FIELD_LIMIT &&
+                        "cursor-not-allowed opacity-50",
+                    )}
+                  >
+                    <Checkbox
+                      checked={!!order}
+                      disabled={
+                        !order && cardIds.length >= LINK_CARD_FIELD_LIMIT
+                      }
+                      onCheckedChange={(checked) =>
+                        toggleCardField(option.objId, checked === true)
+                      }
+                    />
+                    <FieldTypeIcon type={option.type} />
+                    <span className="min-w-0 flex-1 truncate">
+                      {option.name}
+                    </span>
+                    {!!order && (
+                      <span className="rounded bg-primary-10 px-1.5 text-[0.65rem] font-medium text-primary">
+                        {order}
+                      </span>
+                    )}
+                  </label>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {sourceText} has no fields to show on a card yet.
+            </p>
+          )}
+          <RecordLinkCard
+            title={titleField?.name ?? "Untitled record"}
+            fields={cardFields}
+            className="pointer-events-none bg-muted/30"
+          />
         </Field>
       )}
       <label className="flex items-start justify-between gap-3 text-sm">
@@ -554,6 +650,14 @@ function FieldLinkSettings({
       </label>
     </div>
   );
+}
+
+/** A new link card shows the first fields after its title, up to the card's limit. */
+function firstCardFieldIds(options: ISidebarField[], titleFieldId?: string) {
+  return options
+    .filter((option) => option.objId !== titleFieldId)
+    .slice(0, LINK_CARD_FIELD_LIMIT)
+    .map((option) => option.objId);
 }
 
 function FieldLookupSettings({

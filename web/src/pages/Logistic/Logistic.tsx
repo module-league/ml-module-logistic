@@ -24,6 +24,8 @@ import {
 } from "@/services/forms/form.api";
 import { getMembers } from "@/services/user/user.api";
 import { uploadAttachment } from "@/services/attachments/attachment.api";
+import { RecordLookupContext } from "@/components/custom/RecordLookup.context";
+import { useMemo } from "react";
 
 const pageApi: ModuleDataApi = {
   getFields,
@@ -45,7 +47,11 @@ const pageApi: ModuleDataApi = {
 };
 
 export default function Logistic() {
-  const sidebarId = useCurrentNavItem()?.sidebarId;
-  const data = useModuleData(sidebarId, pageApi);
-  return <></>;
+  const item = useCurrentNavItem();
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <main className="flex min-h-0 flex-1 flex-col"></main>
+    </div>
+  );
 }

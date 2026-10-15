@@ -54,7 +54,7 @@ namespace LogisticApi.MVVM
         /// <summary>Lookup fields only: linked records can be previewed from an open record.</summary>
         public bool? previewEnabled { get; set; }
 
-        /// <summary>Lookup fields only: the fields shown in the preview: field ObjIds of the linked sidebar, or "ds_create_time".</summary>
+        /// <summary>Field ObjIds of the linked sidebar, or "ds_create_time". Lookup fields: the fields shown in the preview. Link fields: up to three fields shown on each linked record's card.</summary>
         [MaxLength(200)]
         public List<string>? previewFieldIds { get; set; }
     }

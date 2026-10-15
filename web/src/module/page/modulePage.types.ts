@@ -53,6 +53,11 @@ export interface ModuleData {
   members: IUserInfo[];
   onRefreshFields: () => void;
   onAddRecord: (values: ISidebarRecordValues) => Promise<unknown>;
+  /** Adds a record to a sidebar a link field links to, so it can be linked at once. */
+  onAddLinkedRecord: (
+    sidebarId: string,
+    values: ISidebarRecordValues,
+  ) => Promise<ISidebarRecord>;
   /** objId of the record open in ModuleOpenRecord. */
   openedRecordId?: string;
   /** The open record; the row from the list shows while the fresh copy loads. */
@@ -92,6 +97,14 @@ export interface ModuleData {
 export interface ModuleFieldAction {
   kind: "edit" | "delete";
   fieldId: string;
+  open: boolean;
+}
+
+/** The linked sidebar the New record dialog adds to; kept after open turns false so the dialog can animate out. */
+export interface ModuleLinkedRecordDraft {
+  sidebarId: string;
+  /** Links the added record in the input that asked for it. */
+  onAdded: (record: ISidebarRecord) => void;
   open: boolean;
 }
 

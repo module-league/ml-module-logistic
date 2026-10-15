@@ -49,6 +49,10 @@ export interface ModuleNewRecordFormProps
   extends ModuleQueryState, Pick<ModuleRecordFormProps, "onUploadAttachment"> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** @default "New record" */
+  title?: string;
+  /** Shown under the title. */
+  description?: string;
   fields: ISidebarField[];
   members?: IUserInfo[];
   /** Return a promise to keep the dialog open until it settles; a rejection shows its message and keeps the input. */

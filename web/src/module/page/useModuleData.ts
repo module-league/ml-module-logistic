@@ -119,14 +119,31 @@ export function useModuleData(
   });
   const openedRecord = recordQuery.data;
 
-  const { mutateAsync: onAddRecord } = useMutation({
-    mutationFn: (values: ISidebarRecordValues) => api.createRecord(id, values),
-    onSuccess: (created) =>
+  // Adds to this sidebar or to one its link fields link to; that sidebar's list is shared with its lookups
+  const { mutateAsync: addRecord } = useMutation({
+    mutationFn: ({
+      recordSidebarId,
+      values,
+    }: {
+      recordSidebarId: string;
+      values: ISidebarRecordValues;
+    }) => api.createRecord(recordSidebarId, values),
+    onSuccess: (created, { recordSidebarId }) =>
       queryClient.setQueryData<ISidebarRecord[]>(
-        recordKeys.list(id),
+        recordKeys.list(recordSidebarId),
         (current) => [created, ...(current ?? [])],
       ),
   });
+  const onAddRecord = useCallback(
+    (values: ISidebarRecordValues) =>
+      addRecord({ recordSidebarId: id, values }),
+    [id, addRecord],
+  );
+  const onAddLinkedRecord = useCallback(
+    (recordSidebarId: string, values: ISidebarRecordValues) =>
+      addRecord({ recordSidebarId, values }),
+    [addRecord],
+  );
   const { mutateAsync: updateRecord } = useMutation({
     mutationFn: ({
       objId,
@@ -366,6 +383,7 @@ export function useModuleData(
       members: membersQuery.data ?? NO_MEMBERS,
       onRefreshFields,
       onAddRecord,
+      onAddLinkedRecord,
       openedRecordId,
       openedRecord,
       openedRecordState,
@@ -408,6 +426,7 @@ export function useModuleData(
       membersQuery.data,
       onRefreshFields,
       onAddRecord,
+      onAddLinkedRecord,
       onAddField,
       onUpdateField,
       onDeleteField,

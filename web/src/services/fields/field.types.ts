@@ -96,7 +96,7 @@ declare global {
         lookupFieldId?: string;
         /** For lookup field only. Linked records can be previewed from an open record. @default true */
         previewEnabled?: boolean;
-        /** For lookup field only. The looked-up fields the preview shows; kept while the preview is off. Left out, every field shows. */
+        /** lookup: the looked-up fields the preview shows, kept while the preview is off; left out, every field shows. link_table: the up to three fields on each linked record's card; left out, the first ones show. */
         previewFieldIds?: string[];
         /** For mirror field only. The destined linked record field ID */
         mirrorFieldId?: string;

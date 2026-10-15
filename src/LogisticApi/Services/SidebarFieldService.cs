@@ -221,7 +221,10 @@ namespace LogisticApi.Services
             return settings;
         }
 
-        /// <summary>The linked sidebar can be any one, the field's own included, and is fixed once set: linked record ids belong to it. The field to show labels each linked record; left out, the primary or first field does.</summary>
+        /// <summary>
+        /// The linked sidebar can be any one, the field's own included, and is fixed once set: linked record ids belong to it.
+        /// The field to show titles each linked record's card (left out, the primary or first field does); previewFieldIds are the up to three fields under it.
+        /// </summary>
         private async Task ApplyLinkAsync(FieldSettings settings, SidebarLookupSettingsRequest? request, CancellationToken ct)
         {
             var sidebarId = request?.categoryId ?? settings.lookupSidebarId;
@@ -237,7 +240,15 @@ namespace LogisticApi.Services
             }
             settings.lookupSidebarId = sidebarId;
             if (request?.multiple is { } multiple) settings.linkMultiple = multiple;
+            if (request?.previewFieldIds is { } cardFieldIds)
+            {
+                if (cardFieldIds.Count > LinkCardFieldLimit)
+                    throw ApiProblemException.BadRequest("A card shows up to three fields.", $"Pick at most {LinkCardFieldLimit} fields for each linked record's card.");
+                settings.lookupPreviewFieldIds = await CleanPreviewFieldIdsAsync(sidebarId, cardFieldIds, ct);
+            }
         }
+
+        private const int LinkCardFieldLimit = 3;
 
         /// <summary>The field shown for each linked record must belong to the linked sidebar and read as text.</summary>
         private async Task EnsureShowableAsync(string sidebarId, Guid fieldId, CancellationToken ct)

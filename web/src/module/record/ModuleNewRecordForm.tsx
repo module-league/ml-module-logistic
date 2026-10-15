@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   toast,
@@ -15,6 +16,8 @@ import type { ModuleNewRecordFormProps } from "./moduleRecord.types";
 export function ModuleNewRecordForm({
   open,
   onOpenChange,
+  title = "New record",
+  description,
   fields,
   members,
   onUploadAttachment,
@@ -51,13 +54,14 @@ export function ModuleNewRecordForm({
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogContent
-        aria-describedby={undefined}
+        {...(!description && { "aria-describedby": undefined })}
         overlayClassName="supports-backdrop-filter:backdrop-blur-none"
         className="flex flex-col gap-0 p-0 rounded-md"
         style={RECORD_DIALOG_STYLE}
       >
         <DialogHeader className="shrink-0 p-4 pr-10 pb-3 border-b">
-          <DialogTitle>New record</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
+          {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
         <QueryWrapper isLoading={isLoading} error={error} onRetry={onRetry}>
           <ModuleRecordForm

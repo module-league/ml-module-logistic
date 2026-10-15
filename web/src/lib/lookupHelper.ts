@@ -49,7 +49,7 @@ export function isLinkingField(field?: Pick<IField, "type">) {
   return field?.type === "link_table" || field?.type === "lookup";
 }
 
-/** The fields of a linked sidebar a preview can show, in display order; link and lookup fields are left out. */
+/** The fields of a linked sidebar a preview can show, and a new linked record fills in, in display order; link and lookup fields are left out. */
 export function previewableLookupFields(fields?: ISidebarField[]) {
   return (fields ?? [])
     .filter((field) => !isLinkingField(field))
@@ -64,6 +64,27 @@ export function lookupDisplayField(field: IField, lookups?: RecordLookups) {
     fields?.find((f) => f?.isPrimaryField && canShowInLookup(f)) ??
     fields?.find(canShowInLookup)
   );
+}
+
+/** How many fields a link field's record card shows under its title. */
+export const LINK_CARD_FIELD_LIMIT = 3;
+
+/** The fields a link's record cards show under the title: the picked ones, else the first plain fields after the title field. */
+export function linkCardFields(field: IField, lookups?: RecordLookups) {
+  const fields =
+    lookups?.[field?.lookupSettings?.categoryId ?? ""]?.fields ?? [];
+  const picked = field?.lookupSettings?.previewFieldIds;
+  if (picked) {
+    return picked
+      .flatMap(
+        (id) => fields.find((candidate) => candidate?.objId === id) ?? [],
+      )
+      .slice(0, LINK_CARD_FIELD_LIMIT);
+  }
+  const title = lookupDisplayField(field, lookups);
+  return previewableLookupFields(fields)
+    .filter((candidate) => candidate?.objId !== title?.objId)
+    .slice(0, LINK_CARD_FIELD_LIMIT);
 }
 
 /** Undefined while the linked sidebar's records are still loading. */
