@@ -22,7 +22,7 @@ namespace LogisticApi.Models
         public string? submitLabel { get; set; }
         /// <summary>The clear form button's text; null shows "Clear form".</summary>
         public string? clearLabel { get; set; }
-        /// <summary>JSON array of the field ObjIds on the form, in the order they show.</summary>
+        /// <summary>JSON array of SidebarFormField: the fields on the form, in the order they show.</summary>
         public string fields { get; set; } = "[]";
     }
 }

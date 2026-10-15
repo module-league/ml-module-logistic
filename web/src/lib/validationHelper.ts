@@ -30,14 +30,17 @@ export function recordValueSchema(field?: IField) {
   }
 }
 
+/** Why a record value can't be saved, or undefined when it can. */
+export function recordValueError(field: IField | undefined, value: unknown) {
+  return recordValueSchema(field).safeParse(value)?.error?.issues?.[0]?.message;
+}
+
 /** The record form's values, one per field in field order; an error lands on its field's input. */
 export function recordValuesSchema(fields?: IField[]) {
-  const schemas = fields?.map(recordValueSchema) ?? [];
   return z.object({
     values: z.array(z.string()).superRefine((values, ctx) =>
-      schemas.forEach((schema, index) => {
-        const message = schema.safeParse(values?.[index])?.error?.issues?.[0]
-          ?.message;
+      fields?.forEach((field, index) => {
+        const message = recordValueError(field, values?.[index]);
         if (message) ctx.addIssue({ code: "custom", path: [index], message });
       }),
     ),

@@ -252,7 +252,8 @@ namespace LogisticApi.Services
         private static ApiProblemException StaleVersion() =>
             ApiProblemException.Conflict("Record was changed by someone else.", "Reload the record and apply your change again.");
 
-        private static string? CleanValue(SidebarField field, string? value)
+        /// <summary>A plain value as stored: trimmed, checked against the field's type; blank is null. Form default values use it too.</summary>
+        internal static string? CleanValue(SidebarField field, string? value)
         {
             var text = value?.Trim();
             if (string.IsNullOrEmpty(text)) return null;

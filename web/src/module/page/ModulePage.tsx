@@ -423,6 +423,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           onOpenChange={setFormsOpen}
           title={item?.sidebarText ?? ""}
           fields={fields}
+          members={members}
           forms={data.forms}
           onAddForm={data.onAddForm}
           onUpdateForm={data.onUpdateForm}

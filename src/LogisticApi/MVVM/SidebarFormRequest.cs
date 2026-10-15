@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using LogisticApi.Models;
 
 namespace LogisticApi.MVVM
 {
@@ -30,9 +31,9 @@ namespace LogisticApi.MVVM
         [MaxLength(40)]
         public string? clearLabel { get; set; }
 
-        /// <summary>The fields on the form, in order: field ObjIds of the sidebar that can be filled in.</summary>
+        /// <summary>The fields on the form, in order: fields of the sidebar that can be filled in, each with its placeholder and default value.</summary>
         [MaxLength(200)]
-        public List<Guid> fieldIds { get; set; } = [];
+        public List<SidebarFormField> fields { get; set; } = [];
 
         /// <summary>Update only: the versionNo the client last read; a stale value returns 409.</summary>
         public int? versionNo { get; set; }

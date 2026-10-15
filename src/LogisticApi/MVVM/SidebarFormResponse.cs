@@ -20,7 +20,7 @@ namespace LogisticApi.MVVM
         public string submitLabel { get; set; } = SidebarForm.DefaultSubmitLabel;
         public string clearLabel { get; set; } = SidebarForm.DefaultClearLabel;
         /// <summary>Fields deleted since the form was saved are left out.</summary>
-        public List<Guid> fieldIds { get; set; } = [];
+        public List<SidebarFormField> fields { get; set; } = [];
         public int versionNo { get; set; }
         public DateTime createTime { get; set; }
         public DateTime? updateTime { get; set; }
@@ -38,7 +38,7 @@ namespace LogisticApi.MVVM
             logoId = form.logoId,
             submitLabel = form.submitLabel ?? SidebarForm.DefaultSubmitLabel,
             clearLabel = form.clearLabel ?? SidebarForm.DefaultClearLabel,
-            fieldIds = (JsonSerializer.Deserialize<List<Guid>>(form.fields, Json) ?? []).Where(liveFieldIds.Contains).ToList(),
+            fields = (JsonSerializer.Deserialize<List<SidebarFormField>>(form.fields, Json) ?? []).Where(f => liveFieldIds.Contains(f.fieldId)).ToList(),
             versionNo = form.VersionNo,
             createTime = DateTime.SpecifyKind(form.CreateTime, DateTimeKind.Utc),
             updateTime = form.UpdateTime is { } updated ? DateTime.SpecifyKind(updated, DateTimeKind.Utc) : null,

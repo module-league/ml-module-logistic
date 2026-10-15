@@ -6,6 +6,7 @@ import {
   ImagePlus,
   ListPlus,
   Plus,
+  Settings2,
   SquarePen,
   Trash2,
   X,
@@ -38,7 +39,9 @@ import { ConfirmDeleteDialog } from "@/components/custom/ConfirmDeleteDialog";
 import { SortableHandle, SortableList } from "@/components/custom/SortableList";
 import { useSortableRow } from "@/hooks/useSortableRow";
 import { errorParser } from "@/hooks/useErrorParser";
-import { zodErrors } from "@/lib/validationHelper";
+import { recordValueError, zodErrors } from "@/lib/validationHelper";
+import { toRecordText } from "@/lib/recordTextHelper";
+import { RecordInputControl } from "@/components/custom/RecordInputControl";
 import type {
   ModuleFormDialogProps,
   ModuleFormEditorProps,
@@ -63,6 +66,7 @@ export function ModuleFormDialog({
   onDeleteForm,
   onReorderForms,
   onUploadAttachment,
+  members,
 }: ModuleFormDialogProps) {
   const [selectedId, setSelectedId] = useState<string>();
   const [creating, setCreating] = useState(false);
@@ -90,7 +94,7 @@ export function ModuleFormDialog({
         formTitle,
         isHidden: false,
         isDefault: false,
-        fieldIds: [],
+        fields: [],
       });
       setSelectedId(created?.objId);
     } catch (err) {
@@ -165,6 +169,7 @@ export function ModuleFormDialog({
                   fillableFields={fillableFields}
                   onUpdateForm={onUpdateForm}
                   onUploadAttachment={onUploadAttachment}
+                  members={members}
                   onDelete={() => setDeleteOpen(true)}
                 />
               ) : (
@@ -268,17 +273,41 @@ const ANSWER_HINTS: Partial<Record<IField["type"], string>> = {
   attachment: "Drop files here or browse",
 };
 
-/** What a form is saved with, matching the API's limits. */
-const FORM_SCHEMA = z.object({
-  formTitle: z
-    .string()
-    .trim()
-    .min(1, "Give the form a title.")
-    .max(80, "Use up to 80 characters."),
-  formDescription: z.string().max(500, "Use up to 500 characters.").optional(),
-  submitLabel: z.string().max(40, "Use up to 40 characters.").optional(),
-  clearLabel: z.string().max(40, "Use up to 40 characters.").optional(),
-});
+/** What a form is saved with, matching the API's limits; a default value is checked like its field's record value. */
+function formSchema(fieldById: Map<string, ISidebarField>) {
+  return z.object({
+    formTitle: z
+      .string()
+      .trim()
+      .min(1, "Give the form a title.")
+      .max(80, "Use up to 80 characters."),
+    formDescription: z
+      .string()
+      .max(500, "Use up to 500 characters.")
+      .optional(),
+    submitLabel: z.string().max(40, "Use up to 40 characters.").optional(),
+    clearLabel: z.string().max(40, "Use up to 40 characters.").optional(),
+    fields: z.array(
+      z
+        .object({
+          fieldId: z.string(),
+          placeholder: z
+            .string()
+            .max(100, "Use up to 100 characters.")
+            .optional(),
+          defaultValue: z.string().optional(),
+        })
+        .superRefine(({ fieldId, defaultValue }, ctx) => {
+          const message = recordValueError(
+            fieldById.get(fieldId),
+            defaultValue ?? "",
+          );
+          if (message)
+            ctx.addIssue({ code: "custom", path: ["defaultValue"], message });
+        }),
+    ),
+  });
+}
 
 /** The picked form, laid out as people will see it; nothing is saved until Save. */
 function FormEditor({
@@ -286,6 +315,7 @@ function FormEditor({
   fillableFields,
   onUpdateForm,
   onUploadAttachment,
+  members,
   onDelete,
 }: ModuleFormEditorProps) {
   const saved = useMemo(() => toFormInput(form), [form]);
@@ -295,14 +325,21 @@ function FormEditor({
     () => JSON.stringify(draft) !== JSON.stringify(saved),
     [draft, saved],
   );
-  const errors = useMemo(() => zodErrors(FORM_SCHEMA, draft), [draft]);
   const fieldById = useMemo(
     () => new Map(fillableFields?.map((field) => [field?.objId, field])),
     [fillableFields],
   );
+  const shownFields = useMemo(
+    () => draft.fields.filter((item) => fieldById.has(item?.fieldId)),
+    [draft.fields, fieldById],
+  );
   const shownIds = useMemo(
-    () => draft.fieldIds.filter((id) => fieldById.has(id)),
-    [draft.fieldIds, fieldById],
+    () => shownFields.map((item) => item?.fieldId),
+    [shownFields],
+  );
+  const errors = useMemo(
+    () => zodErrors(formSchema(fieldById), { ...draft, fields: shownFields }),
+    [draft, shownFields, fieldById],
   );
   const availableFields = useMemo(
     () => fillableFields?.filter((field) => !shownIds.includes(field?.objId)),
@@ -314,20 +351,50 @@ function FormEditor({
       setDraft((current) => ({ ...current, ...patch })),
     [],
   );
-  const setFieldIds = useCallback(
-    (fieldIds: string[]) => change({ fieldIds }),
-    [change],
+  const addFields = useCallback(
+    (ids: string[]) =>
+      change({
+        fields: [
+          ...shownFields,
+          ...ids.map((fieldId) => ({
+            fieldId,
+            placeholder: "",
+            defaultValue: "",
+          })),
+        ],
+      }),
+    [shownFields, change],
+  );
+  const reorderFields = useCallback(
+    (ids: string[]) => {
+      const itemById = new Map(
+        shownFields.map((item) => [item?.fieldId, item]),
+      );
+      change({ fields: ids.flatMap((id) => itemById.get(id) ?? []) });
+    },
+    [shownFields, change],
+  );
+  const updateField = useCallback(
+    (fieldId: string, patch: Partial<ISidebarFormField>) =>
+      setDraft((current) => ({
+        ...current,
+        fields: current.fields.map((item) =>
+          item?.fieldId === fieldId ? { ...item, ...patch } : item,
+        ),
+      })),
+    [],
   );
   const removeField = useCallback(
-    (id: string) => setFieldIds(shownIds.filter((shownId) => shownId !== id)),
-    [shownIds, setFieldIds],
+    (id: string) =>
+      change({ fields: shownFields.filter((item) => item?.fieldId !== id) }),
+    [shownFields, change],
   );
   const save = useCallback(async () => {
     setSaving(true);
     try {
       const updated = await onUpdateForm(form.objId, {
         ...draft,
-        fieldIds: shownIds,
+        fields: shownFields,
       });
       setDraft(toFormInput(updated));
       toast.success("Form saved");
@@ -338,7 +405,7 @@ function FormEditor({
     } finally {
       setSaving(false);
     }
-  }, [form.objId, draft, shownIds, onUpdateForm]);
+  }, [form.objId, draft, shownFields, onUpdateForm]);
 
   return (
     <>
@@ -378,7 +445,7 @@ function FormEditor({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto bg-muted/40 px-6 py-8">
-        <article className="mx-auto max-w-xl overflow-hidden rounded-xl border bg-background shadow-sm">
+        <article className="mx-auto max-w-4xl overflow-hidden rounded-xl border bg-background shadow-sm">
           <FormImage
             kind="cover"
             imageId={draft.coverImageId}
@@ -416,11 +483,18 @@ function FormEditor({
             <Separator className="border-b" />
             <div className="mt-6 flex flex-col gap-3">
               {shownIds.length ? (
-                <SortableList ids={shownIds} onReorder={setFieldIds}>
-                  {shownIds.map((id) => (
+                <SortableList ids={shownIds} onReorder={reorderFields}>
+                  {shownFields.map((item, index) => (
                     <FormFieldRow
-                      key={id}
-                      field={fieldById.get(id)}
+                      key={item.fieldId}
+                      field={fieldById.get(item.fieldId)}
+                      item={item}
+                      members={members}
+                      error={
+                        errors?.[`fields.${index}.defaultValue`] ??
+                        errors?.[`fields.${index}.placeholder`]
+                      }
+                      onChange={updateField}
                       onRemove={removeField}
                     />
                   ))}
@@ -454,7 +528,7 @@ function FormEditor({
                 {availableFields?.map((field) => (
                   <DropdownMenuItem
                     key={field.objId}
-                    onSelect={() => setFieldIds([...shownIds, field.objId])}
+                    onSelect={() => addFields([field.objId])}
                   >
                     <FieldTypeIcon type={field.type} />
                     {field.name}
@@ -463,10 +537,9 @@ function FormEditor({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() =>
-                    setFieldIds([
-                      ...shownIds,
-                      ...(availableFields?.map((field) => field?.objId) ?? []),
-                    ])
+                    addFields(
+                      availableFields?.map((field) => field?.objId) ?? [],
+                    )
                   }
                 >
                   <ListPlus />
@@ -650,7 +723,12 @@ function toFormInput(form?: ISidebarForm): ISidebarFormInput {
     formDescription: form?.formDescription ?? "",
     isHidden: !!form?.isHidden,
     isDefault: !!form?.isDefault,
-    fieldIds: form?.fieldIds ?? [],
+    fields:
+      form?.fields?.map((item) => ({
+        fieldId: item?.fieldId,
+        placeholder: item?.placeholder ?? "",
+        defaultValue: item?.defaultValue ?? "",
+      })) ?? [],
     coverImageId: form?.coverImageId ?? undefined,
     logoId: form?.logoId ?? undefined,
     submitLabel: form?.submitLabel ?? "",
@@ -694,16 +772,33 @@ function ButtonLabelInput({
   );
 }
 
-/** One field on the form, with a preview of its answer box: dragged by its grip, removed by its X. */
+/** One field on the form, previewed with its placeholder or default value: dragged by its grip, customized from its gear, removed by its X. */
 function FormFieldRow({
   field,
+  item,
+  members,
+  error,
+  onChange,
   onRemove,
 }: {
   field?: ISidebarField;
+  item: ISidebarFormField;
+  members?: IUserInfo[];
+  /** Why the placeholder or default value can't be saved. */
+  error?: string;
+  onChange: (fieldId: string, patch: Partial<ISidebarFormField>) => void;
   onRemove: (id: string) => void;
 }) {
   const { ref, style, isDragging, handle } = useSortableRow(field?.objId ?? "");
+  const [open, setOpen] = useState(false);
+  const defaultText = useMemo(
+    () => (field ? toRecordText(field, item?.defaultValue, members) : ""),
+    [field, item?.defaultValue, members],
+  );
   if (!field) return null;
+
+  const hint = ANSWER_HINTS[field.type] ?? "Answer";
+  const canDefault = field.type !== "link_table" && field.type !== "attachment";
 
   return (
     <div
@@ -711,6 +806,7 @@ function FormFieldRow({
       style={style}
       className={cn(
         "group/field rounded-lg border bg-background p-3 transition-colors hover:border-primary/40",
+        open && "border-primary/40",
         isDragging && "relative z-10 shadow-md",
       )}
     >
@@ -727,6 +823,19 @@ function FormFieldRow({
         <Button
           variant="ghost"
           size="icon-xs"
+          aria-label={`Customize ${field.name}`}
+          aria-expanded={open}
+          title="Placeholder and default value"
+          className={cn(
+            "text-muted-foreground opacity-0 group-hover/field:opacity-100 hover:text-foreground focus-visible:opacity-100",
+            open && "text-primary opacity-100",
+          )}
+          startIcon={<Settings2 size={13} />}
+          onClick={() => setOpen((current) => !current)}
+        />
+        <Button
+          variant="ghost"
+          size="icon-xs"
           aria-label={`Remove ${field.name}`}
           title="Remove from form"
           className="text-muted-foreground opacity-0 group-hover/field:opacity-100 hover:text-foreground focus-visible:opacity-100"
@@ -736,14 +845,67 @@ function FormFieldRow({
       </div>
       {field.type === "checkbox" ? (
         <div className="mt-2 flex items-center gap-2 pl-6 text-xs text-muted-foreground">
-          <span className="size-4 rounded border" />
-          Tick if yes
+          <span
+            className={cn(
+              "size-4 rounded border",
+              item?.defaultValue === "true" && "border-primary bg-primary",
+            )}
+          />
+          {item?.defaultValue === "true"
+            ? "Ticked to start with"
+            : "Tick if yes"}
         </div>
       ) : (
-        <div className="mt-2 ml-6 flex h-9 items-center rounded-md border bg-muted/30 px-3 text-xs text-muted-foreground">
-          {ANSWER_HINTS[field.type] ?? "Answer"}
+        <div className="mt-2 ml-6 flex h-9 items-center truncate rounded-md border bg-muted/30 px-3 text-xs text-muted-foreground">
+          {defaultText ? (
+            <span className="truncate text-foreground">{defaultText}</span>
+          ) : (
+            item?.placeholder || hint
+          )}
         </div>
       )}
+      {open && (
+        <div className="mt-3 ml-6 grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2 border-t pt-3 text-xs">
+          {field.type !== "checkbox" && (
+            <>
+              <label
+                htmlFor={`${field.objId}-placeholder`}
+                className="text-muted-foreground"
+              >
+                Placeholder
+              </label>
+              <Input
+                id={`${field.objId}-placeholder`}
+                maxLength={100}
+                placeholder={hint}
+                value={item?.placeholder ?? ""}
+                onChange={(event) =>
+                  onChange(field.objId, { placeholder: event.target.value })
+                }
+              />
+            </>
+          )}
+          <span className="text-muted-foreground">Default value</span>
+          {canDefault ? (
+            <RecordInputControl
+              field={field}
+              members={members}
+              value={item?.defaultValue ?? ""}
+              placeholder="No default"
+              onChange={(defaultValue) =>
+                onChange(field.objId, { defaultValue })
+              }
+              className="w-full"
+            />
+          ) : (
+            <span className="text-muted-foreground">
+              Not available for{" "}
+              {field.type === "attachment" ? "attachment" : "link"} fields.
+            </span>
+          )}
+        </div>
+      )}
+      <FieldError className="mt-1 ml-6 text-xs">{error}</FieldError>
     </div>
   );
 }

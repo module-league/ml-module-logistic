@@ -12,7 +12,10 @@ namespace LogisticApi.Services
     /// </summary>
     public class SidebarFormService(ContextDb db)
     {
-        private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+        private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
+        {
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        };
 
         public async Task<List<SidebarFormResponse>> ListAsync(string sidebarId, CancellationToken ct)
         {
@@ -101,7 +104,7 @@ namespace LogisticApi.Services
             form.clearLabel = Label(request.clearLabel, SidebarForm.DefaultClearLabel);
             form.isHidden = request.isHidden;
             form.isDefault = request.isDefault;
-            form.fields = JsonSerializer.Serialize(await CleanFieldIdsAsync(form.sidebarId, request.fieldIds, ct), Json);
+            form.fields = JsonSerializer.Serialize(await CleanFieldsAsync(form.sidebarId, request.fields, ct), Json);
             form.coverImageId = await CheckImageAsync(form.sidebarId, request.coverImageId, "cover image", ct);
             form.logoId = await CheckImageAsync(form.sidebarId, request.logoId, "logo", ct);
         }
@@ -125,23 +128,35 @@ namespace LogisticApi.Services
             return attachmentId;
         }
 
-        /// <summary>Each field must belong to the sidebar and be one people fill in: not a system or lookup field. Repeats are dropped.</summary>
-        private async Task<List<Guid>> CleanFieldIdsAsync(string sidebarId, List<Guid> ids, CancellationToken ct)
+        /// <summary>
+        /// Each field must belong to the sidebar and be one people fill in: not a system or lookup field. Repeats are dropped.
+        /// A default value is checked like a record value; link and attachment fields can't have one.
+        /// </summary>
+        private async Task<List<SidebarFormField>> CleanFieldsAsync(string sidebarId, List<SidebarFormField> items, CancellationToken ct)
         {
-            var fields = await db.SidebarFields
+            var byId = await db.SidebarFields
                 .AsNoTracking()
+                .Include(f => f.options)
                 .Where(f => f.sidebarId == sidebarId)
-                .Select(f => new { f.ObjId, f.sidebarName, f.type, f.isSystemField })
-                .ToListAsync(ct);
-            var byId = fields.ToDictionary(f => f.ObjId);
-            var cleaned = new List<Guid>();
-            foreach (var id in ids)
+                .ToDictionaryAsync(f => f.ObjId, ct);
+            var cleaned = new List<SidebarFormField>();
+            foreach (var item in items)
             {
-                if (!byId.TryGetValue(id, out var field))
-                    throw ApiProblemException.BadRequest("Unknown field.", $"'{sidebarId}' has no field '{id}'.");
+                if (!byId.TryGetValue(item.fieldId, out var field))
+                    throw ApiProblemException.BadRequest("Unknown field.", $"'{sidebarId}' has no field '{item.fieldId}'.");
                 if (field.isSystemField || FieldTypes.IsLookup(field.type))
                     throw ApiProblemException.BadRequest("This field can't be on a form.", $"'{field.sidebarName}' is filled in automatically.");
-                if (!cleaned.Contains(id)) cleaned.Add(id);
+                if (cleaned.Any(c => c.fieldId == item.fieldId)) continue;
+
+                var hasDefault = !string.IsNullOrWhiteSpace(item.defaultValue);
+                if (hasDefault && (FieldTypes.IsLink(field.type) || field.type == "attachment"))
+                    throw ApiProblemException.BadRequest("This field can't have a default value.", $"'{field.sidebarName}' is a {field.type} field.");
+                cleaned.Add(new SidebarFormField
+                {
+                    fieldId = item.fieldId,
+                    placeholder = string.IsNullOrWhiteSpace(item.placeholder) ? null : item.placeholder.Trim(),
+                    defaultValue = hasDefault ? SidebarRecordService.CleanValue(field, item.defaultValue) : null,
+                });
             }
             return cleaned;
         }

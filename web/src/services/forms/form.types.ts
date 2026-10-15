@@ -1,4 +1,13 @@
 declare global {
+  /** One field on a form and how the form shows it. */
+  type ISidebarFormField = {
+    fieldId: string;
+    /** The empty answer box's hint; the field type's hint when left out. */
+    placeholder?: string;
+    /** The answer the form starts with, stored like the field's record value. Link and attachment fields have none. */
+    defaultValue?: string;
+  };
+
   /** A form of one sidebar, as the API returns it (lg_sidebar_form): the fields people fill in, in order. */
   type ISidebarForm = {
     objId: string;
@@ -18,8 +27,8 @@ declare global {
     submitLabel: string;
     /** The clear form button's text; "Clear form" unless renamed. */
     clearLabel: string;
-    /** objIds of the sidebar's fields on the form, in the order they show. */
-    fieldIds: string[];
+    /** The sidebar's fields on the form, in the order they show. */
+    fields: ISidebarFormField[];
     /** Send back on update; a stale value is rejected with 409. */
     versionNo: number;
     createTime: string;
@@ -33,7 +42,7 @@ declare global {
     | "formDescription"
     | "isHidden"
     | "isDefault"
-    | "fieldIds"
+    | "fields"
     | "coverImageId"
     | "logoId"
   > &
