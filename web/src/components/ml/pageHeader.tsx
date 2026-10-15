@@ -60,7 +60,7 @@ export function PageHeader({
           startIcon={<HouseCogIcon size={13} />}
           className=""
         >
-          Create Shipment Form
+          Create {title} Form
         </Button>
         {(people?.length || onInvitePeople) && (
           <div className="flex shrink-0 items-center gap-3">
