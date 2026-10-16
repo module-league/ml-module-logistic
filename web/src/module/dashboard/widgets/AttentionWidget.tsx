@@ -25,7 +25,7 @@ const MAX_ROWS = 6;
 export function AttentionWidget({
   widget,
   view,
-  compact,
+  preview,
 }: DashboardWidgetBodyProps) {
   const { members, lookups, now, onOpenRecord } = useDashboard();
   const attention = widget?.attention;
@@ -57,7 +57,7 @@ export function AttentionWidget({
       });
     });
   }, [attention?.rules, view.records, view.fieldById, now]);
-  const shown = flagged.slice(0, compact ? 2 : MAX_ROWS);
+  const shown = flagged.slice(0, MAX_ROWS);
 
   return (
     <DashboardWidgetFrame
@@ -81,7 +81,7 @@ export function AttentionWidget({
             <li key={record.objId}>
               <button
                 type="button"
-                disabled={compact}
+                disabled={preview}
                 onClick={() => onOpenRecord(widget.sidebarId, record.objId)}
                 className={cn(
                   "flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-opacity hover:opacity-85 disabled:cursor-default",

@@ -33,11 +33,7 @@ const BUCKET_TEXT: Record<IDashboardTrend["bucket"], string> = {
 };
 
 /** One series over time, by a date field: a bar per day, week or month, ending with the current one. */
-export function TrendWidget({
-  widget,
-  view,
-  compact,
-}: DashboardWidgetBodyProps) {
+export function TrendWidget({ widget, view }: DashboardWidgetBodyProps) {
   const { now } = useDashboard();
   const trend = widget?.trend;
   const dateField = view.fieldById.get(trend?.dateFieldId ?? "");
@@ -101,12 +97,7 @@ export function TrendWidget({
           Pick a date field in this widget's settings.
         </DashboardWidgetMessage>
       ) : (
-        <ChartContainer
-          config={config}
-          className={
-            compact ? "aspect-auto h-32 w-full" : "aspect-auto h-52 w-full"
-          }
-        >
+        <ChartContainer config={config} className="aspect-auto h-52 w-full">
           {trend?.chart === "line" ? (
             <LineChart
               data={series}

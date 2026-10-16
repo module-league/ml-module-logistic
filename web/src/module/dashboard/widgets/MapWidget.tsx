@@ -41,11 +41,11 @@ function fitZoom(points: [number, number][], width: number, height: number) {
 }
 
 /** Records as pins on an OpenStreetMap, with a route from each record's from point to its to point. */
-export function MapWidget({ widget, view, compact }: DashboardWidgetBodyProps) {
+export function MapWidget({ widget, view, preview }: DashboardWidgetBodyProps) {
   const { members, lookups, onOpenRecord } = useDashboard();
   const map = widget?.map;
   const titleField = titleFieldOf(view.fields, map?.titleFieldId);
-  const height = compact ? 160 : 280;
+  const height = 280;
   const [width, setWidth] = useState(0);
   // Re-fits the map whenever the widget is resized
   const measure = useCallback((node: HTMLDivElement | null) => {
@@ -187,17 +187,17 @@ export function MapWidget({ widget, view, compact }: DashboardWidgetBodyProps) {
                 <g
                   key={pin.record.objId}
                   role="button"
-                  tabIndex={compact ? undefined : 0}
+                  tabIndex={preview ? undefined : 0}
                   aria-label={pin.title}
-                  className={compact ? undefined : "cursor-pointer"}
+                  className={preview ? undefined : "cursor-pointer"}
                   onClick={
-                    compact
+                    preview
                       ? undefined
                       : () => onOpenRecord(widget.sidebarId, pin.record.objId)
                   }
                   onKeyDown={(event) =>
                     event.key === "Enter" &&
-                    !compact &&
+                    !preview &&
                     onOpenRecord(widget.sidebarId, pin.record.objId)
                   }
                 >

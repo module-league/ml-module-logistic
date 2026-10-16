@@ -54,7 +54,7 @@ export const FIELD_TYPE_ICONS: Record<IField["type"], LucideIcon> = {
   ds_running_number: ListOrdered,
 };
 
-export interface FieldTypeIconProps extends Omit<LucideProps, "ref"> {
+interface FieldTypeIconProps extends Omit<LucideProps, "ref"> {
   /** Without a type a dashed circle is shown. */
   type?: IField["type"];
 }

@@ -17,7 +17,7 @@ import {
 export function ListWidget({
   widget,
   view,
-  compact,
+  preview,
 }: DashboardWidgetBodyProps) {
   const { members, lookups, now, onOpenRecord } = useDashboard();
   const list = widget?.list;
@@ -40,14 +40,13 @@ export function ListWidget({
         list?.sortDirection ?? "asc",
         members,
         lookups,
-      ).slice(0, compact ? 3 : (list?.rows ?? 5)),
+      ).slice(0, list?.rows ?? 5),
     [
       view.records,
       sortField,
       list?.sortDirection,
       members,
       lookups,
-      compact,
       list?.rows,
     ],
   );
@@ -93,20 +92,20 @@ export function ListWidget({
               {rows.map((record) => (
                 <tr
                   key={record.objId}
-                  tabIndex={compact ? undefined : 0}
+                  tabIndex={preview ? undefined : 0}
                   onClick={
-                    compact
+                    preview
                       ? undefined
                       : () => onOpenRecord(widget.sidebarId, record.objId)
                   }
                   onKeyDown={(event) =>
                     event.key === "Enter" &&
-                    !compact &&
+                    !preview &&
                     onOpenRecord(widget.sidebarId, record.objId)
                   }
                   className={cn(
                     "border-b last:border-0",
-                    !compact &&
+                    !preview &&
                       "cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
                   )}
                 >

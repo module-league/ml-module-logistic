@@ -64,6 +64,17 @@ export interface ModuleDashboardProps {
   data: ModuleDashboardData;
 }
 
+export interface ModuleDashboardEmptyStateProps {
+  /** The page title, as in "Build your Logistic overview". */
+  title?: string;
+  /** Some table has fields to build a suggested layout from. */
+  canSuggest: boolean;
+  /** Starts customizing from a layout built from the module's tables. */
+  onStartSuggested: () => void;
+  /** Starts customizing with no widgets. */
+  onStartEmpty: () => void;
+}
+
 /** One entry of the Add widget panel. */
 export interface DashboardWidgetType {
   type: IDashboardWidgetType;
@@ -127,8 +138,8 @@ export interface DashboardWidgetView {
 export interface DashboardWidgetBodyProps {
   widget: IDashboardWidget;
   view: DashboardWidgetView;
-  /** Smaller, for the live preview in widget settings. */
-  compact?: boolean;
+  /** Inert, for the live preview in widget settings: records don't open and cards don't drag. */
+  preview?: boolean;
 }
 
 export interface DashboardWidgetCardProps {

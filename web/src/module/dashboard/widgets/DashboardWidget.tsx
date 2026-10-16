@@ -32,10 +32,10 @@ const WIDGETS: Record<
 /** One widget with its records worked out; shows loading lines, the load error or a missing setting in its place. */
 export function DashboardWidget({
   widget,
-  compact = false,
+  preview = false,
 }: {
   widget: IDashboardWidget;
-  compact?: boolean;
+  preview?: boolean;
 }) {
   const view = useWidgetView(widget);
   const { onRetryLookup } = useDashboard();
@@ -57,5 +57,5 @@ export function DashboardWidget({
       </DashboardWidgetFrame>
     );
   }
-  return <Widget widget={widget} view={view} compact={compact} />;
+  return <Widget widget={widget} view={view} preview={preview} />;
 }

@@ -34,6 +34,7 @@ import {
 } from "./moduleDashboard.utils";
 import type {
   DashboardContextValue,
+  ModuleDashboardEmptyStateProps,
   ModuleDashboardProps,
 } from "./moduleDashboard.types";
 import "./moduleDashboard.css";
@@ -202,6 +203,7 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
     () => onCustomize(suggestedLayout(layout, sources)),
     [onCustomize, layout, sources],
   );
+  const startEmpty = useCallback(() => onCustomize(), [onCustomize]);
 
   const title = layout.title || item?.sidebarText;
   const description = layout.description || item?.sidebarDesc;
@@ -292,35 +294,12 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
                       ))}
                     </div>
                   ) : (
-                    <Empty className="h-full border">
-                      <EmptyHeader>
-                        <EmptyMedia variant="icon">
-                          <LayoutDashboard />
-                        </EmptyMedia>
-                        <EmptyTitle>Build your {title} overview</EmptyTitle>
-                        <EmptyDescription>
-                          Widgets read any table in this module: headline
-                          numbers, boards you can drag cards across, lists,
-                          breakdowns, trends and maps.
-                        </EmptyDescription>
-                      </EmptyHeader>
-                      <EmptyContent className="flex-row justify-center">
-                        <Button
-                          size="sm"
-                          onClick={startSuggested}
-                          disabled={!sources.length}
-                        >
-                          Start from a suggested layout
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onCustomize()}
-                        >
-                          Start empty
-                        </Button>
-                      </EmptyContent>
-                    </Empty>
+                    <ModuleDashboardEmptyState
+                      title={title}
+                      canSuggest={!!sources.length}
+                      onStartSuggested={startSuggested}
+                      onStartEmpty={startEmpty}
+                    />
                   )}
                 </main>
               </>
@@ -385,5 +364,36 @@ function DashboardSkeleton() {
       <Skeleton className={`${WIDTH_CLASS.l} h-64`} />
       <Skeleton className={`${WIDTH_CLASS.m} h-64`} />
     </div>
+  );
+}
+
+/** Shown while the overview has no widgets: start from a suggested layout or from nothing. */
+function ModuleDashboardEmptyState({
+  title,
+  canSuggest,
+  onStartSuggested,
+  onStartEmpty,
+}: ModuleDashboardEmptyStateProps) {
+  return (
+    <Empty className="h-full border">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LayoutDashboard />
+        </EmptyMedia>
+        <EmptyTitle>Build your {title} overview</EmptyTitle>
+        <EmptyDescription>
+          Widgets read any table in this module: headline numbers, boards you
+          can drag cards across, lists, breakdowns, trends and maps.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent className="flex-row justify-center">
+        <Button size="sm" onClick={onStartSuggested} disabled={!canSuggest}>
+          Start from a suggested layout
+        </Button>
+        <Button variant="outline" size="sm" onClick={onStartEmpty}>
+          Start empty
+        </Button>
+      </EmptyContent>
+    </Empty>
   );
 }

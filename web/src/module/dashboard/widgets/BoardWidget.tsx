@@ -59,7 +59,7 @@ interface BoardCardProps {
 export function BoardWidget({
   widget,
   view,
-  compact,
+  preview,
 }: DashboardWidgetBodyProps) {
   const { members, lookups, now, onOpenRecord, onMoveRecord, onOpenTable } =
     useDashboard();
@@ -81,7 +81,7 @@ export function BoardWidget({
   const [expanded, setExpanded] = useState<string[]>([]);
   const [draggingId, setDraggingId] = useState<string>();
   const canDrag =
-    !!board?.draggable && !compact && groupField?.type === "single_select";
+    !!board?.draggable && !preview && groupField?.type === "single_select";
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, KEYBOARD_DRAG),
@@ -115,7 +115,7 @@ export function BoardWidget({
             : undefined,
         lateDays: board?.showLate && !done ? daysLate(date, now) : 0,
         draggable: canDrag,
-        onOpen: compact
+        onOpen: preview
           ? undefined
           : () => onOpenRecord(widget.sidebarId, record.objId),
       };
@@ -130,7 +130,7 @@ export function BoardWidget({
       board?.showLate,
       now,
       canDrag,
-      compact,
+      preview,
       onOpenRecord,
       widget.sidebarId,
     ],
@@ -167,7 +167,7 @@ export function BoardWidget({
     <DashboardWidgetFrame
       title={widget?.label}
       aside={
-        !compact &&
+        !preview &&
         view.source && (
           <button
             type="button"
@@ -194,7 +194,7 @@ export function BoardWidget({
           <div className="flex min-w-0 gap-3 overflow-x-auto pb-1">
             {groups.map((group, index) => {
               const done = board?.doneOptionIds?.includes(group.key) ?? false;
-              const limit = compact ? 2 : (board?.cardsPerColumn ?? 3);
+              const limit = board?.cardsPerColumn ?? 3;
               const open = expanded.includes(group.key);
               return (
                 <BoardColumn
@@ -306,8 +306,8 @@ function BoardCard({
     <div
       ref={overlay ? undefined : setNodeRef}
       {...(draggable ? { ...attributes, ...listeners } : {})}
-      role="button"
-      tabIndex={0}
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
       aria-roledescription={draggable ? "Draggable card" : undefined}
       onClick={onOpen}
       onKeyDown={(event) => {
@@ -315,7 +315,9 @@ function BoardCard({
         openOnEnter(event);
       }}
       className={cn(
-        "flex cursor-pointer flex-col gap-1 rounded-md border bg-background p-2.5 text-left shadow-xs transition-colors hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none",
+        "flex flex-col gap-1 rounded-md border bg-background p-2.5 text-left shadow-xs transition-colors",
+        onOpen &&
+          "cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none",
         lateDays > 0 && "border-red-200 dark:border-red-900/60",
         isDragging && !overlay && "opacity-40",
         overlay && "rotate-1 cursor-grabbing shadow-lg",

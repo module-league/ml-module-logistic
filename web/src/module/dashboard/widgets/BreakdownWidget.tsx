@@ -17,11 +17,7 @@ import {
  * How the records split by a field. Bars rank the biggest groups against the largest;
  * a stacked bar shows each group's share with a legend, in the field's own order and colours.
  */
-export function BreakdownWidget({
-  widget,
-  view,
-  compact,
-}: DashboardWidgetBodyProps) {
+export function BreakdownWidget({ widget, view }: DashboardWidgetBodyProps) {
   const { members, lookups } = useDashboard();
   const breakdown = widget?.breakdown;
   const groupField = view.fieldById.get(breakdown?.groupFieldId ?? "");
@@ -39,7 +35,7 @@ export function BreakdownWidget({
   );
   const total = groups.reduce((sum, group) => sum + group.value, 0);
   const stacked = breakdown?.style === "stacked";
-  const limit = compact ? 3 : (breakdown?.limit ?? 6);
+  const limit = breakdown?.limit ?? 6;
   const ranked = useMemo(
     () => [...groups].sort((a, b) => b.value - a.value).slice(0, limit),
     [groups, limit],

@@ -30,7 +30,7 @@ import {
 } from "./DashboardControls";
 
 /**
- * The side sheet that edits one widget: a live preview on top, then where its data comes from,
+ * The side sheet that edits one widget: a live preview on the left (on top on narrow screens), and beside it where its data comes from,
  * which records it keeps and how it shows. Every change shows on the page at once and is saved with Save layout.
  */
 export function DashboardWidgetSettings({
@@ -76,7 +76,14 @@ export function DashboardWidgetSettings({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full gap-0 sm:max-w-md">
+      <SheetContent
+        onOpenAutoFocus={(event) => {
+          // Start in the settings, not on a button inside the preview
+          event.preventDefault();
+          document.getElementById("widget-table")?.focus();
+        }}
+        className="gap-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[600px] data-[side=right]:lg:w-[min(1080px,94vw)] data-[side=right]:lg:max-w-[min(1080px,94vw)]"
+      >
         <SheetHeader className="border-b pr-12">
           <p className="text-xs text-muted-foreground">{entry.label} widget</p>
           <SheetTitle>Widget settings</SheetTitle>
@@ -85,120 +92,123 @@ export function DashboardWidgetSettings({
           </SheetDescription>
         </SheetHeader>
         {widget && (
-          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4">
-            <div className="flex flex-col gap-2 rounded-xl border bg-muted/40 p-3">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
+            <div className="flex shrink-0 flex-col gap-2 border-b bg-muted/40 p-4 lg:min-w-0 lg:flex-1 lg:shrink lg:overflow-y-auto lg:overscroll-contain lg:border-r lg:border-b-0 lg:p-6">
               <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
                 Live preview
               </p>
-              <div className="pointer-events-none max-h-80 overflow-hidden">
-                <DashboardWidget widget={widget} compact />
+              <div className="max-h-96 overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">
+                <DashboardWidget widget={widget} preview />
               </div>
             </div>
-
-            <SettingsSection title="Data">
-              <SettingsField label="Table" htmlFor="widget-table">
-                <Select value={widget.sidebarId} onValueChange={pickTable}>
-                  <SelectTrigger id="widget-table" className="w-full">
-                    <SelectValue placeholder="Choose a table">
-                      {source?.sidebarText}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent position="popper">
-                    {sources.map((candidate) => {
-                      const fits = entry.accepts(candidate, sources);
-                      return (
-                        <SelectItem
-                          key={candidate.sidebarId}
-                          value={candidate.sidebarId}
-                          disabled={!fits}
-                          textValue={candidate.sidebarText}
-                        >
-                          {candidate.sidebarText}
-                          {!fits && (
-                            <span className="text-xs text-muted-foreground">
-                              {entry.requirement}
-                            </span>
-                          )}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </SettingsField>
-              {source && (
-                <DataSettings
-                  widget={widget}
-                  fields={fields}
-                  sources={sources}
-                  members={members}
-                  onChange={patch}
-                />
-              )}
-            </SettingsSection>
-
-            {source && (
-              <SettingsSection title="Filter">
-                {rangeSidebarId === widget.sidebarId && (
-                  <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
-                    Follow the page date range
-                    <Switch
-                      checked={!!widget.followsRange}
-                      onCheckedChange={(followsRange) =>
-                        patch({ followsRange })
-                      }
-                    />
-                  </label>
+            <div className="flex shrink-0 flex-col gap-6 p-4 lg:w-[400px] lg:overflow-y-auto lg:overscroll-contain">
+              <SettingsSection title="Data">
+                <SettingsField label="Table" htmlFor="widget-table">
+                  <Select value={widget.sidebarId} onValueChange={pickTable}>
+                    <SelectTrigger id="widget-table" className="w-full">
+                      <SelectValue placeholder="Choose a table">
+                        {source?.sidebarText}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                      {sources.map((candidate) => {
+                        const fits = entry.accepts(candidate, sources);
+                        return (
+                          <SelectItem
+                            key={candidate.sidebarId}
+                            value={candidate.sidebarId}
+                            disabled={!fits}
+                            textValue={candidate.sidebarText}
+                          >
+                            {candidate.sidebarText}
+                            {!fits && (
+                              <span className="text-xs text-muted-foreground">
+                                {entry.requirement}
+                              </span>
+                            )}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </SettingsField>
+                {source && (
+                  <DataSettings
+                    widget={widget}
+                    fields={fields}
+                    sources={sources}
+                    members={members}
+                    onChange={patch}
+                  />
                 )}
-                <DashboardFilterEditor
-                  fields={fields}
-                  filter={widget.filter ?? { match: "all", conditions: [] }}
-                  members={members}
-                  onChange={(filter) => patch({ filter })}
-                />
               </SettingsSection>
-            )}
 
-            <SettingsSection title="Display">
-              <SettingsField label="Label" htmlFor="widget-label">
-                <Input
-                  id="widget-label"
-                  value={widget.label}
-                  maxLength={60}
-                  onChange={(event) => patch({ label: event.target.value })}
-                />
-              </SettingsField>
-              {widget.type === "metric" ? (
-                <MetricDisplay
-                  widget={widget}
-                  fields={fields}
-                  sources={sources}
-                  members={members}
-                  onChange={patch}
-                />
-              ) : (
-                <SettingsField
-                  label="Note on the right"
-                  htmlFor="widget-caption"
-                  hint="blank describes the widget"
-                >
+              {source && (
+                <SettingsSection title="Filter">
+                  {rangeSidebarId === widget.sidebarId && (
+                    <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
+                      Follow the page date range
+                      <Switch
+                        checked={!!widget.followsRange}
+                        onCheckedChange={(followsRange) =>
+                          patch({ followsRange })
+                        }
+                      />
+                    </label>
+                  )}
+                  <DashboardFilterEditor
+                    fields={fields}
+                    filter={widget.filter ?? { match: "all", conditions: [] }}
+                    members={members}
+                    onChange={(filter) => patch({ filter })}
+                  />
+                </SettingsSection>
+              )}
+
+              <SettingsSection title="Display">
+                <SettingsField label="Label" htmlFor="widget-label">
                   <Input
-                    id="widget-caption"
-                    value={widget.caption ?? ""}
-                    maxLength={40}
-                    placeholder="e.g. Active shipments"
-                    onChange={(event) => patch({ caption: event.target.value })}
+                    id="widget-label"
+                    value={widget.label}
+                    maxLength={60}
+                    onChange={(event) => patch({ label: event.target.value })}
                   />
                 </SettingsField>
-              )}
-              <SettingsField label="Width">
-                <DashboardSegmented
-                  label="Width"
-                  value={widget.width}
-                  options={WIDGET_WIDTHS}
-                  onChange={(width) => patch({ width })}
-                />
-              </SettingsField>
-            </SettingsSection>
+                {widget.type === "metric" ? (
+                  <MetricDisplay
+                    widget={widget}
+                    fields={fields}
+                    sources={sources}
+                    members={members}
+                    onChange={patch}
+                  />
+                ) : (
+                  <SettingsField
+                    label="Note on the right"
+                    htmlFor="widget-caption"
+                    hint="blank describes the widget"
+                  >
+                    <Input
+                      id="widget-caption"
+                      value={widget.caption ?? ""}
+                      maxLength={40}
+                      placeholder="e.g. Active shipments"
+                      onChange={(event) =>
+                        patch({ caption: event.target.value })
+                      }
+                    />
+                  </SettingsField>
+                )}
+                <SettingsField label="Width">
+                  <DashboardSegmented
+                    label="Width"
+                    value={widget.width}
+                    options={WIDGET_WIDTHS}
+                    onChange={(width) => patch({ width })}
+                  />
+                </SettingsField>
+              </SettingsSection>
+            </div>
           </div>
         )}
       </SheetContent>

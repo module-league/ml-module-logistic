@@ -139,6 +139,7 @@ export function DashboardFilterEditor({
               variant="ghost"
               size="icon-sm"
               aria-label={`Remove condition ${index + 1}`}
+              className="text-muted-foreground hover:text-foreground"
               startIcon={<X size={14} />}
               onClick={() => removeCondition(index)}
             />

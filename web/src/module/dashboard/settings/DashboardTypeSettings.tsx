@@ -388,6 +388,7 @@ function ListColumnRow({
         variant="ghost"
         size="icon-sm"
         aria-label={`Remove column ${field?.name ?? index + 1}`}
+        className="text-muted-foreground hover:text-foreground"
         startIcon={<X size={14} />}
         onClick={onRemove}
       />
@@ -764,6 +765,7 @@ function AttentionData({
               variant="ghost"
               size="icon-sm"
               aria-label={`Remove rule ${rule.name || index + 1}`}
+              className="text-muted-foreground hover:text-foreground"
               startIcon={<X size={14} />}
               onClick={() =>
                 set({ rules: attention.rules.filter((_, at) => at !== index) })

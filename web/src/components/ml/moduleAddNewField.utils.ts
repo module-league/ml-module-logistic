@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FIELD_TYPE_ICONS } from "./fieldTypeIcon.utils";
+import { FIELD_TYPE_ICONS } from "@/components/custom/fieldTypeIcon";
 import { presetColors } from "@/lib/colorUtils";
 import {
   DEFAULT_NUMBER_SETTINGS,
