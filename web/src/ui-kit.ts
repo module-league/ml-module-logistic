@@ -69,7 +69,7 @@ export * from "./components/ui/toggle-group";
 export * from "./components/ui/tooltip";
 
 // Module League components
-export * from "./components/ml/fieldTypeIcon";
+export * from "./components/custom/fieldTypeIcon";
 export * from "./components/ml/fieldTypeIcon.types";
 export * from "./components/ml/fieldTypeIcon.utils";
 export * from "./components/ml/moduleAddNewButton";

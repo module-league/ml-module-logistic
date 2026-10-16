@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { ModuleAddNewFieldDialog } from "./moduleAddNewFieldDialog";
 import { SortableHandle, SortableList } from "@/components/custom/SortableList";
 import { useSortableRow } from "@/hooks/useSortableRow";
-import { FieldTypeIcon } from "./fieldTypeIcon";
+import { FieldTypeIcon } from "../custom/fieldTypeIcon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

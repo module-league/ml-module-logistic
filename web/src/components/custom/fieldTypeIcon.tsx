@@ -1,3 +1,8 @@
+import { memo } from "react";
+import { CircleDashed } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { LucideProps } from "lucide-react";
+
 import {
   AlignLeft,
   Banknote,
@@ -48,3 +53,25 @@ export const FIELD_TYPE_ICONS: Record<IField["type"], LucideIcon> = {
   ds_update_time: CalendarClock,
   ds_running_number: ListOrdered,
 };
+
+export interface FieldTypeIconProps extends Omit<LucideProps, "ref"> {
+  /** Without a type a dashed circle is shown. */
+  type?: IField["type"];
+}
+
+export const FieldTypeIcon = memo(function FieldTypeIcon({
+  type,
+  className,
+  size,
+  ...props
+}: FieldTypeIconProps) {
+  const Icon = (type && FIELD_TYPE_ICONS[type]) || CircleDashed;
+  return (
+    <Icon
+      aria-hidden
+      className={cn("size-3.5 shrink-0 text-muted-foreground", className)}
+      size={size}
+      {...props}
+    />
+  );
+});
