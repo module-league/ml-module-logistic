@@ -174,9 +174,9 @@ function PreviewFallback({
   failed,
 }: AttachmentChipProps & { failed: boolean }) {
   return (
-    <div className="flex max-w-80 flex-col items-center gap-3 rounded-xl bg-white/10 px-8 py-6 text-center">
+    <div className="flex max-w-80 flex-col items-center gap-3 rounded-xl bg-white px-8 py-6 text-center">
       <AttachmentTypeIcon attachment={attachment} size="lg" />
-      <p className="text-sm text-white/70">
+      <p className="text-sm text-black">
         {failed
           ? "This file couldn't be shown."
           : "This file type can't be previewed."}{" "}
