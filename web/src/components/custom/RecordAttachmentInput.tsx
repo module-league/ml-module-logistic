@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useDropzone, type FileRejection } from "react-dropzone";
-import { FileText, Tag, Trash2Icon, Upload, UploadIcon } from "lucide-react";
+import { Tag, Trash2Icon, Upload, UploadIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
@@ -190,7 +190,7 @@ export function RecordAttachmentInput({
                 media={
                   <AttachmentThumbnail
                     attachment={attachment}
-                    fallback={<FileText className="size-5" />}
+                    iconSize="lg"
                     className="size-full object-cover"
                   />
                 }
@@ -325,7 +325,7 @@ function AttachmentCard({
         onClick={onOpen}
         className="flex flex-col h-48 items-start gap-3 rounded-lg border bg-card p-3 text-left shadow-xs transition-colors enabled:cursor-pointer enabled:hover:border-primary/40"
       >
-        <span className="flex w-full flex-1 items-center justify-center overflow-hidden rounded-lg bg-foreground text-background">
+        <span className="flex w-full flex-1 items-center justify-center overflow-hidden rounded-lg bg-muted text-muted-foreground">
           {media}
         </span>
         <span className="flex w-full min-w-0 flex-col gap-0.5">

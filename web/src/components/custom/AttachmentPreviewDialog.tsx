@@ -4,7 +4,7 @@ import {
   type KeyboardEvent,
   type SyntheticEvent,
 } from "react";
-import { ChevronLeft, ChevronRight, Download, FileText, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, X } from "lucide-react";
 import {
   Dialog,
   DialogClose,
@@ -21,6 +21,7 @@ import {
   isImageAttachment,
 } from "@/lib/attachmentHelper";
 import { AttachmentThumbnail } from "./AttachmentThumbnail";
+import { AttachmentTypeIcon } from "./AttachmentTypeIcon";
 import type {
   AttachmentChipProps,
   AttachmentPreviewDialogProps,
@@ -157,11 +158,7 @@ export function AttachmentPreviewDialog({
                 <AttachmentThumbnail
                   attachment={item}
                   className="size-full object-cover"
-                  fallback={
-                    item.fileExtension?.toUpperCase() || (
-                      <FileText className="size-4" />
-                    )
-                  }
+                  iconSize="sm"
                 />
               </button>
             ))}
@@ -178,11 +175,7 @@ function PreviewFallback({
 }: AttachmentChipProps & { failed: boolean }) {
   return (
     <div className="flex max-w-80 flex-col items-center gap-3 rounded-xl bg-white/10 px-8 py-6 text-center">
-      <span className="flex size-14 items-center justify-center rounded-xl bg-white/10 text-xs font-semibold text-white/80">
-        {attachment.fileExtension?.toUpperCase() || (
-          <FileText className="size-6" />
-        )}
-      </span>
+      <AttachmentTypeIcon attachment={attachment} size="lg" />
       <p className="text-sm text-white/70">
         {failed
           ? "This file couldn't be shown."

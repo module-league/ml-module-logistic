@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { FileText } from "lucide-react";
 import { useAttachmentPreview } from "@/hooks/useAttachmentPreview";
 import { attachmentOption } from "@/lib/attachmentHelper";
 import { SelectionNode } from "./RecordValueNode";
@@ -28,10 +27,8 @@ export const AttachmentChip = memo(function AttachmentChip({
     >
       <AttachmentThumbnail
         attachment={attachment}
-        className="size-4 shrink-0 rounded-sm object-cover"
-        fallback={
-          <FileText className="size-3.5 shrink-0 text-muted-foreground" />
-        }
+        iconSize="xs"
+        className="size-5 shrink-0 rounded-sm object-cover"
       />
       {option && (
         <SelectionNode

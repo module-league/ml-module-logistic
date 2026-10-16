@@ -50,8 +50,17 @@ export interface AttachmentChipProps {
 
 export interface AttachmentThumbnailProps {
   attachment: IAttachment;
-  /** Shown for files that aren't images, and when the image fails to load. */
-  fallback: ReactNode;
+  /** The file-type icon's size, shown for files that aren't images and when the image fails to load. */
+  iconSize?: AttachmentTypeIconProps["size"];
+  /** The image's classes. */
+  className?: string;
+}
+
+export interface AttachmentTypeIconProps {
+  attachment?: Pick<IAttachment, "fileType" | "fileExtension">;
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
+  /** The extension badge, shown from md up. */
+  showBadge?: boolean;
   className?: string;
 }
 
