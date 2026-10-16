@@ -13,7 +13,7 @@ import { useCurrentUser } from "@/services/user/current.user";
 import { useCurrentNavItem } from "@/module/shell/navItem.context";
 import type { ModuleAppColumn } from "@/module/appView/moduleAppView.types";
 import { ModuleAppView } from "@/module/appView/ModuleAppView";
-import { ModuleNewRecordForm } from "@/module/record/ModuleNewRecordForm";
+import { ModuleNewRecord } from "@/module/record/ModuleNewRecord";
 import { ModuleOpenRecord } from "@/module/record/ModuleOpenRecord";
 import { ConfirmDeleteDialog } from "@/components/custom/ConfirmDeleteDialog";
 import { ModuleFormDialog } from "@/module/form/ModuleFormDialog";
@@ -440,7 +440,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           onReorderForms={data.onReorderForms}
           onUploadAttachment={data.onUploadAttachment}
         />
-        <ModuleNewRecordForm
+        <ModuleNewRecord
           {...data.fieldsState}
           open={newRecordOpen}
           onOpenChange={setNewRecordOpen}
@@ -449,7 +449,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           onUploadAttachment={data.onUploadAttachment}
           onSave={saveRecord}
         />
-        <ModuleNewRecordForm
+        <ModuleNewRecord
           {...linkedRecord.dialog}
           members={members}
           onUploadAttachment={data.onUploadAttachment}

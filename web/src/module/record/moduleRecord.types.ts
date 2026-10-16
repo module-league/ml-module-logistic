@@ -29,6 +29,10 @@ export interface ModuleRecordFormProps {
   readOnly?: boolean;
   submitLabel?: string;
   savingLabel?: string;
+  /** "form" lays the fields out as cards with the buttons under them, for a form's own layout; "dialog" is label beside input with a dialog footer. */
+  variant?: "dialog" | "form";
+  /** The "form" variant's button that puts every answer back to how it started. */
+  clearLabel?: string;
   onCancel?: () => void;
   /** Shows the Cancel and submit buttons. */
   onSave?: (values: ISidebarRecordValues) => void;
@@ -49,7 +53,7 @@ export interface ModuleLookupFormInputProps extends Pick<
   linkIndex?: number;
 }
 
-export interface ModuleNewRecordFormProps
+export interface ModuleNewRecordProps
   extends ModuleQueryState, Pick<ModuleRecordFormProps, "onUploadAttachment"> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -58,11 +62,14 @@ export interface ModuleNewRecordFormProps
   /** Shown under the title. */
   description?: string;
   fields: ISidebarField[];
-  /** Lays the dialog out as this form: its title, description, fields in order with their hints and defaults, and submit text. */
-  form?: ISidebarForm;
   members?: IUserInfo[];
   /** Return a promise to keep the dialog open until it settles; a rejection shows its message and keeps the input. */
   onSave: (values: ISidebarRecordValues) => void | Promise<unknown>;
+}
+
+export interface ModuleNewRecordWithFormProps extends ModuleNewRecordProps {
+  /** Its cover, logo, title, description, fields in order with their hints and defaults, and button texts; undefined while it loads. */
+  form?: ISidebarForm;
 }
 
 export interface ModuleOpenRecordProps

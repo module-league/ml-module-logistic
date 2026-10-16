@@ -27,6 +27,8 @@ export function ModuleRecordForm({
   readOnly = false,
   submitLabel = "Save",
   savingLabel = "Saving…",
+  variant = "dialog",
+  clearLabel,
   onCancel,
   onSave,
   onValuesChange,
@@ -76,12 +78,19 @@ export function ModuleRecordForm({
     if (!onValuesChange || !(await form.trigger())) return;
     onValuesChange(toRecordValues(form.getValues()));
   }, [onValuesChange, toRecordValues, form]);
+  const clear = useCallback(
+    () => form.reset(defaultValues),
+    [form, defaultValues],
+  );
   const unchanged = !!values && !form.formState.isDirty;
+  const isForm = variant === "form";
 
   if (!fields?.length) {
     return (
       <p className="m-auto max-w-64 text-center text-sm text-muted-foreground">
-        No fields yet. Add fields from the Fields menu to fill in records.
+        {isForm
+          ? "This form has no fields yet."
+          : "No fields yet. Add fields from the Fields menu to fill in records."}
       </p>
     );
   }
@@ -90,9 +99,17 @@ export function ModuleRecordForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(submit)}
-        className="flex min-h-0 flex-1 flex-col"
+        className={
+          isForm ? "flex flex-col gap-3" : "flex min-h-0 flex-1 flex-col"
+        }
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-8">
+        <div
+          className={
+            isForm
+              ? "contents"
+              : "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-8"
+          }
+        >
           {fields.map((field, index) => (
             <FormField2
               key={field.objId}
@@ -105,7 +122,11 @@ export function ModuleRecordForm({
                 </span>
               }
               labelProps={{ size: "sm" }}
-              className="grid grid-cols-[minmax(0,12rem)_1fr] items-start gap-x-4 [&>[data-slot=form-field-message]]:col-start-2 [&>[data-slot=form-field-message]]:row-start-2 [&>[data-slot=form-field-message]]:pt-1 [&>[data-slot=form-field-message]]:pb-0"
+              className={
+                isForm
+                  ? "flex flex-col gap-2 rounded-lg border bg-background p-3 transition-colors focus-within:border-primary/40 [&>[data-slot=form-field-message]]:order-last [&>[data-slot=form-field-message]]:pb-0"
+                  : "grid grid-cols-[minmax(0,12rem)_1fr] items-start gap-x-4 [&>[data-slot=form-field-message]]:col-start-2 [&>[data-slot=form-field-message]]:row-start-2 [&>[data-slot=form-field-message]]:pt-1 [&>[data-slot=form-field-message]]:pb-0"
+              }
               render={({ field: input }) =>
                 field?.type === "lookup" ? (
                   <LookupFormInput
@@ -145,7 +166,27 @@ export function ModuleRecordForm({
             />
           ))}
         </div>
-        {onSave && !readOnly && (
+        {onSave && !readOnly && isForm && (
+          <div className="mt-5 flex items-center justify-between gap-3 border-t pt-6">
+            {clearLabel ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                disabled={saving}
+                onClick={clear}
+              >
+                {clearLabel}
+              </Button>
+            ) : (
+              <span />
+            )}
+            <Button type="submit" size="sm" disabled={saving}>
+              {saving ? savingLabel : submitLabel}
+            </Button>
+          </div>
+        )}
+        {onSave && !readOnly && !isForm && (
           <DialogFooter className="m-0 shrink-0">
             <Button variant="outline" size="sm" onClick={onCancel}>
               Cancel

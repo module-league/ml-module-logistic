@@ -12,7 +12,7 @@ import type { ModuleLinkedRecordDraft } from "@/module/page/modulePage.types";
  * the returned dialog props open a New record form for it, and the saved record is handed back to be linked.
  * @example
  * const linked = useNewLinkedRecord(lookupSources, lookups, onAddLinkedRecord);
- * <ModuleNewRecordForm {...linked.dialog} members={members} />
+ * <ModuleNewRecord {...linked.dialog} members={members} />
  */
 export function useNewLinkedRecord(
   sources: LookupSource[],

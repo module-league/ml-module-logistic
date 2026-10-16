@@ -16,7 +16,8 @@ import QueryWrapper from "@/components/custom/QueryWrapper";
 import { RecordLookupContext } from "@/components/custom/RecordLookup.context";
 import { useCurrentNavItem } from "@/module/shell/navItem.context";
 import { useWorkspaceContext } from "@/module/workspace/workspace.context";
-import { ModuleNewRecordForm } from "@/module/record/ModuleNewRecordForm";
+import { ModuleNewRecord } from "@/module/record/ModuleNewRecord";
+import { ModuleNewRecordWithForm } from "@/module/record/ModuleNewRecordWithForm";
 import { ModuleOpenRecord } from "@/module/record/ModuleOpenRecord";
 import { useNewLinkedRecord } from "@/module/record/useNewLinkedRecord";
 import { DashboardContext } from "./dashboard.context";
@@ -181,6 +182,22 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
     [layout.newRecordSidebarId, onAddRecord, newSource?.sidebarText],
   );
 
+  // A picked form opens as itself; one that was deleted falls back to every field
+  const opensForm =
+    !!layout.newRecordFormId &&
+    (!!newForm || data.formsState.isLoading || !!data.formsState.error);
+  const newRecordProps = {
+    open: newRecordOpen,
+    onOpenChange: setNewRecordOpen,
+    title:
+      layout.newRecordLabel ||
+      `New ${newSource ? singular(newSource.sidebarText) : "record"}`,
+    fields: newSource?.fields ?? [],
+    members,
+    onUploadAttachment: uploadForNew,
+    onSave: addNewRecord,
+  };
+
   const selectWidget = useCallback((widgetId: string) => {
     setSettingsId(widgetId);
     setSettingsOpen(true);
@@ -317,21 +334,16 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
           record={openedRecord}
           onSave={saveOpenedRecord}
         />
-        <ModuleNewRecordForm
-          open={newRecordOpen}
-          onOpenChange={setNewRecordOpen}
-          title={
-            layout.newRecordLabel ||
-            `New ${newSource ? singular(newSource.sidebarText) : "record"}`
-          }
-          fields={newSource?.fields ?? []}
-          form={newForm}
-          {...(layout.newRecordFormId ? data.formsState : {})}
-          members={members}
-          onUploadAttachment={uploadForNew}
-          onSave={addNewRecord}
-        />
-        <ModuleNewRecordForm
+        {opensForm ? (
+          <ModuleNewRecordWithForm
+            {...newRecordProps}
+            {...data.formsState}
+            form={newForm}
+          />
+        ) : (
+          <ModuleNewRecord {...newRecordProps} />
+        )}
+        <ModuleNewRecord
           {...linkedRecord.dialog}
           members={members}
           onUploadAttachment={uploadForNew}
