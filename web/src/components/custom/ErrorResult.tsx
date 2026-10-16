@@ -24,7 +24,7 @@ export default function ErrorResult(props: ErrorResultProps) {
       <div className="text-center">
         {props.content}
         {!!onRetry && (
-          <div className="flex flex-row gap-4 justify-center">
+          <div className="flex flex-row gap-4 justify-center pt-4">
             <Button onClick={() => onRetry()}>Try again</Button>
           </div>
         )}

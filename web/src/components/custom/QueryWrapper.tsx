@@ -87,7 +87,7 @@ export default function QueryWrapper(props: QueryWrapperProps) {
           title="Something went wrong..."
           content={
             <>
-              <div>{errorParser(props.error)?.message}</div>
+              <div className="pb-4">{errorParser(props.error)?.message}</div>
               {!!onRetry && (
                 <Button onClick={() => onRetry()}>Try again</Button>
               )}
