@@ -91,6 +91,7 @@ export * from "./hooks/useAutoSave";
 export * from "./hooks/useDialog";
 export * from "./hooks/useDrawer";
 export * from "./hooks/useErrorParser";
+export * from "./hooks/useSortableRow";
 
 // Helpers
 export { cn } from "./lib/utils";
