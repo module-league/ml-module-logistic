@@ -369,7 +369,7 @@ namespace LogisticApi.Services
         {
             if (!FieldTypes.HasOptions(type))
             {
-                if (options?.Count > 0) throw ApiProblemException.BadRequest("Only select fields have dropDownValues.");
+                if (options?.Count > 0) throw ApiProblemException.BadRequest("Only select and attachment fields have dropDownValues.");
                 return [];
             }
 
@@ -385,7 +385,7 @@ namespace LogisticApi.Services
                 })
                 .ToList();
 
-            if (cleaned.Count == 0)
+            if (cleaned.Count == 0 && FieldTypes.NeedsOptions(type))
                 throw ApiProblemException.BadRequest("A select field needs at least one option.");
             if (cleaned.Any(option => option.value.Length == 0))
                 throw ApiProblemException.BadRequest("Option values can't be empty.");

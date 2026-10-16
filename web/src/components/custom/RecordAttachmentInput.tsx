@@ -1,36 +1,39 @@
 import { useCallback, useMemo, useState } from "react";
 import { useDropzone, type FileRejection } from "react-dropzone";
-import { FileText, Upload, UploadIcon, X } from "lucide-react";
+import { FileText, Tag, Trash2Icon, Upload, UploadIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Attachment,
-  AttachmentAction,
-  AttachmentActions,
-  AttachmentContent,
-  AttachmentDescription,
-  AttachmentGroup,
-  AttachmentMedia,
-  AttachmentTitle,
-  AttachmentTrigger,
-} from "@/components/ui/attachment";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { errorParser } from "@/hooks/useErrorParser";
 import { ATTACHMENT_MAX_BYTES } from "@/services/attachments/attachment.api";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import {
+  attachmentOption,
   bytesToKilobytes,
   formatFileSize,
-  isImageAttachment,
   parseAttachments,
   toAttachmentValue,
 } from "@/lib/attachmentHelper";
 import { useAttachmentPreview } from "@/hooks/useAttachmentPreview";
 import { AttachmentPreviewDialog } from "./AttachmentPreviewDialog";
 import { AttachmentThumbnail } from "./AttachmentThumbnail";
-import type { RecordAttachmentInputProps } from "./RecordAttachmentInput.types";
+import { SelectionNode } from "./RecordValueNode";
+import type {
+  AttachmentCardProps,
+  AttachmentLabelSelectProps,
+  RecordAttachmentInputProps,
+} from "./RecordAttachmentInput.types";
 import { Button } from "@/ui-kit";
 
 type PendingUpload = Pick<IAttachment, "name" | "fileSize"> & { key: string };
+
+/** Radix Select can't hold an empty value, so "No label" is this. */
+const NO_LABEL = "__none";
 
 /**
  * Files for an attachment field: drop anywhere on it, or use Attach File / the empty box, to upload; open one in the
@@ -45,6 +48,7 @@ export function RecordAttachmentInput({
   onChange,
   onBlur,
   onUpload,
+  options,
 }: RecordAttachmentInputProps) {
   const attachments = useMemo(() => parseAttachments(value), [value]);
   const [pending, setPending] = useState<PendingUpload[]>([]);
@@ -110,6 +114,22 @@ export function RecordAttachmentInput({
     [attachments, onChange, onBlur],
   );
 
+  const label = useCallback(
+    (attachmentId: string, optionId?: string) => {
+      onChange?.(
+        toAttachmentValue(
+          attachments.map((attachment) =>
+            attachment?.id === attachmentId
+              ? { ...attachment, optionId }
+              : attachment,
+          ),
+        ),
+      );
+      onBlur?.();
+    },
+    [attachments, onChange, onBlur],
+  );
+
   const uploading = pending.length > 0;
   const canUpload = !!onUpload && !disabled;
   const hasFiles = attachments.length > 0 || uploading;
@@ -163,65 +183,60 @@ export function RecordAttachmentInput({
             </button>
           ))}
         {hasFiles && (
-          <AttachmentGroup className="flex-wrap overflow-visible">
+          <div className="flex flex-wrap gap-3">
             {attachments.map((attachment, index) => (
-              <Attachment key={attachment.id} size="sm" className="max-w-60">
-                <AttachmentMedia
-                  variant={isImageAttachment(attachment) ? "image" : "icon"}
-                >
+              <AttachmentCard
+                key={attachment.id}
+                media={
                   <AttachmentThumbnail
                     attachment={attachment}
-                    fallback={<FileText />}
+                    fallback={<FileText className="size-5" />}
+                    className="size-full object-cover"
                   />
-                </AttachmentMedia>
-                <AttachmentContent>
-                  <AttachmentTitle title={attachment.name}>
-                    {attachment.name}
-                  </AttachmentTitle>
-                  <AttachmentDescription>
-                    {[
-                      attachment.fileExtension?.toUpperCase(),
-                      formatFileSize(attachment.fileSize),
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </AttachmentDescription>
-                </AttachmentContent>
-                <AttachmentTrigger
-                  aria-label={`Open ${attachment.name}`}
-                  onClick={() => openPreview(attachments, index)}
-                  className="cursor-pointer"
-                />
-                {!disabled && (
-                  <AttachmentActions>
-                    <AttachmentAction
-                      aria-label={`Remove ${attachment.name}`}
-                      onClick={() => remove(attachment.id)}
-                      startIcon={<X size={13} />}
-                    />
-                  </AttachmentActions>
+                }
+                title={attachment.name}
+                description={[
+                  attachment.fileExtension?.toUpperCase(),
+                  formatFileSize(attachment.fileSize),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+                onOpen={() => openPreview(attachments, index)}
+              >
+                {!!options?.length && (
+                  <AttachmentLabelSelect
+                    name={attachment.name}
+                    options={options}
+                    value={attachmentOption(attachment, options)?.id}
+                    disabled={disabled}
+                    onChange={(optionId) => label(attachment.id, optionId)}
+                  />
                 )}
-              </Attachment>
+                <div className="ml-auto flex shrink-0 items-center gap-1.5">
+                  {!disabled && (
+                    <Button
+                      variant="outline"
+                      size="icon-xs"
+                      aria-label={`Remove ${attachment.name}`}
+                      title="Remove"
+                      onClick={() => remove(attachment.id)}
+                      startIcon={<Trash2Icon size={13} />}
+                      className="text-muted-foreground hover:text-destructive"
+                    />
+                  )}
+                </div>
+              </AttachmentCard>
             ))}
             {pending.map((file) => (
-              <Attachment
+              <AttachmentCard
                 key={file.key}
-                size="sm"
-                state="uploading"
-                className="max-w-60"
-              >
-                <AttachmentMedia>
-                  <Spinner />
-                </AttachmentMedia>
-                <AttachmentContent>
-                  <AttachmentTitle>{file.name}</AttachmentTitle>
-                  <AttachmentDescription>
-                    Uploading · {formatFileSize(file.fileSize)}
-                  </AttachmentDescription>
-                </AttachmentContent>
-              </Attachment>
+                media={<Spinner className="size-5" />}
+                title={file.name}
+                description={`Uploading · ${formatFileSize(file.fileSize)}`}
+                uploading
+              />
             ))}
-          </AttachmentGroup>
+          </div>
         )}
         {isDragActive && (
           <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-1 rounded-md border border-dashed border-primary bg-primary-10 text-center text-xs text-primary">
@@ -233,5 +248,106 @@ export function RecordAttachmentInput({
       </div>
       <AttachmentPreviewDialog {...dialogProps} />
     </>
+  );
+}
+
+/** The label of one file, picked from the attachment field's options; it sits above the card's open trigger. */
+function AttachmentLabelSelect({
+  name,
+  options,
+  value,
+  disabled,
+  onChange,
+}: AttachmentLabelSelectProps) {
+  const picked = options.find((option) => option?.id === value);
+  if (disabled && !picked) return null;
+  return (
+    <Select
+      value={value ?? NO_LABEL}
+      onValueChange={(next) => onChange(next === NO_LABEL ? undefined : next)}
+      disabled={disabled}
+    >
+      <SelectTrigger
+        asChild
+        aria-label={`Label for ${name}`}
+        className="flex h-6 w-fit max-w-full min-w-0 cursor-pointer items-center rounded-md border-0 bg-transparent p-0 text-xs shadow-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none disabled:cursor-default"
+      >
+        <button type="button">
+          {picked ? (
+            <SelectionNode
+              dropDownValue={picked}
+              className="flex h-6 min-w-0 items-center gap-1 px-2 text-xs font-medium"
+            >
+              <Tag className="size-3 shrink-0" />
+              <span className="truncate">{picked.value}</span>
+            </SelectionNode>
+          ) : (
+            <span className="flex h-6 items-center gap-1 rounded-md border bg-background px-2 font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+              <Tag className="size-3" />
+              Add label
+            </span>
+          )}
+        </button>
+      </SelectTrigger>
+      <SelectContent position="popper">
+        <SelectItem value={NO_LABEL} textValue="No label">
+          <span className="text-muted-foreground">No label</span>
+        </SelectItem>
+        {options.map((option) => (
+          <SelectItem
+            key={option.id}
+            value={option.id}
+            textValue={option.value}
+          >
+            <SelectionNode dropDownValue={option}>{option.value}</SelectionNode>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+/** One file as a card: its tile, name and details in a raised panel that opens it, with the footer's controls below. */
+function AttachmentCard({
+  media,
+  title,
+  description,
+  uploading = false,
+  onOpen,
+  children,
+}: AttachmentCardProps) {
+  return (
+    <div className="flex w-58 max-w-full flex-col gap-1.5 rounded-xl border bg-muted/50 p-1.5">
+      <button
+        type="button"
+        tabIndex={-1}
+        disabled={uploading}
+        onClick={onOpen}
+        className="flex flex-col h-48 items-start gap-3 rounded-lg border bg-card p-3 text-left shadow-xs transition-colors enabled:cursor-pointer enabled:hover:border-primary/40"
+      >
+        <span className="flex w-full flex-1 items-center justify-center overflow-hidden rounded-lg bg-foreground text-background">
+          {media}
+        </span>
+        <span className="flex w-full min-w-0 flex-col gap-0.5">
+          <span
+            title={title}
+            className={cn(
+              "truncate text-sm font-semibold text-foreground",
+              uploading && "animate-pulse",
+            )}
+          >
+            {title}
+          </span>
+          <span className="truncate text-xs text-muted-foreground">
+            {description}
+          </span>
+        </span>
+      </button>
+      {children && (
+        <div className="flex min-h-6 items-center gap-1.5 px-0.5">
+          {children}
+        </div>
+      )}
+    </div>
   );
 }

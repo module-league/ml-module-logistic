@@ -15,7 +15,11 @@ namespace LogisticApi.Models
 
         public static bool IsKnown(string type) => All.Contains(type);
 
-        public static bool HasOptions(string type) => type is "single_select" or "multi_select";
+        /// <summary>Keeps a list of options: the choices of a select, or the labels an attachment field's files can take.</summary>
+        public static bool HasOptions(string type) => type is "single_select" or "multi_select" or "attachment";
+
+        /// <summary>A select needs at least one option; an attachment field's labels are optional.</summary>
+        public static bool NeedsOptions(string type) => type is "single_select" or "multi_select";
 
         public static bool IsSelection(string type) => type == "single_select";
 

@@ -67,7 +67,12 @@ export function RecordValueNode({
   }
   if (!value) return <span className="text-muted-foreground">—</span>;
   if (field?.type === "attachment") {
-    return <AttachmentChipList attachments={parseAttachments(value)} />;
+    return (
+      <AttachmentChipList
+        attachments={parseAttachments(value)}
+        options={field?.dropDownValues}
+      />
+    );
   }
   if (field?.type === "member") {
     return (

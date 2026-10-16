@@ -131,7 +131,15 @@ export function fieldTypeOption(type: IField["type"]) {
   return MODULE_FIELD_TYPES.find((option) => option.fieldType === type);
 }
 
+/** Keeps a list of options: a select's choices, or the labels an attachment field's files can take. */
 export function hasFieldOptions(type?: IField["type"] | null) {
+  return (
+    type === "single_select" || type === "multi_select" || type === "attachment"
+  );
+}
+
+/** A select needs at least one option; an attachment field's labels are optional. */
+export function needsFieldOptions(type?: IField["type"] | null) {
   return type === "single_select" || type === "multi_select";
 }
 
@@ -183,7 +191,8 @@ export function fieldDraftSchema(takenNames?: string[]) {
               (other) => other.toLowerCase() === value.toLowerCase(),
             ) !== index,
         );
-        if (!values?.length) issue(["options"], "Add at least one option.");
+        if (!values?.length && needsFieldOptions(type as IField["type"]))
+          issue(["options"], "Add at least one option.");
         else if (duplicate)
           issue(["options"], `“${duplicate}” is listed more than once.`);
       }

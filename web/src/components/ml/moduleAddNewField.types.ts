@@ -115,6 +115,8 @@ export interface ModuleFieldOptionsEditorProps {
   /** In display order; displayOrder is set from the position when the field is built. */
   options: IFieldDropDownValue[];
   onChange: (options: IFieldDropDownValue[]) => void;
+  /** The last option can be removed too, e.g. an attachment field's optional labels. */
+  allowEmpty?: boolean;
 }
 
 export interface ModuleFieldOptionRowProps {

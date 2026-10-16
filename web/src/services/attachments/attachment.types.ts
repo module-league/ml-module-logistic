@@ -10,5 +10,7 @@ declare global {
     /** In KB. */
     fileSize: number;
     attachmentVersion: number;
+    /** The label picked for the file in a record: the id of one of its attachment field's options. */
+    optionId?: string;
   };
 }

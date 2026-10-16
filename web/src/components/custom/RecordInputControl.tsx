@@ -262,6 +262,7 @@ export function RecordInputControl(props: RecordInputControlProps) {
         onChange={onChange}
         onBlur={onBlur}
         onUpload={onUploadAttachment}
+        options={field.dropDownValues}
       />
     );
   }

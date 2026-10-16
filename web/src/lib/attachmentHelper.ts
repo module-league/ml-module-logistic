@@ -14,6 +14,14 @@ export function parseAttachments(value?: string | null): IAttachment[] {
   }
 }
 
+/** The label picked for a file, when it is still one of the field's options. */
+export function attachmentOption(
+  attachment: Pick<IAttachment, "optionId">,
+  options?: IFieldDropDownValue[],
+) {
+  return options?.find((option) => option?.id === attachment?.optionId);
+}
+
 export function toAttachmentValue(attachments: IAttachment[]) {
   return attachments?.length ? JSON.stringify(attachments) : "";
 }
@@ -27,7 +35,9 @@ export const PREVIEW_FILE_TYPES = [
   "application/pdf",
 ];
 
-export function canPreviewAttachment(attachment?: Pick<IAttachment, "fileType">) {
+export function canPreviewAttachment(
+  attachment?: Pick<IAttachment, "fileType">,
+) {
   return PREVIEW_FILE_TYPES.includes(attachment?.fileType ?? "");
 }
 

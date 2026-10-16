@@ -135,8 +135,8 @@ namespace LogisticApi.Services
 
             var attachmentIds = fields
                 .Where(f => f.type == "attachment")
-                .ToDictionary(f => f.ObjId, f => ReadAttachmentIds(f, values.GetValueOrDefault(f.ObjId)));
-            var wanted = attachmentIds.Values.SelectMany(ids => ids).Distinct().ToList();
+                .ToDictionary(f => f.ObjId, f => ReadAttachments(f, values.GetValueOrDefault(f.ObjId)));
+            var wanted = attachmentIds.Values.SelectMany(files => files.Select(file => file.id)).Distinct().ToList();
             var attachments = wanted.Count == 0
                 ? []
                 : await db.Attachments
@@ -213,12 +213,12 @@ namespace LogisticApi.Services
             }
         }
 
-        /// <summary>The attachment ids in a value: a JSON array of attachment objects (or of bare ids), in order, without repeats.</summary>
-        private static List<Guid> ReadAttachmentIds(SidebarField field, string? value)
+        /// <summary>The files in a value: a JSON array of attachment objects (or of bare ids), in order, without repeats, each with the label picked for it.</summary>
+        private static List<(Guid id, Guid? optionId)> ReadAttachments(SidebarField field, string? value)
         {
             if (string.IsNullOrWhiteSpace(value)) return [];
             var invalid = ApiProblemException.BadRequest("Invalid attachments.", $"'{field.sidebarName}' needs a list of uploaded attachments.");
-            List<Guid> ids = [];
+            List<(Guid id, Guid? optionId)> files = [];
             try
             {
                 using var json = JsonDocument.Parse(value);
@@ -229,24 +229,31 @@ namespace LogisticApi.Services
                         ? id.GetString()
                         : item.ValueKind == JsonValueKind.String ? item.GetString() : null;
                     if (!Guid.TryParse(text, out var attachmentId)) throw invalid;
-                    if (!ids.Contains(attachmentId)) ids.Add(attachmentId);
+                    Guid? optionId = item.ValueKind == JsonValueKind.Object
+                        && item.TryGetProperty("optionId", out var option)
+                        && option.ValueKind == JsonValueKind.String
+                        && Guid.TryParse(option.GetString(), out var parsed) ? parsed : null;
+                    if (files.All(file => file.id != attachmentId)) files.Add((attachmentId, optionId));
                 }
             }
             catch (Exception error) when (error is JsonException or InvalidOperationException)
             {
                 throw invalid;
             }
-            return ids;
+            return files;
         }
 
-        /// <summary>Stores each attachment's name, size and type from the database, not from what the client sent.</summary>
-        private static string? AttachmentsValue(SidebarField field, List<Guid> ids, Dictionary<Guid, Attachment> attachments)
+        /// <summary>Stores each attachment's name, size and type from the database, not from what the client sent, with its label, one of the field's options.</summary>
+        private static string? AttachmentsValue(SidebarField field, List<(Guid id, Guid? optionId)> files, Dictionary<Guid, Attachment> attachments)
         {
-            if (ids.Count == 0) return null;
-            var missing = ids.Where(id => !attachments.ContainsKey(id)).Select(id => (Guid?)id).FirstOrDefault();
+            if (files.Count == 0) return null;
+            var missing = files.Where(file => !attachments.ContainsKey(file.id)).Select(file => (Guid?)file.id).FirstOrDefault();
             if (missing is not null)
                 throw ApiProblemException.BadRequest("Unknown attachment.", $"'{field.sidebarName}' has no uploaded attachment '{missing}'.");
-            return JsonSerializer.Serialize(ids.Select(id => AttachmentResponse.From(attachments[id])), Json);
+            var unknownLabel = files.FirstOrDefault(file => file.optionId is { } id && field.options.All(o => o.ObjId != id));
+            if (unknownLabel.optionId is not null)
+                throw ApiProblemException.BadRequest("Unknown label.", $"'{field.sidebarName}' has no label '{unknownLabel.optionId}'.");
+            return JsonSerializer.Serialize(files.Select(file => AttachmentResponse.From(attachments[file.id], file.optionId)), Json);
         }
 
         private static ApiProblemException StaleVersion() =>

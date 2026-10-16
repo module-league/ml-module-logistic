@@ -215,8 +215,8 @@ function AddFieldSteps({
   const [type, setType] = useState<IField["type"] | null>(field?.type ?? null);
   const [name, setName] = useState(field?.name ?? "");
   const [options, setOptions] = useState<IFieldDropDownValue[]>(() =>
-    field?.dropDownValues?.length
-      ? field.dropDownValues
+    field?.dropDownValues?.length || field?.type === "attachment"
+      ? (field?.dropDownValues ?? [])
       : [createDropDownValue(0), createDropDownValue(1)],
   );
   const [dateSettings, setDateSettings] = useState<ModuleFieldDateSettings>(
@@ -309,6 +309,19 @@ function AddFieldSteps({
         ([path]) => path !== "name" && path !== "formula",
       )?.[1]
     : undefined;
+  // An attachment field starts without labels; a select starts with two options
+  const pickType = useCallback(
+    (picked: IField["type"]) => {
+      setType(picked);
+      if (editing) return;
+      setOptions(
+        picked === "attachment"
+          ? []
+          : [createDropDownValue(0), createDropDownValue(1)],
+      );
+    },
+    [editing],
+  );
   const submit = useCallback(
     (event: SyntheticEvent) => {
       event.preventDefault();
@@ -341,7 +354,7 @@ function AddFieldSteps({
                   type="button"
                   role="radio"
                   aria-checked={false}
-                  onClick={() => setType(fieldType)}
+                  onClick={() => pickType(fieldType)}
                   className="flex cursor-pointer flex-col gap-2 rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-primary-10 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
                 >
                   <span className="flex size-8 items-center justify-center rounded-md bg-primary-10 text-primary">
@@ -401,8 +414,20 @@ function AddFieldSteps({
           </Field>
           {hasFieldOptions(type) && (
             <Field>
-              <FieldLabel>Options</FieldLabel>
-              <FieldOptionsEditor options={options} onChange={setOptions} />
+              <FieldLabel>
+                {type === "attachment" ? "File labels" : "Options"}
+              </FieldLabel>
+              {type === "attachment" && (
+                <p className="text-xs text-muted-foreground">
+                  Optional. Each file in a record can take one, e.g. Invoice or
+                  Proof of delivery.
+                </p>
+              )}
+              <FieldOptionsEditor
+                options={options}
+                onChange={setOptions}
+                allowEmpty={type === "attachment"}
+              />
             </Field>
           )}
           {(type === "date" || type === "time") && (
@@ -1180,6 +1205,7 @@ function FieldNumberSettings({
 function FieldOptionsEditor({
   options,
   onChange,
+  allowEmpty = false,
 }: ModuleFieldOptionsEditorProps) {
   const [focusId, setFocusId] = useState<string>();
   const ids = useMemo(() => options?.map((option) => option?.id), [options]);
@@ -1218,7 +1244,7 @@ function FieldOptionsEditor({
             key={option.id}
             option={option}
             index={index}
-            removable={options.length > 1}
+            removable={allowEmpty || options.length > 1}
             autoFocus={option.id === focusId}
             onChange={changeOption}
             onRemove={removeOption}

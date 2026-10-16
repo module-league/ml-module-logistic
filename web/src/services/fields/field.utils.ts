@@ -1,7 +1,4 @@
-
-import {
-  type QueryClient,
-} from "@tanstack/react-query";
+import { type QueryClient } from "@tanstack/react-query";
 
 export const fieldKeys = {
   all: ["fields"] as const,
@@ -15,7 +12,7 @@ export function toOptionInputs(
   field: Pick<IField, "type" | "dropDownValues">,
   existingIds?: Set<string>,
 ) {
-  if (field?.type !== "single_select" && field?.type !== "multi_select") {
+  if (!["single_select", "multi_select", "attachment"].includes(field?.type)) {
     return undefined;
   }
   return field?.dropDownValues?.map((option, index) => ({
