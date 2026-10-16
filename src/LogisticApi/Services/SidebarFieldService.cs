@@ -62,6 +62,7 @@ namespace LogisticApi.Services
             var settings = ApplySettings(new FieldSettings(), request);
             if (FieldTypes.IsLink(type)) await ApplyLinkAsync(settings, request.lookupSettings, ct);
             if (FieldTypes.IsLookup(type)) await ApplyLookupAsync(sidebarId, settings, request.lookupSettings, ct);
+            if (FieldTypes.IsFormula(type)) await ApplyFormulaAsync(sidebarId, settings, request.formulaSettings, ct);
             field.settings = settings.Write();
             foreach (var (option, index) in options.Select((option, index) => (option, index)))
                 field.options.Add(NewOption(field.ObjId, option, index));
@@ -98,6 +99,8 @@ namespace LogisticApi.Services
                 await ApplyLinkAsync(settings, request.lookupSettings, ct);
             if (FieldTypes.IsLookup(field.type) && request.lookupSettings is not null)
                 await ApplyLookupAsync(field.sidebarId, settings, request.lookupSettings, ct);
+            if (FieldTypes.IsFormula(field.type) && request.formulaSettings is not null)
+                await ApplyFormulaAsync(field.sidebarId, settings, request.formulaSettings, ct);
             field.settings = settings.Write();
             if (FieldTypes.IsLink(field.type) && wasMultiple && !settings.linkMultiple)
                 await KeepFirstLinkAsync(field, ct);
@@ -133,6 +136,19 @@ namespace LogisticApi.Services
                     .ToList();
                 if (lookupNames.Count > 0)
                     throw ApiProblemException.Conflict("Lookup fields use this link.", $"Delete {string.Join(", ", lookupNames)} or look up through another link field first.");
+            }
+
+            if (FieldTypes.IsFormulaInput(field.type))
+            {
+                var formulaNames = (await db.SidebarFields
+                        .AsNoTracking()
+                        .Where(f => f.sidebarId == field.sidebarId && f.type == "formula")
+                        .ToListAsync(ct))
+                    .Where(f => FormulaExpression.FieldIdsOf(FieldSettings.Read(f.settings).formulaExpression ?? "").Contains(field.ObjId))
+                    .Select(f => $"'{f.sidebarName}'")
+                    .ToList();
+                if (formulaNames.Count > 0)
+                    throw ApiProblemException.Conflict("Formula fields use this field.", $"Take it out of {string.Join(", ", formulaNames)} first.");
             }
 
             // MLAuditFieldsInterceptor turns both removes into soft deletes
@@ -285,6 +301,26 @@ namespace LogisticApi.Services
             if (request?.previewEnabled is { } previewEnabled) settings.lookupPreview = previewEnabled;
             if (request?.previewFieldIds is { } previewFieldIds)
                 settings.lookupPreviewFieldIds = await CleanPreviewFieldIdsAsync(sidebarId, previewFieldIds, ct);
+        }
+
+        /// <summary>A formula reads number and currency fields of its own sidebar.</summary>
+        private async Task ApplyFormulaAsync(string sidebarId, FieldSettings settings, SidebarFormulaSettingsRequest? request, CancellationToken ct)
+        {
+            var expression = request?.expression?.Trim();
+            if (string.IsNullOrEmpty(expression))
+                throw ApiProblemException.BadRequest("Write the formula.", "formulaSettings.expression is required for a formula field.");
+            var fieldIds = FormulaExpression.FieldIdsOf(expression);
+            var inputs = await db.SidebarFields
+                .AsNoTracking()
+                .Where(f => f.sidebarId == sidebarId && fieldIds.Contains(f.ObjId))
+                .ToListAsync(ct);
+            var missing = fieldIds.FirstOrDefault(id => inputs.All(f => f.ObjId != id));
+            if (missing != Guid.Empty)
+                throw ApiProblemException.BadRequest("Unknown field in the formula.", $"'{sidebarId}' has no field '{missing}'.");
+            var notNumber = inputs.FirstOrDefault(f => !FieldTypes.IsFormulaInput(f.type));
+            if (notNumber is not null)
+                throw ApiProblemException.BadRequest("A formula reads number and currency fields.", $"'{notNumber.sidebarName}' is a {notNumber.type} field.");
+            settings.formulaExpression = expression;
         }
 
         /// <summary>Once a link field takes one record, each record keeps only its first link so every saved value fits again.</summary>

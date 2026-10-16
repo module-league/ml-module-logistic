@@ -10,7 +10,9 @@ import {
 } from "@moduleleague/ui";
 import { RecordInputControl } from "@/components/custom/RecordInputControl";
 import { recordValuesSchema } from "@/lib/validationHelper";
+import { formulaValue } from "@/lib/formulaHelper";
 import type {
+  ModuleFormulaFormInputProps,
   ModuleLookupFormInputProps,
   ModuleRecordFormProps,
   ModuleRecordFormValues,
@@ -54,12 +56,12 @@ export function ModuleRecordForm({
     () => new Map(fields?.map((field, index) => [field?.objId, index])),
     [fields],
   );
-  // Lookups store nothing; the API fills them from their link field
+  // Lookups and formulas store nothing; they're worked out from other fields
   const toRecordValues = useCallback(
     (data: ModuleRecordFormValues): ISidebarRecordValues =>
       Object.fromEntries(
         fields?.flatMap((field, i) =>
-          field?.type === "lookup"
+          field?.type === "lookup" || field?.type === "formula"
             ? []
             : [[field?.objId, data?.values?.[i] ?? ""]],
         ) ?? [],
@@ -145,6 +147,13 @@ export function ModuleRecordForm({
                     previewActive={previewFieldId === field?.objId}
                     className="w-full"
                   />
+                ) : field?.type === "formula" ? (
+                  <FormulaFormInput
+                    control={form.control}
+                    fields={fields}
+                    field={field}
+                    className="w-full"
+                  />
                 ) : (
                   <RecordInputControl
                     field={field}
@@ -199,6 +208,26 @@ export function ModuleRecordForm({
       </form>
     </Form>
   );
+}
+
+/** A formula works out its value from the other inputs as they change, before saving. */
+function FormulaFormInput({
+  control,
+  fields,
+  ...props
+}: ModuleFormulaFormInputProps) {
+  const values = useWatch({ control, name: "values" });
+  const value = useMemo(
+    () =>
+      formulaValue(
+        props.field,
+        Object.fromEntries(
+          fields.map((field, index) => [field?.objId, values?.[index]]),
+        ),
+      ),
+    [props.field, fields, values],
+  );
+  return <RecordInputControl {...props} value={value ?? ""} />;
 }
 
 /** A lookup follows its link field's input, so picking records there updates it before saving. */

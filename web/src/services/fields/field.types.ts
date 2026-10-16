@@ -23,6 +23,7 @@ declare global {
         | "associate"
         | "attachment"
         | "record_attachment"
+        | "formula"
         | "ds_creator_id"
         | "ds_create_time"
         | "ds_updater_id"
@@ -66,7 +67,7 @@ declare global {
         /** Several people can be picked; the value is then a JSON array of user ids. */
         multiple?: boolean;
       };
-      /** Settings for number and currency fields. The value is stored as a plain number; these only change how it shows. */
+      /** Settings for number, currency and formula fields. The value is stored as a plain number; these only change how it shows. */
       numberSettings?: {
         /** Currency field only. Shown before the number, e.g. "$" or "RM". */
         symbol?: string;
@@ -102,6 +103,11 @@ declare global {
         mirrorFieldId?: string;
         /** For mirror field only. The dependant lookup field ID */
         mirrorDependantFieldId?: string;
+      };
+      /** Settings for formula field only. It stores nothing; its value is worked out from the record's number and currency fields. */
+      formulaSettings?: {
+        /** A math.js expression with each field written {fieldObjId}, e.g. "{a} * {b} + 10". */
+        expression: string;
       };
       templatingSettings?: {
         template?: string;
@@ -180,6 +186,7 @@ declare global {
         | "memberSettings"
         | "numberSettings"
         | "lookupSettings"
+        | "formulaSettings"
       >
     > & {
       isPrimaryField?: boolean;
@@ -197,6 +204,7 @@ declare global {
         | "memberSettings"
         | "numberSettings"
         | "lookupSettings"
+        | "formulaSettings"
       >
     > & {
       versionNo: number;

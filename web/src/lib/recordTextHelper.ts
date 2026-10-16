@@ -23,7 +23,7 @@ export function toRecordText(
   if (field?.type === "attachment") return attachmentNames(value);
   if (field?.isDateField) return formatFieldDate(field, value);
   if (field?.type === "time") return formatFieldTime(field, value);
-  if (field?.type === "number" || field?.type === "currency") {
+  if (field?.isNumeric) {
     return formatFieldNumber(field, value);
   }
   if (field?.type === "single_select") {

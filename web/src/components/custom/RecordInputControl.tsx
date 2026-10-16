@@ -27,6 +27,7 @@ import { RecordTimeInput } from "./RecordTimeInput";
 import type { AttachmentUploadHandler } from "./RecordAttachmentInput.types";
 import { DateTimePicker } from "../ui/date-time-picker";
 import { parseFieldDate, toFieldDateValue } from "@/lib/dateHelper";
+import { formatFieldNumber } from "@/lib/numberHelper";
 import {
   RECORD_INPUT_CLASS,
   RECORD_INPUT_GROW_CLASS,
@@ -211,6 +212,26 @@ export function RecordInputControl(props: RecordInputControlProps) {
         style={props.style}
         onChange={onChange}
         onBlur={onBlur}
+      />
+    );
+  }
+
+  if (field.type === "formula") {
+    return (
+      <Input
+        id={id}
+        readOnly
+        tabIndex={-1}
+        aria-label={field.name}
+        value={formatFieldNumber(field, value)}
+        placeholder="Worked out from other fields"
+        title="Worked out from other fields; change those to change it."
+        className={cn(
+          RECORD_INPUT_CLASS,
+          "cursor-default bg-muted/40 tabular-nums",
+          props.className,
+        )}
+        style={props.style}
       />
     );
   }

@@ -123,7 +123,9 @@ export const CALCULATIONS: { value: IDashboardCalculation; label: string }[] = [
 ];
 
 export const isNumberField = (field?: Pick<IField, "type">) =>
-  field?.type === "number" || field?.type === "currency";
+  field?.type === "number" ||
+  field?.type === "currency" ||
+  field?.type === "formula";
 
 export const isDateField = (field?: Pick<IField, "type" | "isDateField">) =>
   !!field?.isDateField ||

@@ -78,7 +78,7 @@ export function RecordValueNode({
       </span>
     );
   }
-  if (field?.type === "number" || field?.type === "currency") {
+  if (field?.isNumeric) {
     return (
       <span className="tabular-nums">{formatFieldNumber(field, value)}</span>
     );

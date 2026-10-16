@@ -38,6 +38,8 @@ namespace LogisticApi.Models
         public bool lookupPreview { get; set; } = true;
         /// <summary>Lookup fields: the looked-up fields shown in the preview, kept while the preview is off; null shows every field. Link fields: the up to three fields on each linked record's card; null shows the first ones.</summary>
         public List<string>? lookupPreviewFieldIds { get; set; }
+        /// <summary>Formula fields only: the math.js expression, with fields written {fieldObjId}.</summary>
+        public string? formulaExpression { get; set; }
 
         public static FieldSettings Read(string? json) =>
             string.IsNullOrWhiteSpace(json) ? new() : JsonSerializer.Deserialize<FieldSettings>(json, Json) ?? new();

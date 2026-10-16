@@ -53,6 +53,15 @@ export interface ModuleLookupFormInputProps extends Pick<
   linkIndex?: number;
 }
 
+export interface ModuleFormulaFormInputProps extends Pick<
+  RecordInputControlProps,
+  "field" | "className"
+> {
+  control: Control<ModuleRecordFormValues>;
+  /** Every field of the form, in the order of its values. */
+  fields: ISidebarField[];
+}
+
 export interface ModuleNewRecordProps
   extends ModuleQueryState, Pick<ModuleRecordFormProps, "onUploadAttachment"> {
   open: boolean;

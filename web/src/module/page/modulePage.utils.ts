@@ -1,3 +1,5 @@
+import { formulaValue } from "@/lib/formulaHelper";
+
 /** Shows when each record was created; filled from the record itself, not from a saved field. */
 const CREATE_TIME_FIELD: ISidebarField = {
   objId: "ds_create_time",
@@ -31,7 +33,7 @@ const SYSTEM_FIELD_VALUES: Partial<
   ds_create_time: (record) => record?.createTime,
 };
 
-/** A record's value for a field: from the record itself for system fields, its link field's linked record ids for a lookup, from its values otherwise. */
+/** A record's value for a field: from the record itself for system fields, its link field's linked record ids for a lookup, worked out for a formula, from its values otherwise. */
 export function recordFieldValue(
   field: ISidebarField,
   record?: ISidebarRecord,
@@ -40,5 +42,6 @@ export function recordFieldValue(
   if (field?.type === "lookup") {
     return record?.values?.[field?.lookupSettings?.linkFieldId ?? ""];
   }
+  if (field?.type === "formula") return formulaValue(field, record?.values);
   return record?.values?.[field?.objId];
 }

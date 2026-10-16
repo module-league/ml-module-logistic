@@ -79,7 +79,10 @@ export function ModuleFormDialog({
   const fillableFields = useMemo(
     () =>
       fields?.filter(
-        (field) => !field?.isSystemField && field?.type !== "lookup",
+        (field) =>
+          !field?.isSystemField &&
+          field?.type !== "lookup" &&
+          field?.type !== "formula",
       ) ?? [],
     [fields],
   );

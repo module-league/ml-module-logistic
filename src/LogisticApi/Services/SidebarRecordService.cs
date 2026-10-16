@@ -159,7 +159,7 @@ namespace LogisticApi.Services
             {
                 fieldId = f.ObjId,
                 type = f.type,
-                value = FieldTypes.IsLookup(f.type)
+                value = FieldTypes.IsVirtual(f.type)
                     ? null
                     : attachmentIds.TryGetValue(f.ObjId, out var ids)
                         ? AttachmentsValue(f, ids, attachments)

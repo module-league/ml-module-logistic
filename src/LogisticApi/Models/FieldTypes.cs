@@ -9,7 +9,7 @@ namespace LogisticApi.Models
         [
             "text", "long_text", "number", "single_select", "multi_select", "checkbox",
             "date", "time", "member", "link_table", "lookup", "mirror", "templating", "currency", "associate", "attachment",
-            "record_attachment", "sys_creator_id", "sys_create_time", "sys_updater_id",
+            "record_attachment", "formula", "sys_creator_id", "sys_create_time", "sys_updater_id",
             "sys_update_time", "sys_running_number",
         ];
 
@@ -34,9 +34,16 @@ namespace LogisticApi.Models
 
         public static bool IsUser(string type) => type is "member" or "sys_creator_id" or "sys_updater_id";
 
-        public static bool IsNumeric(string type) => type is "number" or "currency" or "sys_running_number";
+        /// <summary>Stores nothing: works out a number from number and currency fields of the same record.</summary>
+        public static bool IsFormula(string type) => type == "formula";
 
-        public static bool IsVirtual(string type) => type is "lookup" or "mirror" or "templating";
+        /// <summary>The fields a formula can read.</summary>
+        public static bool IsFormulaInput(string type) => type is "number" or "currency";
+
+        public static bool IsNumeric(string type) => type is "number" or "currency" or "formula" or "sys_running_number";
+
+        /// <summary>Stores no value of its own; records keep null for it.</summary>
+        public static bool IsVirtual(string type) => type is "lookup" or "mirror" or "templating" or "formula";
 
         public static bool IsForeign(string type) => type is "link_table" or "lookup" or "mirror";
 

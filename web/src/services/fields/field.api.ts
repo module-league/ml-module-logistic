@@ -46,6 +46,9 @@ function toFieldSettings(field: IField) {
     ...((field?.type === "lookup" || field?.type === "link_table") && {
       lookupSettings: field.lookupSettings,
     }),
+    ...(field?.type === "formula" && {
+      formulaSettings: field.formulaSettings,
+    }),
     ...(field?.isDateField && {
       dateFormat: field.dateFormat,
       displayTime: field.displayTime,

@@ -38,6 +38,11 @@ namespace LogisticApi.MVVM
         public string abbreviation { get; set; } = string.Empty;
     }
 
+    public class SidebarFormulaSettingsResponse
+    {
+        public string expression { get; set; } = string.Empty;
+    }
+
     public class SidebarLookupSettingsResponse
     {
         /// <summary>The sidebarId whose records are linked; for a lookup, the sidebar of its link field.</summary>
@@ -79,8 +84,10 @@ namespace LogisticApi.MVVM
         public string? color { get; set; }
         /// <summary>Only set for member fields.</summary>
         public SidebarMemberSettingsResponse? memberSettings { get; set; }
-        /// <summary>Only set for number and currency fields.</summary>
+        /// <summary>Only set for number, currency and formula fields.</summary>
         public SidebarNumberSettingsResponse? numberSettings { get; set; }
+        /// <summary>Only set for formula fields.</summary>
+        public SidebarFormulaSettingsResponse? formulaSettings { get; set; }
         /// <summary>Only set for link and lookup fields.</summary>
         public SidebarLookupSettingsResponse? lookupSettings { get; set; }
 
@@ -117,13 +124,16 @@ namespace LogisticApi.MVVM
                 timeFormat = settings.timeFormat,
                 color = settings.color,
                 memberSettings = field.type == "member" ? new() { multiple = settings.multipleMembers } : null,
-                numberSettings = field.type is "number" or "currency"
+                numberSettings = field.type is "number" or "currency" or "formula"
                     ? new()
                     {
                         symbol = field.type == "currency" ? settings.currencySymbol : null,
                         decimalPlaces = settings.decimalPlaces ?? (field.type == "currency" ? 2 : null),
                         abbreviation = settings.abbreviation,
                     }
+                    : null,
+                formulaSettings = FieldTypes.IsFormula(field.type)
+                    ? new() { expression = settings.formulaExpression ?? string.Empty }
                     : null,
                 lookupSettings = FieldTypes.IsLink(field.type)
                     ? new()

@@ -1,5 +1,12 @@
-import { useCallback, useMemo, useState, type SyntheticEvent } from "react";
-import { Check, ChevronLeft, Link2, Plus, X } from "lucide-react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useMemo,
+  useState,
+  type SyntheticEvent,
+} from "react";
+import { Check, ChevronLeft, Link2, Plus, Sigma, X } from "lucide-react";
 import { SortableHandle, SortableList } from "@/components/custom/SortableList";
 import { useSortableRow } from "@/hooks/useSortableRow";
 import { cn } from "@/lib/utils";
@@ -22,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { fieldDateFormat } from "@/lib/dateHelper";
 import {
@@ -39,6 +47,12 @@ import { toast } from "@/components/ui/sonner";
 import { errorParser } from "@/hooks/useErrorParser";
 import { zodErrors } from "@/lib/validationHelper";
 import {
+  formulaError,
+  fromFormulaText,
+  isFormulaInput,
+  toFormulaText,
+} from "@/lib/formulaHelper";
+import {
   LINK_CARD_FIELD_LIMIT,
   LOOKUP_CREATE_TIME_ID,
   previewableLookupFields,
@@ -54,6 +68,7 @@ import type {
   ModuleFieldNumberSettingsProps,
   ModuleFieldDateSettings,
   ModuleFieldDateSettingsProps,
+  ModuleFieldFormulaSettingsProps,
   ModuleFieldLinkSettingsProps,
   ModuleFieldLookupSettings,
   ModuleFieldLookupSettingsProps,
@@ -79,6 +94,9 @@ import {
   FIELD_DATE_FORMATS,
   FIELD_TIME_FORMATS,
 } from "./moduleAddNewField.utils";
+
+// Monaco is large, so it loads only when a formula is edited
+const FormulaEditor = lazy(() => import("@/components/custom/FormulaEditor"));
 
 /**
  * Two-step dialog: pick a field type, then name it. A select also lists its choices with a color and order. Builds an {@link IField}.
@@ -166,7 +184,14 @@ function FieldDialog({
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogContent className="flex h-[min(620px,90dvh)] flex-col gap-0 p-0 sm:max-w-lg">
+      <DialogContent
+        className="flex h-[min(620px,90dvh)] flex-col gap-0 p-0 sm:max-w-lg"
+        onInteractOutside={(event) => {
+          // The formula editor's suggestions sit outside the dialog
+          if ((event.target as Element)?.closest?.(".monaco-editor"))
+            event.preventDefault();
+        }}
+      >
         <AddFieldSteps
           field={field}
           onAdd={save}
@@ -204,6 +229,23 @@ function AddFieldSteps({
     fieldNumberDraft(field),
   );
   const { sources, linkFields, sidebarId } = useRecordLookups();
+  const formulaInputs = useMemo(
+    () =>
+      sources
+        ?.find((source) => source?.sidebarId === sidebarId)
+        ?.fields?.filter(isFormulaInput) ?? [],
+    [sources, sidebarId],
+  );
+  const [formulaText, setFormulaText] = useState(() =>
+    toFormulaText(field?.formulaSettings?.expression, formulaInputs),
+  );
+  const formula = useMemo(
+    () => fromFormulaText(formulaText, formulaInputs),
+    [formulaText, formulaInputs],
+  );
+  const formulaProblem = formula.unknown.length
+    ? `“${formula.unknown[0]}” isn't a number or currency field of this table.`
+    : formulaError(formula.expression);
   const [lookupSettings, setLookupSettings] =
     useState<ModuleFieldLookupSettings>(() => ({
       categoryId: field?.lookupSettings?.categoryId,
@@ -227,6 +269,7 @@ function AddFieldSteps({
       memberSettings: { multiple: multipleMembers },
       numberSettings,
       lookupSettings,
+      formulaSettings: { expression: formula.expression },
     });
   }, [
     type,
@@ -236,6 +279,7 @@ function AddFieldSteps({
     multipleMembers,
     numberSettings,
     lookupSettings,
+    formula.expression,
   ]);
   const [submitted, setSubmitted] = useState(false);
   const errors = useMemo(
@@ -246,13 +290,24 @@ function AddFieldSteps({
         options,
         numberSettings,
         lookupSettings,
+        formula: type === "formula" ? formulaProblem : undefined,
       }),
-    [type, name, options, numberSettings, lookupSettings, takenNames],
+    [
+      type,
+      name,
+      options,
+      numberSettings,
+      lookupSettings,
+      formulaProblem,
+      takenNames,
+    ],
   );
   // Before the first save, only a typed name that can't be used is flagged
   const nameError = submitted || name.trim() ? errors?.name : undefined;
   const settingsError = submitted
-    ? Object.entries(errors).find(([path]) => path !== "name")?.[1]
+    ? Object.entries(errors).find(
+        ([path]) => path !== "name" && path !== "formula",
+      )?.[1]
     : undefined;
   const submit = useCallback(
     (event: SyntheticEvent) => {
@@ -357,7 +412,15 @@ function AddFieldSteps({
               timeOnly={type === "time"}
             />
           )}
-          {(type === "number" || type === "currency") && (
+          {type === "formula" && (
+            <FieldFormulaSettings
+              value={formulaText}
+              onChange={setFormulaText}
+              fields={formulaInputs}
+              error={submitted ? errors?.formula : undefined}
+            />
+          )}
+          {(type === "number" || type === "currency" || type === "formula") && (
             <FieldNumberSettings
               value={numberSettings}
               onChange={setNumberSettings}
@@ -859,6 +922,44 @@ function FieldLookupSettings({
         </div>
       )}
     </div>
+  );
+}
+
+function FieldFormulaSettings({
+  value,
+  onChange,
+  fields,
+  error,
+}: ModuleFieldFormulaSettingsProps) {
+  if (!fields.length) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center">
+        <Sigma className="size-5 text-muted-foreground" />
+        <p className="text-sm font-medium">No number fields to work with.</p>
+        <p className="text-xs text-muted-foreground">
+          Add a number or currency field to this table, then write the formula.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <Field>
+      <FieldLabel>Formula</FieldLabel>
+      <Suspense fallback={<Skeleton className="h-24 w-full" />}>
+        <FormulaEditor
+          defaultValue={value}
+          fields={fields}
+          onChange={onChange}
+          invalid={!!error}
+        />
+      </Suspense>
+      <p className="text-xs text-muted-foreground">
+        Type a field name, or {"{"}, to add a number field. Use + − * / % ^,
+        brackets and functions like round, sum, min and max. An empty field
+        counts as 0.
+      </p>
+      <FieldError className="text-xs">{error}</FieldError>
+    </Field>
   );
 }
 

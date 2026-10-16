@@ -144,7 +144,7 @@ namespace LogisticApi.Services
             {
                 if (!byId.TryGetValue(item.fieldId, out var field))
                     throw ApiProblemException.BadRequest("Unknown field.", $"'{sidebarId}' has no field '{item.fieldId}'.");
-                if (field.isSystemField || FieldTypes.IsLookup(field.type))
+                if (field.isSystemField || FieldTypes.IsVirtual(field.type))
                     throw ApiProblemException.BadRequest("This field can't be on a form.", $"'{field.sidebarName}' is filled in automatically.");
                 if (cleaned.Any(c => c.fieldId == item.fieldId)) continue;
 

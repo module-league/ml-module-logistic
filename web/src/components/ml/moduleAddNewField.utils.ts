@@ -78,6 +78,12 @@ export const MODULE_FIELD_TYPES: ModuleFieldTypeOption[] = [
     icon: FIELD_TYPE_ICONS.lookup,
   },
   {
+    fieldType: "formula",
+    label: "Formula",
+    description: "Work out a number from other number fields.",
+    icon: FIELD_TYPE_ICONS.formula,
+  },
+  {
     fieldType: "attachment",
     label: "Attachment",
     description: "Documents, photos, proof of delivery.",
@@ -159,8 +165,10 @@ export function fieldDraftSchema(takenNames?: string[]) {
         linkFieldId: z.string().nullish(),
         lookupFieldId: z.string().nullish(),
       }),
+      /** Why the formula can't be worked out. */
+      formula: z.string().optional(),
     })
-    .superRefine(({ type, name, options, lookupSettings }, ctx) => {
+    .superRefine(({ type, name, options, lookupSettings, formula }, ctx) => {
       const issue = (path: string[], message: string) =>
         ctx.addIssue({ code: "custom", path, message });
       if (isFieldNameTaken(name, takenNames))
@@ -181,6 +189,7 @@ export function fieldDraftSchema(takenNames?: string[]) {
       }
       if (type === "link_table" && !lookupSettings?.categoryId)
         issue(["lookupSettings", "categoryId"], "Pick the sidebar to link to.");
+      if (type === "formula" && formula) issue(["formula"], formula);
       if (type === "lookup") {
         if (!lookupSettings?.linkFieldId)
           issue(["lookupSettings", "linkFieldId"], "Pick a link field.");
@@ -253,7 +262,7 @@ function toNumberSettings(type: IField["type"], settings: NumberSettings) {
   if (type === "currency") {
     return { ...settings, symbol: settings?.symbol?.trim() ?? "" };
   }
-  if (type === "number") {
+  if (type === "number" || type === "formula") {
     return {
       decimalPlaces: settings?.decimalPlaces,
       abbreviation: settings?.abbreviation,
@@ -296,11 +305,12 @@ export function toField({
   memberSettings,
   numberSettings = DEFAULT_NUMBER_SETTINGS,
   lookupSettings,
+  formulaSettings,
 }: Pick<IField, "type" | "name" | "dropDownValues"> &
   Partial<ModuleFieldDateSettings> &
   Pick<
     IField,
-    "memberSettings" | "numberSettings" | "lookupSettings"
+    "memberSettings" | "numberSettings" | "lookupSettings" | "formulaSettings"
   >): IField {
   return {
     name,
@@ -312,10 +322,11 @@ export function toField({
     isMultiSelectField: type === "multi_select",
     isDateField: type === "date",
     isUserField: type === "member",
-    isNumeric: type === "number" || type === "currency",
-    isVirtualField: type === "lookup",
+    isNumeric: type === "number" || type === "currency" || type === "formula",
+    isVirtualField: type === "lookup" || type === "formula",
     isForeignField: type === "lookup" || type === "link_table",
-    isPlainField: type !== "lookup" && type !== "link_table",
+    isPlainField:
+      type !== "lookup" && type !== "link_table" && type !== "formula",
     dateFormat,
     categoryId: "",
     displayOrder: 0,
@@ -328,5 +339,6 @@ export function toField({
       type === "member" ? { multiple: !!memberSettings?.multiple } : undefined,
     numberSettings: toNumberSettings(type, numberSettings),
     lookupSettings: toLookupSettings(type, lookupSettings),
+    formulaSettings: type === "formula" ? formulaSettings : undefined,
   };
 }

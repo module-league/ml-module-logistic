@@ -59,6 +59,13 @@ namespace LogisticApi.MVVM
         public List<string>? previewFieldIds { get; set; }
     }
 
+    public class SidebarFormulaSettingsRequest
+    {
+        /// <summary>A math.js expression over number and currency fields of the same sidebar, each written {fieldObjId}.</summary>
+        [Required, MaxLength(2000)]
+        public string expression { get; set; } = string.Empty;
+    }
+
     public abstract class SidebarFieldSettingsRequest
     {
         [MaxLength(500)]
@@ -78,8 +85,11 @@ namespace LogisticApi.MVVM
         /// <summary>Only for member fields.</summary>
         public SidebarMemberSettingsRequest? memberSettings { get; set; }
 
-        /// <summary>Only for number and currency fields.</summary>
+        /// <summary>Only for number, currency and formula fields.</summary>
         public SidebarNumberSettingsRequest? numberSettings { get; set; }
+
+        /// <summary>Only for formula fields; required when one is created.</summary>
+        public SidebarFormulaSettingsRequest? formulaSettings { get; set; }
 
         /// <summary>Only for link and lookup fields; required when one is created.</summary>
         public SidebarLookupSettingsRequest? lookupSettings { get; set; }

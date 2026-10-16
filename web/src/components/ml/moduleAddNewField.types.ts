@@ -82,6 +82,15 @@ export interface ModuleFieldLookupSettingsProps {
   linkFields: ISidebarField[];
 }
 
+export interface ModuleFieldFormulaSettingsProps {
+  /** The formula as the editor shows it, fields written {Field name}. */
+  value: string;
+  onChange: (value: string) => void;
+  /** This table's number and currency fields; the formula reads them. */
+  fields: ISidebarField[];
+  error?: string;
+}
+
 export interface ModuleDeleteFieldDialogProps extends Pick<
   ModuleAddNewFieldDialogProps,
   "open" | "onOpenChange"
