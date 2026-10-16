@@ -70,6 +70,8 @@ const OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
   wordBasedSuggestions: "off",
   contextmenu: false,
   automaticLayout: true,
+  // A hidden textarea, not an EditContext div: page shortcuts like "/" skip textareas, and the div drew a second caret
+  editContext: false,
   fixedOverflowWidgets: true,
   overflowWidgetsDomNode: overflowWidgets,
   ariaLabel: "Formula",
