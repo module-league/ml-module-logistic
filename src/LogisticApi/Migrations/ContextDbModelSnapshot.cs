@@ -243,6 +243,10 @@ namespace LogisticApi.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("description");
 
+                    b.Property<Guid?>("newRecordFormId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("new_record_form_id");
+
                     b.Property<string>("newRecordLabel")
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)")

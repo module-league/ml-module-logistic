@@ -21,6 +21,8 @@ export function ModuleRecordForm({
   members,
   onUploadAttachment,
   values,
+  initialValues,
+  placeholders,
   saving = false,
   readOnly = false,
   submitLabel = "Save",
@@ -33,9 +35,13 @@ export function ModuleRecordForm({
 }: ModuleRecordFormProps) {
   const defaultValues = useMemo<ModuleRecordFormValues>(
     () => ({
-      values: fields?.map((field) => values?.[field?.objId] ?? "") ?? [],
+      values:
+        fields?.map(
+          (field) =>
+            values?.[field?.objId] ?? initialValues?.[field?.objId] ?? "",
+        ) ?? [],
     }),
-    [fields, values],
+    [fields, values, initialValues],
   );
   const schema = useMemo(() => recordValuesSchema(fields), [fields]);
   const form = useForm<ModuleRecordFormValues>({
@@ -125,6 +131,7 @@ export function ModuleRecordForm({
                     onUploadAttachment={onUploadAttachment}
                     name={input.name}
                     value={input.value ?? ""}
+                    placeholder={placeholders?.[field.objId] || undefined}
                     disabled={saving || readOnly}
                     onChange={(next) => {
                       input.onChange(next);

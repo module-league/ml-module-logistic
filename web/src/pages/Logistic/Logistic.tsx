@@ -12,6 +12,7 @@ import {
   getDashboard,
   saveDashboard,
 } from "@/services/dashboards/dashboard.api";
+import { getForms } from "@/services/forms/form.api";
 import { getMembers } from "@/services/user/user.api";
 import { uploadAttachment } from "@/services/attachments/attachment.api";
 
@@ -20,6 +21,7 @@ const dashboardApi: ModuleDashboardApi = {
   saveDashboard,
   getFields,
   getRecords,
+  getForms,
   createRecord,
   updateRecord,
   getMembers,

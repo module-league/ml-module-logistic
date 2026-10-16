@@ -61,6 +61,16 @@ namespace LogisticApi.Services
                 if (!FieldTypes.IsDate(rangeField.type))
                     throw ApiProblemException.BadRequest("The date range needs a date field.", $"'{rangeField.sidebarName}' is a {rangeField.type} field.");
             }
+            if (request.newRecordFormId is { } newRecordFormId)
+            {
+                var form = await db.SidebarForms
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(f => f.ObjId == newRecordFormId, ct)
+                    ?? throw ApiProblemException.BadRequest("Unknown form.", $"There's no form '{newRecordFormId}'.");
+                request.newRecordSidebarId ??= form.sidebarId;
+                if (form.sidebarId != request.newRecordSidebarId)
+                    throw ApiProblemException.BadRequest("The form belongs to another table.", $"'{form.formTitle}' is a form of '{form.sidebarId}', not '{request.newRecordSidebarId}'.");
+            }
             if (request.newRecordSidebarId is { } newRecordSidebarId) CheckSidebarId(newRecordSidebarId);
 
             dashboard.title = Clean(request.title);
@@ -70,6 +80,7 @@ namespace LogisticApi.Services
             dashboard.rangeFieldId = request.rangeFieldId;
             dashboard.newRecordSidebarId = request.newRecordSidebarId;
             dashboard.newRecordLabel = request.newRecordSidebarId is null ? null : Clean(request.newRecordLabel);
+            dashboard.newRecordFormId = request.newRecordFormId;
             dashboard.widgets = CleanWidgets(request.widgets);
         }
 

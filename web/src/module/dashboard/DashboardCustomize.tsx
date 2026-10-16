@@ -124,6 +124,27 @@ export function DashboardCustomize({
     }
   }, [data]);
   const newSource = sourceById.get(layout.newRecordSidebarId ?? "");
+  // Hidden forms aren't offered, unless one is already picked
+  const formOptions = useMemo(
+    () =>
+      data.forms.filter(
+        (form) =>
+          sourceById.has(form?.sidebarId) &&
+          (!form?.isHidden || form?.objId === layout.newRecordFormId),
+      ),
+    [data.forms, sourceById, layout.newRecordFormId],
+  );
+  const pickForm = useCallback(
+    (value: string) => {
+      const form = formOptions.find((entry) => entry.objId === value);
+      set(
+        form
+          ? { newRecordFormId: form.objId, newRecordSidebarId: form.sidebarId }
+          : { newRecordFormId: undefined },
+      );
+    },
+    [formOptions, set],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -242,6 +263,7 @@ export function DashboardCustomize({
                 onValueChange={(value) =>
                   set({
                     newRecordSidebarId: value === NONE ? undefined : value,
+                    newRecordFormId: undefined,
                   })
                 }
               >
@@ -259,6 +281,58 @@ export function DashboardCustomize({
                   ))}
                 </SelectContent>
               </Select>
+            </SettingsField>
+            <SettingsField label="New button form" htmlFor="dashboard-new-form">
+              <Select
+                value={layout.newRecordFormId ?? NONE}
+                onValueChange={pickForm}
+                disabled={data.formsState.isLoading}
+              >
+                <SelectTrigger id="dashboard-new-form" className="w-full">
+                  {data.formsState.isLoading ? (
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Spinner className="size-3.5" />
+                      Loading forms…
+                    </span>
+                  ) : (
+                    <SelectValue />
+                  )}
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  searchable={formOptions.length > 8}
+                >
+                  <SelectItem value={NONE} textValue="Every field">
+                    <span className="text-muted-foreground">
+                      No form: every field
+                    </span>
+                  </SelectItem>
+                  {formOptions.map((form) => {
+                    const table = sourceById.get(form.sidebarId)?.sidebarText;
+                    return (
+                      <SelectItem
+                        key={form.objId}
+                        value={form.objId}
+                        textValue={`${form.formTitle} ${table}`}
+                      >
+                        {form.formTitle}
+                        <span className="text-xs text-muted-foreground">
+                          {table}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              {!!data.formsState.error && (
+                <button
+                  type="button"
+                  onClick={data.formsState.onRetry}
+                  className="cursor-pointer self-start text-xs text-destructive hover:underline"
+                >
+                  Couldn't load the forms. Retry
+                </button>
+              )}
             </SettingsField>
             <SettingsField
               label="New button label"

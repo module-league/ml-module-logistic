@@ -31,6 +31,9 @@ namespace LogisticApi.MVVM
         [MaxLength(40)]
         public string? newRecordLabel { get; set; }
 
+        /// <summary>A form of newRecordSidebarId the New button opens; null opens every field. The form's sidebar is used when newRecordSidebarId is left out.</summary>
+        public Guid? newRecordFormId { get; set; }
+
         /// <summary>The widgets in display order. Each needs an id, a type, a width and the sidebarId it reads; the rest is the web app's.</summary>
         [MaxLength(40)]
         public List<JsonElement> widgets { get; set; } = [];

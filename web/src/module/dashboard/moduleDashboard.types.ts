@@ -8,6 +8,7 @@ export interface ModuleDashboardApi extends Pick<
   ModuleDataApi,
   | "getFields"
   | "getRecords"
+  | "getForms"
   | "createRecord"
   | "updateRecord"
   | "getMembers"
@@ -47,6 +48,9 @@ export interface ModuleDashboardData {
   lookupErrors: Record<string, unknown>;
   onRetryLookup: (sidebarId: string) => void;
   members: IUserInfo[];
+  /** The forms the New button can open: every table's while customizing, the picked one's otherwise. */
+  forms: ISidebarForm[];
+  formsState: ModuleQueryState;
   /** Saves new values for a record with its latest versionNo; the list changes at once and rolls back on failure. */
   onUpdateRecord: (
     sidebarId: string,

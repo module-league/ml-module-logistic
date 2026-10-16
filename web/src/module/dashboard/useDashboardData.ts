@@ -1,6 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { dashboardKeys } from "@/services/dashboards/dashboard.api";
+import { formKeys } from "@/services/forms/form.api";
 import { recordKeys } from "@/services/records/record.api";
 import { memberKeys } from "@/services/user/user.api";
 import {
@@ -19,6 +26,14 @@ import type {
 } from "./moduleDashboard.types";
 
 const NO_MEMBERS: IUserInfo[] = [];
+
+function formsOf(results: UseQueryResult<ISidebarForm[]>[]) {
+  return {
+    forms: results.flatMap((result) => result.data ?? []),
+    isLoading: results.some((result) => result.isLoading),
+    error: results.find((result) => result.error)?.error,
+  };
+}
 
 /**
  * Runs a dashboard page's API for one sidebar: its saved overview, the draft while customizing,
@@ -71,6 +86,34 @@ export function useDashboardData(
       retryLookup(lookupId);
     },
     [retryLookup],
+  );
+
+  // Customize offers every table's forms; the page itself only needs the New button's
+  const formSidebarIds = useMemo(
+    () =>
+      draft
+        ? sources.map((source) => source.sidebarId)
+        : layout.newRecordFormId && layout.newRecordSidebarId
+          ? [layout.newRecordSidebarId]
+          : [],
+    [draft, sources, layout.newRecordFormId, layout.newRecordSidebarId],
+  );
+  const { forms, ...formsQueryState } = useQueries({
+    queries: formSidebarIds.map((formSidebarId) => ({
+      queryKey: formKeys.list(formSidebarId),
+      queryFn: () => api.getForms(formSidebarId),
+    })),
+    combine: formsOf,
+  });
+  const formsState = useMemo(
+    () => ({
+      isLoading: formsQueryState.isLoading,
+      error: formsQueryState.error,
+      onRetry: () => {
+        queryClient.refetchQueries({ queryKey: formKeys.all, type: "active" });
+      },
+    }),
+    [formsQueryState.isLoading, formsQueryState.error, queryClient],
   );
 
   const onCustomize = useCallback(
@@ -190,6 +233,8 @@ export function useDashboardData(
       lookupErrors,
       onRetryLookup,
       members: membersQuery.data ?? NO_MEMBERS,
+      forms,
+      formsState,
       onUpdateRecord,
       onAddRecord,
       onUploadAttachment,
@@ -210,6 +255,8 @@ export function useDashboardData(
       lookupErrors,
       onRetryLookup,
       membersQuery.data,
+      forms,
+      formsState,
       onUpdateRecord,
       onAddRecord,
       onUploadAttachment,

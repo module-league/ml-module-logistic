@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ export function ModuleNewRecordForm({
   title = "New record",
   description,
   fields,
+  form,
   members,
   onUploadAttachment,
   isLoading = false,
@@ -27,6 +28,27 @@ export function ModuleNewRecordForm({
   onSave,
 }: ModuleNewRecordFormProps) {
   const [saving, setSaving] = useState(false);
+  // A form shows its own fields in its order; without one every field shows
+  const layout = useMemo(() => {
+    if (!form) return { fields };
+    const fieldById = new Map(fields?.map((field) => [field?.objId, field]));
+    const items = form.fields?.filter((item) => fieldById.has(item?.fieldId));
+    return {
+      fields: items?.flatMap((item) => fieldById.get(item.fieldId) ?? []),
+      initialValues: Object.fromEntries(
+        items?.flatMap((item) =>
+          item?.defaultValue ? [[item.fieldId, item.defaultValue]] : [],
+        ) ?? [],
+      ),
+      placeholders: Object.fromEntries(
+        items?.flatMap((item) =>
+          item?.placeholder ? [[item.fieldId, item.placeholder]] : [],
+        ) ?? [],
+      ),
+    };
+  }, [form, fields]);
+  const heading = form?.formTitle || title;
+  const subheading = form ? form.formDescription : description;
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
   const changeOpen = useCallback(
     (next: boolean) => {
@@ -54,22 +76,23 @@ export function ModuleNewRecordForm({
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogContent
-        {...(!description && { "aria-describedby": undefined })}
+        {...(!subheading && { "aria-describedby": undefined })}
         overlayClassName="supports-backdrop-filter:backdrop-blur-none"
         className="flex flex-col gap-0 p-0 rounded-md"
         style={RECORD_DIALOG_STYLE}
       >
         <DialogHeader className="shrink-0 p-4 pr-10 pb-3 border-b">
-          <DialogTitle>{title}</DialogTitle>
-          {description && <DialogDescription>{description}</DialogDescription>}
+          <DialogTitle>{heading}</DialogTitle>
+          {subheading && <DialogDescription>{subheading}</DialogDescription>}
         </DialogHeader>
         <QueryWrapper isLoading={isLoading} error={error} onRetry={onRetry}>
           <ModuleRecordForm
-            fields={fields}
+            key={form?.objId}
+            {...layout}
             members={members}
             onUploadAttachment={onUploadAttachment}
             saving={saving}
-            submitLabel="Add record"
+            submitLabel={form?.submitLabel || "Add record"}
             savingLabel="Adding…"
             onCancel={close}
             onSave={save}

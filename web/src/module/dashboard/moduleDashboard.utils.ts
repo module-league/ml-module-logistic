@@ -1154,6 +1154,7 @@ export function normalizeDashboard(
     rangeFieldId: dashboard?.rangeFieldId ?? undefined,
     newRecordSidebarId: dashboard?.newRecordSidebarId ?? undefined,
     newRecordLabel: dashboard?.newRecordLabel ?? undefined,
+    newRecordFormId: dashboard?.newRecordFormId ?? undefined,
     widgets: dashboard?.widgets ?? [],
     versionNo: dashboard?.versionNo ?? 0,
     updateTime: dashboard?.updateTime ?? undefined,
@@ -1226,6 +1227,9 @@ export function toDashboardInput(
     rangeFieldId: layout.rangeSidebarId ? layout.rangeFieldId : undefined,
     newRecordSidebarId: layout.newRecordSidebarId,
     newRecordLabel: layout.newRecordLabel?.trim() || undefined,
+    newRecordFormId: layout.newRecordSidebarId
+      ? layout.newRecordFormId
+      : undefined,
     widgets: layout.widgets,
     versionNo,
   };

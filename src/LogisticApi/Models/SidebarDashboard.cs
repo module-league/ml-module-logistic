@@ -21,6 +21,8 @@ namespace LogisticApi.Models
         /// <summary>The sidebar the page's New button adds a record to; null hides the button.</summary>
         public string? newRecordSidebarId { get; set; }
         public string? newRecordLabel { get; set; }
+        /// <summary>The form of newRecordSidebarId the New button opens; null opens every field.</summary>
+        public Guid? newRecordFormId { get; set; }
         /// <summary>JSON array of widgets, in display order. Each one's settings are owned by the web app.</summary>
         public string widgets { get; set; } = "[]";
     }

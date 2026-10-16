@@ -20,6 +20,10 @@ export interface ModuleRecordFormProps {
   onUploadAttachment?: AttachmentUploadHandler;
   /** Starting values of an existing record; Save then stays off until something changes. */
   values?: ISidebarRecordValues;
+  /** Answers a new record starts with, by field objId, e.g. a form's default values. */
+  initialValues?: ISidebarRecordValues;
+  /** Empty-input hints by field objId; the field type's hint for the rest. */
+  placeholders?: Record<string, string>;
   saving?: boolean;
   /** Inputs are disabled. */
   readOnly?: boolean;
@@ -54,6 +58,8 @@ export interface ModuleNewRecordFormProps
   /** Shown under the title. */
   description?: string;
   fields: ISidebarField[];
+  /** Lays the dialog out as this form: its title, description, fields in order with their hints and defaults, and submit text. */
+  form?: ISidebarForm;
   members?: IUserInfo[];
   /** Return a promise to keep the dialog open until it settles; a rejection shows its message and keeps the input. */
   onSave: (values: ISidebarRecordValues) => void | Promise<unknown>;

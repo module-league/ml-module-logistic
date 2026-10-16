@@ -184,6 +184,8 @@ declare global {
     /** The table the header's New button adds to; left out hides the button. */
     newRecordSidebarId?: string;
     newRecordLabel?: string;
+    /** The form of newRecordSidebarId the New button opens; left out opens every field. */
+    newRecordFormId?: string;
     widgets: IDashboardWidget[];
     /** 0 until the overview is first saved. */
     versionNo: number;

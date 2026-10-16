@@ -45,6 +45,9 @@ namespace LogisticApi.Context.Configurations
              .HasColumnName("new_record_label")
              .HasMaxLength(40);
 
+            b.Property(e => e.newRecordFormId)
+             .HasColumnName("new_record_form_id");
+
             b.Property(e => e.widgets)
              .HasColumnName("widgets")
              .IsRequired();

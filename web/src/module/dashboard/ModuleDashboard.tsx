@@ -69,6 +69,11 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
   const newSource = sources.find(
     (source) => source.sidebarId === layout.newRecordSidebarId,
   );
+  const newForm = data.forms.find(
+    (form) =>
+      form?.objId === layout.newRecordFormId &&
+      form?.sidebarId === layout.newRecordSidebarId,
+  );
 
   const onUpdateRecord = data.onUpdateRecord;
   const onMoveRecord = useCallback(
@@ -320,6 +325,8 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
             `New ${newSource ? singular(newSource.sidebarText) : "record"}`
           }
           fields={newSource?.fields ?? []}
+          form={newForm}
+          {...(layout.newRecordFormId ? data.formsState : {})}
           members={members}
           onUploadAttachment={uploadForNew}
           onSave={addNewRecord}

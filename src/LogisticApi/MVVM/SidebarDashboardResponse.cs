@@ -16,6 +16,7 @@ namespace LogisticApi.MVVM
         public Guid? rangeFieldId { get; set; }
         public string? newRecordSidebarId { get; set; }
         public string? newRecordLabel { get; set; }
+        public Guid? newRecordFormId { get; set; }
         public JsonElement widgets { get; set; }
         /// <summary>0 until the overview is first saved.</summary>
         public int versionNo { get; set; }
@@ -38,6 +39,7 @@ namespace LogisticApi.MVVM
             rangeFieldId = dashboard.rangeFieldId,
             newRecordSidebarId = dashboard.newRecordSidebarId,
             newRecordLabel = dashboard.newRecordLabel,
+            newRecordFormId = dashboard.newRecordFormId,
             widgets = JsonDocument.Parse(dashboard.widgets).RootElement.Clone(),
             versionNo = dashboard.VersionNo,
             updateTime = DateTime.SpecifyKind(dashboard.UpdateTime ?? dashboard.CreateTime, DateTimeKind.Utc),
