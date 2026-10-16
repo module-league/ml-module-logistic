@@ -88,6 +88,7 @@ declare global {
     /** Marks cards whose date has passed, except in doneOptionIds. */
     showLate: boolean;
     doneOptionIds: string[];
+    /** Cards a column shows before it scrolls. */
     cardsPerColumn: number;
     draggable: boolean;
   };
@@ -100,9 +101,6 @@ declare global {
 
   type IDashboardList = {
     columns: IDashboardListColumn[];
-    sortFieldId?: string;
-    sortDirection: "asc" | "desc";
-    rows: number;
   };
 
   type IDashboardBreakdown = IDashboardMeasure & {
@@ -161,6 +159,11 @@ declare global {
     filter: IDashboardFilter;
     /** Also keeps records inside the page date range; only for the table the range applies to. */
     followsRange?: boolean;
+    /** The date field the records are ordered by; left out keeps the table's order. */
+    sortFieldId?: string;
+    sortDirection?: "asc" | "desc";
+    /** The most records the widget uses after sorting (the most rows an attention list shows); left out uses them all. */
+    maxCount?: number;
     metric?: IDashboardMetric;
     board?: IDashboardBoard;
     list?: IDashboardList;

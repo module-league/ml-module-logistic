@@ -16,8 +16,6 @@ import {
   DashboardWidgetMessage,
 } from "./DashboardWidgetFrame";
 
-const MAX_ROWS = 6;
-
 /**
  * The records that break a rule, red rules first; a record matching several rules shows the first.
  * A rule that tests a date "is before" shows how many days late each record is.
@@ -43,7 +41,7 @@ export function AttentionWidget({
         )?.fieldId ?? "",
       );
       return filterRecords(
-        view.records,
+        view.matching,
         rule.filter,
         view.fieldById,
         now,
@@ -56,8 +54,8 @@ export function AttentionWidget({
         return [{ record, rule, late }];
       });
     });
-  }, [attention?.rules, view.records, view.fieldById, now]);
-  const shown = flagged.slice(0, MAX_ROWS);
+  }, [attention?.rules, view.matching, view.fieldById, now]);
+  const shown = widget?.maxCount ? flagged.slice(0, widget.maxCount) : flagged;
 
   return (
     <DashboardWidgetFrame

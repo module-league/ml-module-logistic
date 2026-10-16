@@ -320,11 +320,11 @@ function BoardData({ widget, fields, onChange }: DashboardTypeSettingsProps) {
             </div>
           </SettingsField>
         )}
-      <SettingsField label="Cards per column" hint="the rest fold into + more">
+      <SettingsField label="Cards per column" hint="then it scrolls">
         <DashboardSegmented
           label="Cards per column"
           value={String(board.cardsPerColumn)}
-          options={asOptions([2, 3, 5, 10])}
+          options={asOptions([2, 3, 5])}
           onChange={(value) => set({ cardsPerColumn: Number(value) })}
         />
       </SettingsField>
@@ -398,7 +398,7 @@ function ListColumnRow({
 
 function ListData({ widget, fields, onChange }: DashboardTypeSettingsProps) {
   const list = useMemo<IDashboardList>(
-    () => widget.list ?? { columns: [], sortDirection: "asc", rows: 5 },
+    () => widget.list ?? { columns: [] },
     [widget.list],
   );
   const set = useCallback(
@@ -462,34 +462,6 @@ function ListData({ widget, fields, onChange }: DashboardTypeSettingsProps) {
             Add column
           </Button>
         </div>
-      </SettingsField>
-      <SettingsField label="Sort by">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-          <DashboardFieldSelect
-            fields={fields}
-            accepts={isFilterField}
-            value={list.sortFieldId}
-            onChange={(sortFieldId) => set({ sortFieldId })}
-            noneLabel="Newest first"
-          />
-          <DashboardSegmented
-            label="Direction"
-            value={list.sortDirection}
-            options={[
-              { value: "asc", label: "Ascending" },
-              { value: "desc", label: "Descending" },
-            ]}
-            onChange={(sortDirection) => set({ sortDirection })}
-          />
-        </div>
-      </SettingsField>
-      <SettingsField label="Rows">
-        <DashboardSegmented
-          label="Rows"
-          value={String(list.rows)}
-          options={asOptions([5, 10, 20])}
-          onChange={(value) => set({ rows: Number(value) })}
-        />
       </SettingsField>
     </>
   );
@@ -810,6 +782,56 @@ function AttentionData({
       >
         Add rule
       </Button>
+    </>
+  );
+}
+
+const MAX_COUNTS = [
+  ...asOptions([10, 20, 30, 50]),
+  { value: "all", label: "All" },
+];
+
+/** The date field every widget orders its records by, and how many of them it uses. */
+export function SortSettings({
+  widget,
+  fields,
+  onChange,
+}: Pick<DashboardTypeSettingsProps, "widget" | "fields" | "onChange">) {
+  return (
+    <>
+      <SettingsField label="Sort by" hint="date fields only">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+          <DashboardFieldSelect
+            fields={fields}
+            accepts={isDateField}
+            value={widget.sortFieldId}
+            onChange={(sortFieldId) => onChange({ sortFieldId })}
+            noneLabel="Table order"
+          />
+          <DashboardSegmented
+            label="Direction"
+            value={widget.sortDirection ?? "asc"}
+            options={[
+              { value: "asc", label: "Earliest" },
+              { value: "desc", label: "Latest" },
+            ]}
+            onChange={(sortDirection) => onChange({ sortDirection })}
+          />
+        </div>
+      </SettingsField>
+      <SettingsField
+        label="Show at most"
+        hint={widget.type === "attention" ? "rows" : "records"}
+      >
+        <DashboardSegmented
+          label="Show at most"
+          value={widget.maxCount ? String(widget.maxCount) : "all"}
+          options={MAX_COUNTS}
+          onChange={(value) =>
+            onChange({ maxCount: value === "all" ? undefined : Number(value) })
+          }
+        />
+      </SettingsField>
     </>
   );
 }

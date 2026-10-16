@@ -54,7 +54,7 @@ interface BoardCardProps {
 
 /**
  * Records in one column per option of a single select; a card dropped in another column takes that option.
- * Space picks a card up and drops it, Enter opens it.
+ * A column shows cardsPerColumn cards and scrolls for the rest. Space picks a card up and drops it, Enter opens it.
  */
 export function BoardWidget({
   widget,
@@ -78,7 +78,6 @@ export function BoardWidget({
     () => groupRecords(view.records, groupField, members, lookups),
     [view.records, groupField, members, lookups],
   );
-  const [expanded, setExpanded] = useState<string[]>([]);
   const [draggingId, setDraggingId] = useState<string>();
   const canDrag =
     !!board?.draggable && !preview && groupField?.type === "single_select";
@@ -153,15 +152,6 @@ export function BoardWidget({
     [view.records, groupField, onMoveRecord, widget.sidebarId],
   );
   const dragging = view.records.find((record) => record.objId === draggingId);
-  const toggleExpanded = useCallback(
-    (key: string) =>
-      setExpanded((current) =>
-        current.includes(key)
-          ? current.filter((entry) => entry !== key)
-          : [...current, key],
-      ),
-    [],
-  );
 
   return (
     <DashboardWidgetFrame
@@ -194,31 +184,17 @@ export function BoardWidget({
           <div className="flex min-w-0 gap-3 overflow-x-auto pb-1">
             {groups.map((group, index) => {
               const done = board?.doneOptionIds?.includes(group.key) ?? false;
-              const limit = board?.cardsPerColumn ?? 3;
-              const open = expanded.includes(group.key);
               return (
                 <BoardColumn
                   key={group.key || NO_VALUE}
                   group={group}
                   color={group.color ?? groupColor(index, group.key)}
                   droppable={canDrag}
+                  visible={board?.cardsPerColumn ?? 3}
                 >
-                  {(open ? group.records : group.records.slice(0, limit)).map(
-                    (record) => (
-                      <BoardCard key={record.objId} {...cardOf(record, done)} />
-                    ),
-                  )}
-                  {group.records.length > limit && (
-                    <button
-                      type="button"
-                      onClick={() => toggleExpanded(group.key)}
-                      className="cursor-pointer rounded-md py-1 text-xs text-muted-foreground hover:bg-background hover:text-foreground"
-                    >
-                      {open
-                        ? "Show less"
-                        : `+ ${group.records.length - limit} more`}
-                    </button>
-                  )}
+                  {group.records.map((record) => (
+                    <BoardCard key={record.objId} {...cardOf(record, done)} />
+                  ))}
                 </BoardColumn>
               );
             })}
@@ -251,17 +227,38 @@ function BoardColumn({
   group,
   color,
   droppable,
+  visible,
   children,
 }: {
   group: DashboardRecordGroup;
   color: string;
   droppable: boolean;
+  /** Cards shown before the column scrolls. */
+  visible: number;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: group.key || NO_VALUE,
     disabled: !droppable,
   });
+  const count = group.records.length;
+  // Cards differ in height, so the column is cut at the bottom of its last visible card, kept right as cards resize
+  const fitCards = useCallback(
+    (cards: HTMLDivElement | null) => {
+      if (!cards) return;
+      const fit = () => {
+        const last = cards.children[visible - 1] as HTMLElement | undefined;
+        cards.style.maxHeight =
+          last && count > visible
+            ? `${last.offsetTop + last.offsetHeight}px`
+            : "";
+      };
+      const observer = new ResizeObserver(fit);
+      [cards, ...cards.children].forEach((node) => observer.observe(node));
+      return () => observer.disconnect();
+    },
+    [visible, count],
+  );
   return (
     <div
       ref={setNodeRef}
@@ -277,9 +274,14 @@ function BoardColumn({
           style={{ backgroundColor: color }}
         />
         <span className="min-w-0 flex-1 truncate">{group.label}</span>
-        <span className="text-muted-foreground">{group.records.length}</span>
+        <span className="text-muted-foreground">{count}</span>
       </div>
-      {children}
+      <div
+        ref={fitCards}
+        className="relative -mr-1 flex flex-col gap-2 overflow-y-auto overscroll-contain pr-1"
+      >
+        {children}
+      </div>
     </div>
   );
 }

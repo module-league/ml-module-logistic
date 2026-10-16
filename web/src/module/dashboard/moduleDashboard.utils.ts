@@ -861,8 +861,30 @@ const firstId = (
 const ownDateField = (field: ISidebarField) =>
   isDateField(field) && !field.isSystemField;
 
+/** Widgets that show records one by one start with the first 10; the rest use every record. */
+const LISTS_RECORDS: IDashboardWidgetType[] = [
+  "board",
+  "list",
+  "map",
+  "attention",
+];
+
 /** The settings a widget of this type starts with on the table, using the first fields that suit it. */
 export function defaultSettings(
+  type: IDashboardWidgetType,
+  source: LookupSource | undefined,
+  sources: LookupSource[],
+): Partial<IDashboardWidget> {
+  const fields = tableFields(source);
+  return {
+    ...typeSettings(type, source, sources),
+    sortFieldId: firstId(fields, ownDateField) ?? firstId(fields, isDateField),
+    sortDirection: "asc",
+    maxCount: LISTS_RECORDS.includes(type) ? 10 : undefined,
+  };
+}
+
+function typeSettings(
   type: IDashboardWidgetType,
   source: LookupSource | undefined,
   sources: LookupSource[],
@@ -929,9 +951,6 @@ export function defaultSettings(
             )
             .slice(0, 5)
             .map((field) => ({ fieldId: field.objId })),
-          sortFieldId: dateId,
-          sortDirection: "asc",
-          rows: 5,
         },
       };
     case "breakdown":
@@ -1155,9 +1174,24 @@ export function normalizeDashboard(
     newRecordSidebarId: dashboard?.newRecordSidebarId ?? undefined,
     newRecordLabel: dashboard?.newRecordLabel ?? undefined,
     newRecordFormId: dashboard?.newRecordFormId ?? undefined,
-    widgets: dashboard?.widgets ?? [],
+    widgets: dashboard?.widgets?.map(withListSort) ?? [],
     versionNo: dashboard?.versionNo ?? 0,
     updateTime: dashboard?.updateTime ?? undefined,
+  };
+}
+
+/** Lists saved before every widget could sort and limit kept their sort and row count in list. */
+function withListSort(widget: IDashboardWidget): IDashboardWidget {
+  const saved = widget?.list as
+    | { sortFieldId?: string; sortDirection?: "asc" | "desc"; rows?: number }
+    | undefined;
+  if (!saved?.rows) return widget;
+  return {
+    ...widget,
+    list: { columns: widget.list?.columns ?? [] },
+    sortFieldId: saved.sortFieldId,
+    sortDirection: saved.sortDirection,
+    maxCount: saved.rows,
   };
 }
 
@@ -1184,8 +1218,7 @@ export function describeWidget(
         );
       case "list":
         return (
-          name(widget.list?.sortFieldId) &&
-          `Sorted by ${name(widget.list?.sortFieldId)}`
+          name(widget.sortFieldId) && `Sorted by ${name(widget.sortFieldId)}`
         );
       case "breakdown":
         return (

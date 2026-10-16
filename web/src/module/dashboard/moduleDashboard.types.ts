@@ -129,7 +129,9 @@ export interface DashboardWidgetView {
   source?: LookupSource;
   fields: ISidebarField[];
   fieldById: Map<string, ISidebarField>;
-  /** After the widget filter and the page range. */
+  /** After the widget filter and the page range, in the widget's sort order. */
+  matching: ISidebarRecord[];
+  /** matching, cut to the widget's maxCount. */
   records: ISidebarRecord[];
   isLoading: boolean;
   error?: unknown;

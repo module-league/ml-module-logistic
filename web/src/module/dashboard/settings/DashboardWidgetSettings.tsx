@@ -6,6 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Separator,
   Sheet,
   SheetContent,
   SheetDescription,
@@ -22,7 +23,11 @@ import {
 } from "../moduleDashboard.utils";
 import type { DashboardWidgetSettingsProps } from "../moduleDashboard.types";
 import { DashboardFilterEditor } from "./DashboardFilterEditor";
-import { MetricDisplay, TYPE_DATA_SETTINGS } from "./DashboardTypeSettings";
+import {
+  MetricDisplay,
+  SortSettings,
+  TYPE_DATA_SETTINGS,
+} from "./DashboardTypeSettings";
 import {
   DashboardSegmented,
   SettingsField,
@@ -30,8 +35,8 @@ import {
 } from "./DashboardControls";
 
 /**
- * The side sheet that edits one widget: a live preview on the left (on top on narrow screens), and beside it where its data comes from,
- * which records it keeps and how it shows. Every change shows on the page at once and is saved with Save layout.
+ * The side sheet that edits one widget: a live preview on the left (on top on narrow screens), and beside it, in the order a widget is built,
+ * its label, the table and fields it reads, which records it keeps, their order and count, and how it shows. Every change shows on the page at once and is saved with Save layout.
  */
 export function DashboardWidgetSettings({
   widget,
@@ -80,7 +85,7 @@ export function DashboardWidgetSettings({
         onOpenAutoFocus={(event) => {
           // Start in the settings, not on a button inside the preview
           event.preventDefault();
-          document.getElementById("widget-table")?.focus();
+          document.getElementById("widget-label")?.focus();
         }}
         className="gap-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[600px] data-[side=right]:lg:w-[min(1080px,94vw)] data-[side=right]:lg:max-w-[min(1080px,94vw)]"
       >
@@ -102,6 +107,17 @@ export function DashboardWidgetSettings({
               </div>
             </div>
             <div className="flex shrink-0 flex-col gap-6 p-4 lg:w-[400px] lg:overflow-y-auto lg:overscroll-contain">
+              <SettingsField label="Label" htmlFor="widget-label">
+                <Input
+                  id="widget-label"
+                  value={widget.label}
+                  maxLength={60}
+                  onChange={(event) => patch({ label: event.target.value })}
+                />
+              </SettingsField>
+
+              <Separator className="border-b" />
+
               <SettingsSection title="Data">
                 <SettingsField label="Table" htmlFor="widget-table">
                   <Select value={widget.sidebarId} onValueChange={pickTable}>
@@ -144,36 +160,46 @@ export function DashboardWidgetSettings({
               </SettingsSection>
 
               {source && (
-                <SettingsSection title="Filter">
-                  {rangeSidebarId === widget.sidebarId && (
-                    <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
-                      Follow the page date range
-                      <Switch
-                        checked={!!widget.followsRange}
-                        onCheckedChange={(followsRange) =>
-                          patch({ followsRange })
-                        }
-                      />
-                    </label>
-                  )}
-                  <DashboardFilterEditor
-                    fields={fields}
-                    filter={widget.filter ?? { match: "all", conditions: [] }}
-                    members={members}
-                    onChange={(filter) => patch({ filter })}
-                  />
-                </SettingsSection>
+                <>
+                  <Separator className="border-b" />
+                  <SettingsSection title="Filter">
+                    {rangeSidebarId === widget.sidebarId && (
+                      <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
+                        Follow the page date range
+                        <Switch
+                          checked={!!widget.followsRange}
+                          onCheckedChange={(followsRange) =>
+                            patch({ followsRange })
+                          }
+                        />
+                      </label>
+                    )}
+                    <DashboardFilterEditor
+                      fields={fields}
+                      filter={widget.filter ?? { match: "all", conditions: [] }}
+                      members={members}
+                      onChange={(filter) => patch({ filter })}
+                    />
+                  </SettingsSection>
+                </>
               )}
 
+              {source && (
+                <>
+                  <Separator className="border-b" />
+                  <SettingsSection title="Sort & limit">
+                    <SortSettings
+                      widget={widget}
+                      fields={fields}
+                      onChange={patch}
+                    />
+                  </SettingsSection>
+                </>
+              )}
+
+              <Separator className="border-b" />
+
               <SettingsSection title="Display">
-                <SettingsField label="Label" htmlFor="widget-label">
-                  <Input
-                    id="widget-label"
-                    value={widget.label}
-                    maxLength={60}
-                    onChange={(event) => patch({ label: event.target.value })}
-                  />
-                </SettingsField>
                 {widget.type === "metric" ? (
                   <MetricDisplay
                     widget={widget}

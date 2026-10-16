@@ -6,14 +6,14 @@ import { toRecordText } from "@/lib/recordTextHelper";
 import { recordFieldValue } from "@/module/page/modulePage.utils";
 import { RecordValueNode } from "@/components/custom/RecordValueNode";
 import { useDashboard } from "../dashboard.context";
-import { isDateField, sortRecords } from "../moduleDashboard.utils";
+import { isDateField } from "../moduleDashboard.utils";
 import type { DashboardWidgetBodyProps } from "../moduleDashboard.types";
 import {
   DashboardWidgetFrame,
   DashboardWidgetMessage,
 } from "./DashboardWidgetFrame";
 
-/** The top records in a table, sorted by a field; a row opens its record. Dates show as chips, red once passed. */
+/** The top records in a table, in the widget's sort order; a row opens its record. Dates show as chips, red once passed. */
 export function ListWidget({
   widget,
   view,
@@ -31,25 +31,8 @@ export function ListWidget({
       }) ?? [],
     [list?.columns, view.fieldById],
   );
-  const sortField = view.fieldById.get(list?.sortFieldId ?? "");
-  const rows = useMemo(
-    () =>
-      sortRecords(
-        view.records,
-        sortField,
-        list?.sortDirection ?? "asc",
-        members,
-        lookups,
-      ).slice(0, list?.rows ?? 5),
-    [
-      view.records,
-      sortField,
-      list?.sortDirection,
-      members,
-      lookups,
-      list?.rows,
-    ],
-  );
+  const sortField = view.fieldById.get(widget?.sortFieldId ?? "");
+  const rows = view.records;
   const today = startOfDay(now);
   const textOf = (field: ISidebarField, record: ISidebarRecord) =>
     toRecordText(field, recordFieldValue(field, record), members, lookups) ||
@@ -62,7 +45,7 @@ export function ListWidget({
         widget?.caption ||
         (sortField
           ? `Sorted by ${sortField.name}`
-          : `${view.records.length} records`)
+          : `${view.matching.length} records`)
       }
     >
       {!columns.length ? (

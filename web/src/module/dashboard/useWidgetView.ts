@@ -1,13 +1,17 @@
 import { useMemo } from "react";
 import { useDashboard } from "./dashboard.context";
-import { filterRecords, tableFields } from "./moduleDashboard.utils";
+import {
+  filterRecords,
+  sortRecords,
+  tableFields,
+} from "./moduleDashboard.utils";
 import type { DashboardWidgetView } from "./moduleDashboard.types";
 
 const NO_RECORDS: ISidebarRecord[] = [];
 
 /**
- * A widget's table, its fields and the records it shows: after the widget's own filter,
- * and the page date range when it follows it.
+ * A widget's table, its fields and the records it shows: after the widget's own filter
+ * and the page date range when it follows it, in its sort order and cut to its maxCount.
  */
 export function useWidgetView(widget: IDashboardWidget): DashboardWidgetView {
   const { layout, sources, lookups, lookupErrors, now, range } = useDashboard();
@@ -27,11 +31,11 @@ export function useWidgetView(widget: IDashboardWidget): DashboardWidgetView {
     widget?.followsRange && layout.rangeSidebarId === widget?.sidebarId
       ? fieldById.get(layout.rangeFieldId ?? "")
       : undefined;
-  const records = useMemo(() => {
-    const filtered = filterRecords(allRecords, widget?.filter, fieldById, now);
-    if (!rangeField) return filtered;
+  const filtered = useMemo(() => {
+    const kept = filterRecords(allRecords, widget?.filter, fieldById, now);
+    if (!rangeField) return kept;
     return filterRecords(
-      filtered,
+      kept,
       {
         match: "all",
         conditions: [
@@ -47,6 +51,17 @@ export function useWidgetView(widget: IDashboardWidget): DashboardWidgetView {
     );
   }, [allRecords, widget?.filter, fieldById, now, rangeField, range]);
 
+  const sortField = fieldById.get(widget?.sortFieldId ?? "");
+  const matching = useMemo(
+    () => sortRecords(filtered, sortField, widget?.sortDirection ?? "asc"),
+    [filtered, sortField, widget?.sortDirection],
+  );
+  const maxCount = widget?.maxCount;
+  const records = useMemo(
+    () => (maxCount ? matching.slice(0, maxCount) : matching),
+    [matching, maxCount],
+  );
+
   const problem = !widget?.sidebarId
     ? "Pick a table in this widget's settings."
     : !source
@@ -57,6 +72,7 @@ export function useWidgetView(widget: IDashboardWidget): DashboardWidgetView {
     source,
     fields,
     fieldById,
+    matching,
     records,
     isLoading: !problem && !loaded && !lookupErrors?.[widget?.sidebarId],
     error: lookupErrors?.[widget?.sidebarId],
