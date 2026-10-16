@@ -109,8 +109,6 @@ export interface DashboardContextValue {
   /** When the page opened; dates are compared with it. */
   now: Date;
   range: IDashboardDateRange;
-  /** The page search, lower-cased; widgets keep the records whose text has it. */
-  search: string;
   onOpenRecord: (sidebarId: string, objId: string) => void;
   /** Sets one field of a record, e.g. when a board card is dropped in another column. */
   onMoveRecord: (
@@ -127,7 +125,7 @@ export interface DashboardWidgetView {
   source?: LookupSource;
   fields: ISidebarField[];
   fieldById: Map<string, ISidebarField>;
-  /** After the widget filter, the page range and the page search. */
+  /** After the widget filter and the page range. */
   records: ISidebarRecord[];
   isLoading: boolean;
   error?: unknown;

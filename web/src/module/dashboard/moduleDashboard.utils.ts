@@ -1286,18 +1286,3 @@ export function sortRecords(
     })
     .map((entry) => entry.record);
 }
-
-/** Every text a record shows across its fields, for the page search. */
-export function recordSearchText(
-  record: ISidebarRecord,
-  fields: ISidebarField[],
-  members?: IUserInfo[],
-  lookups?: RecordLookups,
-) {
-  return fields
-    .map((field) =>
-      toRecordText(field, recordFieldValue(field, record), members, lookups),
-    )
-    .join(" ")
-    .toLowerCase();
-}

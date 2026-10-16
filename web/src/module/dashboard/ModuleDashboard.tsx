@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { LayoutDashboard, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { LayoutDashboard, Plus, SlidersHorizontal } from "lucide-react";
 import {
   Button,
   Empty,
@@ -8,7 +8,6 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-  Input,
   Skeleton,
   toast,
 } from "@moduleleague/ui";
@@ -47,7 +46,7 @@ interface OpenedRecord {
 
 /**
  * A page of widgets that read any table of the module: metrics, boards, lists, breakdowns, trends, maps and attention lists.
- * The header switches the date range and searches every widget; Customize edits the layout, saved with Save layout.
+ * The header switches the date range; Customize edits the layout, saved with Save layout.
  */
 export function ModuleDashboard({ data }: ModuleDashboardProps) {
   const item = useCurrentNavItem();
@@ -55,7 +54,6 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
   const { layout, sources, lookups, members } = data;
   const [now] = useState(() => new Date());
   const [range, setRange] = useState<IDashboardDateRange>();
-  const [search, setSearch] = useState("");
   const [settingsId, setSettingsId] = useState<string>();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [opened, setOpened] = useState<OpenedRecord>();
@@ -105,7 +103,6 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
       members,
       now,
       range: activeRange,
-      search: search.trim().toLowerCase(),
       onOpenRecord: openRecord,
       onMoveRecord,
       onOpenTable: goTo,
@@ -119,7 +116,6 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
       members,
       now,
       activeRange,
-      search,
       openRecord,
       onMoveRecord,
       goTo,
@@ -250,17 +246,6 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
                         />
                       </div>
                     )}
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        type="search"
-                        aria-label="Search records"
-                        placeholder="Search records"
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        className="h-8 w-52 pl-8 text-sm"
-                      />
-                    </div>
                     <Button
                       variant="outline"
                       size="sm"

@@ -28,6 +28,7 @@ import {
   WIDTH_CLASS,
 } from "./moduleDashboard.utils";
 import type { DashboardCustomizeProps } from "./moduleDashboard.types";
+import { DashboardWidget } from "./widgets/DashboardWidget";
 import {
   DashboardSegmented,
   SettingsField,
@@ -36,16 +37,6 @@ import {
 /** The data type a widget type carries while dragged from the Add widget panel. */
 const WIDGET_DRAG_TYPE = "application/x-dashboard-widget";
 const NONE = "__none";
-/** Placeholder lines per widget type, roughly as tall as the widget. */
-const PLACEHOLDER_LINES: Record<IDashboardWidgetType, number> = {
-  metric: 2,
-  board: 3,
-  list: 3,
-  breakdown: 3,
-  trend: 3,
-  map: 3,
-  attention: 2,
-};
 
 /**
  * The page in Customize mode: page settings on top, widgets as cards to drag into order and size,
@@ -389,7 +380,7 @@ export function DashboardCustomize({
   );
 }
 
-/** A widget in Customize mode: drag it by the grip, size it, open its settings or remove it. */
+/** A widget in Customize mode, showing its live data: drag it by the grip, size it, open its settings or remove it. */
 function WidgetPlaceholder({
   widget,
   description,
@@ -417,22 +408,19 @@ function WidgetPlaceholder({
       style={style}
       className={cn(
         WIDTH_CLASS[widget.width],
-        "flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-3",
+        "flex min-w-0 flex-col gap-2 rounded-xl border bg-muted/40 p-2",
         selected && "border-primary ring-2 ring-primary/20",
         isDragging && "relative z-10 shadow-lg",
       )}
     >
-      <div className="flex min-w-0 items-start gap-1.5">
+      <div className="flex min-w-0 items-center gap-1.5">
         <SortableHandle handle={handle} label={label} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{label}</p>
-          <p
-            className="truncate text-xs text-muted-foreground"
-            title={description}
-          >
-            {description}
-          </p>
-        </div>
+        <p
+          className="min-w-0 flex-1 truncate text-xs text-muted-foreground"
+          title={description}
+        >
+          {description}
+        </p>
         <Button
           variant="secondary"
           size="icon-sm"
@@ -450,21 +438,10 @@ function WidgetPlaceholder({
           onClick={onRemove}
         />
       </div>
-      <div aria-hidden className="flex flex-col gap-2 px-1">
-        {Array.from(
-          { length: PLACEHOLDER_LINES[widget.type] ?? 2 },
-          (_, index) => (
-            <div
-              key={index}
-              className={cn(
-                "h-2 rounded-full bg-muted",
-                ["w-3/5", "w-11/12", "w-2/5"][index % 3],
-              )}
-            />
-          ),
-        )}
+      <div className="min-w-0 flex-1">
+        <DashboardWidget widget={widget} preview />
       </div>
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
         Width
         <DashboardSegmented
           label={`Width of ${label}`}

@@ -4,19 +4,17 @@ import {
   Button,
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   toast,
 } from "@moduleleague/ui";
 import { errorParser } from "@/hooks/useErrorParser";
-import { dateToFriendlyLongString } from "@/lib/dateHelper";
 import QueryWrapper from "@/components/custom/QueryWrapper";
 import { ModuleRecordForm } from "./ModuleRecordForm";
 import { ModuleLookupPreview } from "./ModuleLookupPreview";
 import { ModuleAutoSaveStatus } from "./ModuleAutoSaveStatus";
 import { useAutoSave } from "../../hooks/useAutoSave";
-import { RECORD_DIALOG_STYLE, toRecordText } from "./moduleRecord.utils";
+import { RECORD_DIALOG_STYLE } from "./moduleRecord.utils";
 import type { ModuleOpenRecordProps } from "./moduleRecord.types";
 
 export function ModuleOpenRecord({
@@ -103,13 +101,6 @@ export function ModuleOpenRecord({
     },
     [flush, onNavigate],
   );
-  const title = useMemo(() => {
-    const first = fields?.[0];
-    return (
-      (first && toRecordText(first, record?.values?.[first.objId], members)) ||
-      "Untitled record"
-    );
-  }, [fields, record, members]);
 
   return (
     <Dialog open={!!recordKey} onOpenChange={changeOpen}>
@@ -118,7 +109,10 @@ export function ModuleOpenRecord({
         className="flex flex-col gap-0 p-0 rounded-md"
         style={dialogStyle}
       >
-        <DialogHeader className="shrink-0 flex-row items-center gap-2 p-4 pr-10 pb-3 border-b">
+        <DialogHeader
+          className="shrink-0 flex-row items-center gap-2 p-4 pr-10 pb-3 border-b"
+          style={{ height: "56.89px" }}
+        >
           {onNavigate && (
             <div className="flex shrink-0 items-center gap-0.5">
               <Button

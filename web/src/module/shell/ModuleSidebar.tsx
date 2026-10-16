@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { NavLink, useLocation } from "react-router";
 import {
-  ChevronDown,
   ChevronRight,
   CircleQuestionMark,
   PanelLeftClose,
@@ -37,13 +36,11 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@moduleleague/ui";
-import { useCurrentUser } from "@/services/user/current.user";
 import type {
   IModuleConfig,
   INavItemConfig,
   INavSubItemConfig,
 } from "./module.types";
-import { UserAvatar } from "@/components/custom/UserAvatar";
 import { ModuleSettings } from "@/module/settings/ModuleSettings";
 import { filterNavItems, navTargetKey } from "./nav.utils";
 

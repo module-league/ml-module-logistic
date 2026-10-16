@@ -1,29 +1,16 @@
 import { useMemo } from "react";
 import { useDashboard } from "./dashboard.context";
-import {
-  filterRecords,
-  recordSearchText,
-  tableFields,
-} from "./moduleDashboard.utils";
+import { filterRecords, tableFields } from "./moduleDashboard.utils";
 import type { DashboardWidgetView } from "./moduleDashboard.types";
 
 const NO_RECORDS: ISidebarRecord[] = [];
 
 /**
  * A widget's table, its fields and the records it shows: after the widget's own filter,
- * the page date range when it follows it, and the page search.
+ * and the page date range when it follows it.
  */
 export function useWidgetView(widget: IDashboardWidget): DashboardWidgetView {
-  const {
-    layout,
-    sources,
-    lookups,
-    lookupErrors,
-    members,
-    now,
-    range,
-    search,
-  } = useDashboard();
+  const { layout, sources, lookups, lookupErrors, now, range } = useDashboard();
   const source = useMemo(
     () => sources.find((entry) => entry?.sidebarId === widget?.sidebarId),
     [sources, widget?.sidebarId],
@@ -42,39 +29,23 @@ export function useWidgetView(widget: IDashboardWidget): DashboardWidgetView {
       : undefined;
   const records = useMemo(() => {
     const filtered = filterRecords(allRecords, widget?.filter, fieldById, now);
-    const inRange = rangeField
-      ? filterRecords(
-          filtered,
+    if (!rangeField) return filtered;
+    return filterRecords(
+      filtered,
+      {
+        match: "all",
+        conditions: [
           {
-            match: "all",
-            conditions: [
-              {
-                fieldId: rangeField.objId,
-                operator: "within",
-                value: range,
-              },
-            ],
+            fieldId: rangeField.objId,
+            operator: "within",
+            value: range,
           },
-          fieldById,
-          now,
-        )
-      : filtered;
-    if (!search) return inRange;
-    return inRange.filter((record) =>
-      recordSearchText(record, fields, members, lookups).includes(search),
+        ],
+      },
+      fieldById,
+      now,
     );
-  }, [
-    allRecords,
-    widget?.filter,
-    fieldById,
-    now,
-    rangeField,
-    range,
-    search,
-    fields,
-    members,
-    lookups,
-  ]);
+  }, [allRecords, widget?.filter, fieldById, now, rangeField, range]);
 
   const problem = !widget?.sidebarId
     ? "Pick a table in this widget's settings."
