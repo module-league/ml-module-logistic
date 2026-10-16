@@ -20,12 +20,11 @@ import { ModuleFormDialog } from "@/module/form/ModuleFormDialog";
 import { RecordValueNode } from "@/components/custom/RecordValueNode";
 import { RecordLookupContext } from "@/components/custom/RecordLookup.context";
 import { toRecordText } from "@/module/record/moduleRecord.utils";
-import { previewableLookupFields } from "@/lib/lookupHelper";
+import { useNewLinkedRecord } from "@/module/record/useNewLinkedRecord";
 import { ModulePageFooter } from "./ModulePageFooter";
 import { recordFieldValue, SYSTEM_FIELDS } from "./modulePage.utils";
 import type {
   ModuleFieldAction,
-  ModuleLinkedRecordDraft,
   ModulePageProps,
   ModuleRecordDeletion,
 } from "./modulePage.types";
@@ -51,7 +50,6 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
   const [fieldAction, setFieldAction] = useState<ModuleFieldAction>();
   const [recordDeletion, setRecordDeletion] = useState<ModuleRecordDeletion>();
   const [formsOpen, setFormsOpen] = useState(false);
-  const [linkedDraft, setLinkedDraft] = useState<ModuleLinkedRecordDraft>();
 
   const onRefreshFields = data.onRefreshFields;
   const openNewRecord = useCallback(() => {
@@ -327,45 +325,12 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     () => fields?.filter((field) => field?.type === "link_table") ?? [],
     [fields],
   );
-  const newLinkedRecord = useCallback(
-    (sidebarId: string, onAdded: (record: ISidebarRecord) => void) =>
-      setLinkedDraft({ sidebarId, onAdded, open: true }),
-    [],
+  const linkedRecord = useNewLinkedRecord(
+    lookupSources,
+    lookups,
+    data.onAddLinkedRecord,
   );
-  const changeLinkedDraftOpen = useCallback(
-    (open: boolean) =>
-      setLinkedDraft((current) => (current ? { ...current, open } : current)),
-    [],
-  );
-  const linkedDraftText = useMemo(
-    () =>
-      lookupSources?.find(
-        (source) => source?.sidebarId === linkedDraft?.sidebarId,
-      )?.sidebarText ?? "linked",
-    [lookupSources, linkedDraft?.sidebarId],
-  );
-  const linkedDraftAllFields = lookups?.[linkedDraft?.sidebarId ?? ""]?.fields;
-  const linkedDraftFields = useMemo(
-    () => previewableLookupFields(linkedDraftAllFields),
-    [linkedDraftAllFields],
-  );
-  const linkedDraftDescription = useMemo(
-    () =>
-      linkedDraftFields.length < (linkedDraftAllFields?.length ?? 0)
-        ? `It's linked once added. Its link and lookup fields are filled in on the ${linkedDraftText} page.`
-        : "It's linked once added.",
-    [linkedDraftFields.length, linkedDraftAllFields?.length, linkedDraftText],
-  );
-  const onAddLinkedRecord = data.onAddLinkedRecord;
-  const saveLinkedRecord = useCallback(
-    async (values: ISidebarRecordValues) => {
-      if (!linkedDraft) return;
-      const added = await onAddLinkedRecord(linkedDraft.sidebarId, values);
-      linkedDraft.onAdded(added);
-      toast.success(`Added to ${linkedDraftText} and linked`);
-    },
-    [linkedDraft, onAddLinkedRecord, linkedDraftText],
-  );
+  const onNewLinkedRecord = linkedRecord.onNewLinkedRecord;
 
   const lookupContext = useMemo(
     () => ({
@@ -373,9 +338,9 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
       sources: lookupSources,
       linkFields,
       lookups,
-      onNewLinkedRecord: newLinkedRecord,
+      onNewLinkedRecord,
     }),
-    [item?.sidebarId, lookupSources, linkFields, lookups, newLinkedRecord],
+    [item?.sidebarId, lookupSources, linkFields, lookups, onNewLinkedRecord],
   );
 
   const pageToolbar = useMemo<PageToolbarProps>(
@@ -485,14 +450,9 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           onSave={saveRecord}
         />
         <ModuleNewRecordForm
-          open={!!linkedDraft?.open}
-          onOpenChange={changeLinkedDraftOpen}
-          title={`New ${linkedDraftText} record`}
-          description={linkedDraftDescription}
-          fields={linkedDraftFields}
+          {...linkedRecord.dialog}
           members={members}
           onUploadAttachment={data.onUploadAttachment}
-          onSave={saveLinkedRecord}
         />
         <ModuleOpenRecord
           recordKey={data.openedRecordId}

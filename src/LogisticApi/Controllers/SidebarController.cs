@@ -6,12 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace LogisticApi.Controllers
 {
     /// <summary>
-    /// The fields and forms of one sidebar page. sidebarId is the kebab-case id from web/src/config/config.ts.
+    /// The fields, forms and overview of one sidebar page. sidebarId is the kebab-case id from web/src/config/config.ts.
     /// </summary>
     [ApiController]
     [Route("api/sidebars/{sidebarId}")]
     [Produces("application/json")]
-    public class SidebarController(SidebarFieldService fields, SidebarFormService forms) : ControllerBase
+    public class SidebarController(SidebarFieldService fields, SidebarFormService forms, SidebarDashboardService dashboards) : ControllerBase
     {
         private const string SidebarIdPattern = "^[a-z0-9]+(-[a-z0-9]+)*$";
 
@@ -77,5 +77,24 @@ namespace LogisticApi.Controllers
             [FromBody] SidebarFormOrderRequest request,
             CancellationToken ct) =>
             forms.ReorderAsync(sidebarId, request, ct);
+
+        /// <summary>The sidebar's widget overview; an empty one with versionNo 0 until it is first saved.</summary>
+        [HttpGet("dashboard")]
+        [ProducesResponseType<SidebarDashboardResponse>(StatusCodes.Status200OK)]
+        public Task<SidebarDashboardResponse> GetDashboard(
+            [FromRoute, MaxLength(100), RegularExpression(SidebarIdPattern)] string sidebarId,
+            CancellationToken ct) =>
+            dashboards.GetAsync(sidebarId, ct);
+
+        /// <summary>Saves the sidebar's widget overview. Send the versionNo you last read, 0 for the first save.</summary>
+        [HttpPut("dashboard")]
+        [ProducesResponseType<SidebarDashboardResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+        public Task<SidebarDashboardResponse> SaveDashboard(
+            [FromRoute, MaxLength(100), RegularExpression(SidebarIdPattern)] string sidebarId,
+            [FromBody] SidebarDashboardRequest request,
+            CancellationToken ct) =>
+            dashboards.SaveAsync(sidebarId, request, ct);
     }
 }

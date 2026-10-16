@@ -18,6 +18,7 @@ namespace LogisticApi.Context
         public virtual DbSet<SidebarField> SidebarFields { get; set; } = null!;
         public virtual DbSet<SidebarFieldOption> SidebarFieldOptions { get; set; } = null!;
         public virtual DbSet<SidebarForm> SidebarForms { get; set; } = null!;
+        public virtual DbSet<SidebarDashboard> SidebarDashboards { get; set; } = null!;
         public virtual DbSet<Attachment> Attachments { get; set; } = null!;
         //public virtual DbSet<JobOrder> JobOrders { get; set; } = null!;
 

@@ -52,7 +52,7 @@ export const moduleConfig: IModuleConfig = {
               page: lazy(() => import("@/pages/Logistic/ShipmentPackage")),
             },
             {
-              sidebarId: "`shipment-tracking-event",
+              sidebarId: "shipment-tracking-event",
               sidebarText: "Tracking Event",
               sidebarDesc: "Track shipments from origin to destination.",
               sidebarIcon: Package,

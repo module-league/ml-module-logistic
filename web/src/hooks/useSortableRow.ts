@@ -21,10 +21,11 @@ export const lockToVerticalAxis: Modifier = ({
 
 /**
  * One row of a SortableList: put `ref` and `style` on the row and pass `handle` to its SortableHandle.
+ * In a grid SortableList pass grid so the row moves sideways too.
  * @example
  * const { ref, style, isDragging, handle } = useSortableRow(option.id);
  */
-export function useSortableRow(id: string, disabled = false) {
+export function useSortableRow(id: string, disabled = false, grid = false) {
   const {
     setNodeRef,
     setActivatorNodeRef,
@@ -36,10 +37,12 @@ export function useSortableRow(id: string, disabled = false) {
   } = useSortable({ id, disabled });
   const style = useMemo(
     () => ({
-      transform: transform ? `translate3d(0, ${transform.y}px, 0)` : undefined,
+      transform: transform
+        ? `translate3d(${grid ? transform.x : 0}px, ${transform.y}px, 0)`
+        : undefined,
       transition,
     }),
-    [transform, transition],
+    [transform, transition, grid],
   );
   const handle = useMemo(
     () => ({ ref: setActivatorNodeRef, ...attributes, ...listeners }),

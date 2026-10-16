@@ -1,0 +1,157 @@
+import { useMemo } from "react";
+import { format, startOfDay } from "date-fns";
+import { cn } from "@moduleleague/ui";
+import { parseFieldDate } from "@/lib/dateHelper";
+import { toRecordText } from "@/lib/recordTextHelper";
+import { recordFieldValue } from "@/module/page/modulePage.utils";
+import { RecordValueNode } from "@/components/custom/RecordValueNode";
+import { useDashboard } from "../dashboard.context";
+import { isDateField, sortRecords } from "../moduleDashboard.utils";
+import type { DashboardWidgetBodyProps } from "../moduleDashboard.types";
+import {
+  DashboardWidgetFrame,
+  DashboardWidgetMessage,
+} from "./DashboardWidgetFrame";
+
+/** The top records in a table, sorted by a field; a row opens its record. Dates show as chips, red once passed. */
+export function ListWidget({
+  widget,
+  view,
+  compact,
+}: DashboardWidgetBodyProps) {
+  const { members, lookups, now, onOpenRecord } = useDashboard();
+  const list = widget?.list;
+  const columns = useMemo(
+    () =>
+      list?.columns?.flatMap((column) => {
+        const field = view.fieldById.get(column?.fieldId);
+        return field
+          ? [{ field, toField: view.fieldById.get(column?.toFieldId ?? "") }]
+          : [];
+      }) ?? [],
+    [list?.columns, view.fieldById],
+  );
+  const sortField = view.fieldById.get(list?.sortFieldId ?? "");
+  const rows = useMemo(
+    () =>
+      sortRecords(
+        view.records,
+        sortField,
+        list?.sortDirection ?? "asc",
+        members,
+        lookups,
+      ).slice(0, compact ? 3 : (list?.rows ?? 5)),
+    [
+      view.records,
+      sortField,
+      list?.sortDirection,
+      members,
+      lookups,
+      compact,
+      list?.rows,
+    ],
+  );
+  const today = startOfDay(now);
+  const textOf = (field: ISidebarField, record: ISidebarRecord) =>
+    toRecordText(field, recordFieldValue(field, record), members, lookups) ||
+    "—";
+
+  return (
+    <DashboardWidgetFrame
+      title={widget?.label}
+      aside={
+        widget?.caption ||
+        (sortField
+          ? `Sorted by ${sortField.name}`
+          : `${view.records.length} records`)
+      }
+    >
+      {!columns.length ? (
+        <DashboardWidgetMessage>
+          Add columns in this widget's settings.
+        </DashboardWidgetMessage>
+      ) : !rows.length ? (
+        <DashboardWidgetMessage>
+          No records match this list.
+        </DashboardWidgetMessage>
+      ) : (
+        <div className="-mx-1 min-w-0 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-left text-xs text-muted-foreground">
+                {columns.map(({ field, toField }) => (
+                  <th
+                    key={field.objId}
+                    className="px-1 pb-2 font-medium whitespace-nowrap"
+                  >
+                    {toField ? `${field.name} → ${toField.name}` : field.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((record) => (
+                <tr
+                  key={record.objId}
+                  tabIndex={compact ? undefined : 0}
+                  onClick={
+                    compact
+                      ? undefined
+                      : () => onOpenRecord(widget.sidebarId, record.objId)
+                  }
+                  onKeyDown={(event) =>
+                    event.key === "Enter" &&
+                    !compact &&
+                    onOpenRecord(widget.sidebarId, record.objId)
+                  }
+                  className={cn(
+                    "border-b last:border-0",
+                    !compact &&
+                      "cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
+                  )}
+                >
+                  {columns.map(({ field, toField }, index) => {
+                    const value = recordFieldValue(field, record);
+                    const date = isDateField(field)
+                      ? parseFieldDate(value)
+                      : undefined;
+                    return (
+                      <td
+                        key={field.objId}
+                        className={cn(
+                          "max-w-64 truncate px-1 py-2.5",
+                          index === 0 && "font-medium",
+                        )}
+                      >
+                        {toField ? (
+                          `${textOf(field, record)} → ${textOf(toField, record)}`
+                        ) : date ? (
+                          <span
+                            className={cn(
+                              "rounded-md px-1.5 py-0.5 text-xs font-medium whitespace-nowrap",
+                              date < today
+                                ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                                : "bg-primary-10 text-primary",
+                            )}
+                          >
+                            {format(date, "d MMM")}
+                          </span>
+                        ) : (
+                          <RecordValueNode
+                            field={field}
+                            value={value}
+                            members={members}
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </DashboardWidgetFrame>
+  );
+}

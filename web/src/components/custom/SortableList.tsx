@@ -10,6 +10,7 @@ import {
 } from "@dnd-kit/core";
 import {
   arrayMove,
+  rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -29,18 +30,21 @@ const ACCESSIBILITY = {
 };
 
 /**
- * A vertical list whose rows (each using useSortableRow) are dragged by their handle.
+ * A vertical list whose rows (each using useSortableRow) are dragged by their handle; with grid, items wrap and move both ways.
  * @example
  * <SortableList ids={ids} onReorder={setIds}>{rows}</SortableList>
  */
 export function SortableList({
   ids,
   onReorder,
+  grid = false,
   children,
 }: {
   ids: string[];
   /** The same ids in their new order, after a drop. */
   onReorder: (ids: string[]) => void;
+  /** Items sit in a wrapping grid; pass grid to useSortableRow too. */
+  grid?: boolean;
   children: ReactNode;
 }) {
   const sensors = useSensors(
@@ -67,11 +71,14 @@ export function SortableList({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
-      modifiers={[lockToVerticalAxis]}
+      modifiers={grid ? undefined : [lockToVerticalAxis]}
       onDragEnd={dragEnd}
       accessibility={ACCESSIBILITY}
     >
-      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+      <SortableContext
+        items={ids}
+        strategy={grid ? rectSortingStrategy : verticalListSortingStrategy}
+      >
         {children}
       </SortableContext>
     </DndContext>

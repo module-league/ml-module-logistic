@@ -1,32 +1,22 @@
 import { useCallback, useMemo, useState } from "react";
-import {
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toFieldCreate, toFieldUpdate } from "@/services/fields/field.api";
 import { fieldKeys, putInLists } from "@/services/fields/field.utils";
 import { recordKeys } from "@/services/records/record.api";
 import { formKeys } from "@/services/forms/form.api";
 import { memberKeys } from "@/services/user/user.api";
-import { useWorkspaceContext } from "@/module/workspace/workspace.context";
+import { isLinkingField } from "@/lib/lookupHelper";
 import {
-  isLinkingField,
-  type LookupSource,
-  type RecordLookups,
-} from "@/lib/lookupHelper";
+  useAddRecord,
+  useLookupSources,
+  useSidebarLookups,
+} from "./useRecordSources";
 import type { ModuleData, ModuleDataApi } from "./modulePage.types";
 
 const NO_FIELDS: ISidebarField[] = [];
 const NO_RECORDS: ISidebarRecord[] = [];
 const NO_MEMBERS: IUserInfo[] = [];
 const NO_FORMS: ISidebarForm[] = [];
-
-function dataOf<T>(results: UseQueryResult<T>[]) {
-  return results.map((result) => result.data);
-}
 
 /** Runs the page's API for one sidebar and returns it as ModuleData. Pass a module-level api object so it stays the same between renders. */
 export function useModuleData(
@@ -52,29 +42,7 @@ export function useModuleData(
     queryFn: () => api.getMembers(),
   });
 
-  // Every page's fields, shared with that page's own query: they list the sidebars a link field can link to
-  const { items: pages } = useWorkspaceContext();
-  const pageFields = useQueries({
-    queries: pages.map((page) => ({
-      queryKey: fieldKeys.list(page.sidebarId),
-      queryFn: () => api.getFields(page.sidebarId),
-    })),
-    combine: dataOf<ISidebarField[]>,
-  });
-  const lookupSources = useMemo<LookupSource[]>(
-    () =>
-      pages.map((page, index) => ({
-        sidebarId: page.sidebarId,
-        sidebarText: page.sidebarText,
-        fields: pageFields[index] ?? NO_FIELDS,
-      })),
-    [pages, pageFields],
-  );
-  const fieldsBySidebar = useMemo(
-    () =>
-      new Map(pages.map((page, index) => [page.sidebarId, pageFields[index]])),
-    [pages, pageFields],
-  );
+  const { lookupSources, fieldsBySidebar } = useLookupSources(api.getFields);
 
   // Records of the sidebars this sidebar's link and lookup fields point at, shared with those pages' own queries
   const lookupSidebarIds = useMemo(
@@ -88,23 +56,10 @@ export function useModuleData(
     ],
     [fieldsQuery.data],
   );
-  const lookupRecords = useQueries({
-    queries: lookupSidebarIds.map((lookupId) => ({
-      queryKey: recordKeys.list(lookupId),
-      queryFn: () => api.getRecords(lookupId),
-    })),
-    combine: dataOf<ISidebarRecord[]>,
-  });
-  const lookups = useMemo<RecordLookups>(
-    () =>
-      Object.fromEntries(
-        lookupSidebarIds.flatMap((lookupId, index) => {
-          const records = lookupRecords[index];
-          const fields = fieldsBySidebar.get(lookupId);
-          return records && fields ? [[lookupId, { fields, records }]] : [];
-        }),
-      ),
-    [lookupSidebarIds, lookupRecords, fieldsBySidebar],
+  const { lookups } = useSidebarLookups(
+    api.getRecords,
+    lookupSidebarIds,
+    fieldsBySidebar,
   );
 
   const [openedRecordId, setOpenedRecordId] = useState<string>();
@@ -119,31 +74,12 @@ export function useModuleData(
   });
   const openedRecord = recordQuery.data;
 
-  // Adds to this sidebar or to one its link fields link to; that sidebar's list is shared with its lookups
-  const { mutateAsync: addRecord } = useMutation({
-    mutationFn: ({
-      recordSidebarId,
-      values,
-    }: {
-      recordSidebarId: string;
-      values: ISidebarRecordValues;
-    }) => api.createRecord(recordSidebarId, values),
-    onSuccess: (created, { recordSidebarId }) =>
-      queryClient.setQueryData<ISidebarRecord[]>(
-        recordKeys.list(recordSidebarId),
-        (current) => [created, ...(current ?? [])],
-      ),
-  });
+  const addRecord = useAddRecord(api.createRecord);
   const onAddRecord = useCallback(
-    (values: ISidebarRecordValues) =>
-      addRecord({ recordSidebarId: id, values }),
+    (values: ISidebarRecordValues) => addRecord(id, values),
     [id, addRecord],
   );
-  const onAddLinkedRecord = useCallback(
-    (recordSidebarId: string, values: ISidebarRecordValues) =>
-      addRecord({ recordSidebarId, values }),
-    [addRecord],
-  );
+  const onAddLinkedRecord = addRecord;
   const { mutateAsync: updateRecord } = useMutation({
     mutationFn: ({
       objId,

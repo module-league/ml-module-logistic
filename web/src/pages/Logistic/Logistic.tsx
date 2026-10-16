@@ -1,57 +1,34 @@
-import { ModulePage } from "@/module/page/ModulePage";
-import { useModuleData } from "@/module/page/useModuleData";
-import type { ModuleDataApi } from "@/module/page/modulePage.types";
+import { ModuleDashboard } from "@/module/dashboard/ModuleDashboard";
+import { useDashboardData } from "@/module/dashboard/useDashboardData";
+import type { ModuleDashboardApi } from "@/module/dashboard/moduleDashboard.types";
 import { useCurrentNavItem } from "@/module/shell/navItem.context";
-import {
-  createField,
-  deleteField,
-  getFields,
-  updateField,
-} from "@/services/fields/field.api";
+import { getFields } from "@/services/fields/field.api";
 import {
   createRecord,
-  getRecord,
   getRecords,
   updateRecord,
-  deleteRecords,
 } from "@/services/records/record.api";
 import {
-  createForm,
-  deleteForm,
-  getForms,
-  reorderForms,
-  updateForm,
-} from "@/services/forms/form.api";
+  getDashboard,
+  saveDashboard,
+} from "@/services/dashboards/dashboard.api";
 import { getMembers } from "@/services/user/user.api";
 import { uploadAttachment } from "@/services/attachments/attachment.api";
-import { RecordLookupContext } from "@/components/custom/RecordLookup.context";
-import { useMemo } from "react";
 
-const pageApi: ModuleDataApi = {
+const dashboardApi: ModuleDashboardApi = {
+  getDashboard,
+  saveDashboard,
   getFields,
   getRecords,
-  getRecord,
   createRecord,
   updateRecord,
-  deleteRecords,
-  createField,
-  updateField,
-  deleteField,
-  getForms,
-  createForm,
-  updateForm,
-  deleteForm,
-  reorderForms,
   getMembers,
   uploadAttachment,
 };
 
+/** The Logistic overview: widgets over shipments, parties, locations and every other table of the module. */
 export default function Logistic() {
-  const item = useCurrentNavItem();
-
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <main className="flex min-h-0 flex-1 flex-col"></main>
-    </div>
-  );
+  const sidebarId = useCurrentNavItem()?.sidebarId;
+  const data = useDashboardData(sidebarId, dashboardApi);
+  return <ModuleDashboard data={data} />;
 }
