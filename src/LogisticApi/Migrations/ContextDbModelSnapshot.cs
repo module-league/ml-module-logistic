@@ -158,6 +158,166 @@ namespace LogisticApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LogisticApi.Models.Dispatch", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<DateTime?>("actualDeliveryAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("actual_delivery_at");
+
+                    b.Property<DateTime?>("actualPickupAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("actual_pickup_at");
+
+                    b.Property<Guid>("destinationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("destination_id");
+
+                    b.Property<Guid>("driverId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("driver_id");
+
+                    b.Property<string>("notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid>("originId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("origin_id");
+
+                    b.Property<DateTime?>("plannedDeliveryAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("planned_delivery_at");
+
+                    b.Property<DateTime>("plannedPickupAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("planned_pickup_at");
+
+                    b.Property<Guid>("shipmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("shipment_id");
+
+                    b.Property<string>("status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("planned")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("vehicleId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("vehicle_id");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_dispatch");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_dispatch_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_dispatch_ds_is_deleted");
+
+                    b.HasIndex("driverId")
+                        .HasDatabaseName("ix_lg_dispatch_driver_id");
+
+                    b.HasIndex("plannedPickupAt")
+                        .HasDatabaseName("ix_lg_dispatch_planned_pickup_at");
+
+                    b.HasIndex("shipmentId")
+                        .HasDatabaseName("ix_lg_dispatch_shipment_id");
+
+                    b.HasIndex("status")
+                        .HasDatabaseName("ix_lg_dispatch_status");
+
+                    b.HasIndex("vehicleId")
+                        .HasDatabaseName("ix_lg_dispatch_vehicle_id");
+
+                    b.ToTable("lg_dispatch", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_dispatch_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_dispatch_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_dispatch_origin_destination", "[origin_id] <> [destination_id]");
+
+                            t.HasCheckConstraint("ck_lg_dispatch_status", "[status] IN ('planned', 'dispatched', 'in_transit', 'delivered', 'cancelled')");
+                        });
+                });
+
             modelBuilder.Entity("LogisticApi.Models.SidebarDashboard", b =>
                 {
                     b.Property<Guid>("ObjId")

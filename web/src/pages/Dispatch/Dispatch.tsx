@@ -1,51 +1,22 @@
-import { ModulePage } from "@/module/page/ModulePage";
-import { useModuleData } from "@/module/page/useModuleData";
-import type { ModuleDataApi } from "@/module/page/modulePage.types";
-import { useCurrentNavItem } from "@/module/shell/navItem.context";
-import {
-  createField,
-  deleteField,
-  getFields,
-  updateField,
-} from "@/services/fields/field.api";
-import {
-  createRecord,
-  getRecord,
-  getRecords,
-  updateRecord,
-  deleteRecords,
-} from "@/services/records/record.api";
-import {
-  createForm,
-  deleteForm,
-  getForms,
-  reorderForms,
-  updateForm,
-} from "@/services/forms/form.api";
+import { getFields } from "@/services/fields/field.api";
+import { getRecords } from "@/services/records/record.api";
 import { getMembers } from "@/services/user/user.api";
-import { uploadAttachment } from "@/services/attachments/attachment.api";
+import {
+  createDispatch,
+  getDispatchSources,
+} from "@/services/dispatches/dispatch.api";
+import { useDispatchJob, type DispatchJobApi } from "./useDispatchJob";
 import DispatchPage from "./DispatchPage";
 
-const pageApi: ModuleDataApi = {
+const dispatchApi: DispatchJobApi = {
   getFields,
   getRecords,
-  getRecord,
-  createRecord,
-  updateRecord,
-  deleteRecords,
-  createField,
-  updateField,
-  deleteField,
-  getForms,
-  createForm,
-  updateForm,
-  deleteForm,
-  reorderForms,
   getMembers,
-  uploadAttachment,
+  getDispatchSources,
+  createDispatch,
 };
 
 export default function Dispatch() {
-  const sidebarId = useCurrentNavItem()?.sidebarId;
-  return <DispatchPage sidebarId={sidebarId} />;
+  const job = useDispatchJob(dispatchApi);
+  return <DispatchPage job={job} />;
 }

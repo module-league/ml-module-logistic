@@ -9,9 +9,11 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { DispatchJobDialog } from "./DispatchJobDialog";
+import type { DispatchJobData } from "./useDispatchJob";
 
 type DispatchPageProps = {
-  sidebarId: string;
+  job: DispatchJobData;
 };
 
 const DISPATCH_TABS = [
@@ -21,7 +23,7 @@ const DISPATCH_TABS = [
 ];
 
 export default function DispatchPage(props: DispatchPageProps) {
-  const { sidebarId } = props;
+  const { job } = props;
   // The picked tab lives in the URL (?tab=…), so it survives a reload and can be linked to
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = DISPATCH_TABS.some(
@@ -56,7 +58,9 @@ export default function DispatchPage(props: DispatchPageProps) {
             </TabsTrigger>
           ))}
         </TabsList>
-        <Button size="sm">Add Dispatch</Button>
+        <Button size="sm" onClick={() => job?.onOpenChange(true)}>
+          Add Dispatch
+        </Button>
       </div>
       {DISPATCH_TABS.map((item) => (
         <TabsContent key={item.value} value={item.value}>
@@ -73,6 +77,7 @@ export default function DispatchPage(props: DispatchPageProps) {
           </Empty>
         </TabsContent>
       ))}
+      <DispatchJobDialog job={job} />
     </Tabs>
   );
 }
