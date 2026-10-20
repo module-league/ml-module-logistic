@@ -158,6 +158,123 @@ namespace LogisticApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LogisticApi.Models.CheckpointLog", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<string>("attachments")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("attachments");
+
+                    b.Property<Guid>("dispatchId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("dispatch_id");
+
+                    b.Property<bool>("internalOnly")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("internal_only");
+
+                    b.Property<string>("note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("note");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_checkpoint_log");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_checkpoint_log_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_checkpoint_log_ds_is_deleted");
+
+                    b.HasIndex("dispatchId")
+                        .HasDatabaseName("ix_lg_checkpoint_log_dispatch_id");
+
+                    b.ToTable("lg_checkpoint_log", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_checkpoint_log_attachments_json", "ISJSON([attachments]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_checkpoint_log_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_checkpoint_log_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+                        });
+                });
+
             modelBuilder.Entity("LogisticApi.Models.Dispatch", b =>
                 {
                     b.Property<Guid>("ObjId")

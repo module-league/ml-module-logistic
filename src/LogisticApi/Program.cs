@@ -36,6 +36,7 @@ builder.Services.AddScoped<AttachmentService>();
 // Dispatches, picking records from the sidebars named in appsettings
 builder.Services.Configure<DispatchOptions>(builder.Configuration.GetSection(DispatchOptions.Section));
 builder.Services.AddScoped<DispatchService>();
+builder.Services.AddScoped<CheckpointLogService>();
 
 // Expected failures (400/404/409) thrown as ApiProblemException become ProblemDetails responses
 builder.Services.AddProblemDetails();

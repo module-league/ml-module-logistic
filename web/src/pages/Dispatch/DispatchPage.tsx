@@ -13,6 +13,7 @@ import QueryWrapper from "@/components/custom/QueryWrapper";
 import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControls";
 import { DispatchBoard, DispatchBoardSkeleton } from "./DispatchBoard";
 import { DispatchCardSettings } from "./DispatchCardSettings";
+import { DispatchDetailDialog } from "./DispatchDetailDialog";
 import { DispatchJobDialog } from "./DispatchJobDialog";
 import {
   boardColumns,
@@ -22,9 +23,11 @@ import {
   type DispatchShipment,
 } from "./dispatchBoard.utils";
 import type { DispatchData } from "./useDispatchData";
+import type { DispatchDetailData } from "./useDispatchDetail";
 
 type DispatchPageProps = {
   data: DispatchData;
+  detail: DispatchDetailData;
 };
 
 type DispatchView = "board" | "schedule" | "fleet";
@@ -38,7 +41,7 @@ const DISPATCH_VIEWS: { value: DispatchView; label: string }[] = [
 const COMING_SOON_ICONS = { schedule: CalendarDays, fleet: Truck };
 
 export default function DispatchPage(props: DispatchPageProps) {
-  const { data } = props;
+  const { data, detail } = props;
   // The picked view lives in the URL (?view=…), so it survives a reload and can be linked to
   const [searchParams, setSearchParams] = useSearchParams();
   const view =
@@ -93,6 +96,21 @@ export default function DispatchPage(props: DispatchPageProps) {
     [onOpenDialog],
   );
   const customize = useCallback(() => setCustomizing(true), []);
+  const onOpenDetail = detail?.onOpen;
+  const open = useCallback(
+    (shipment: DispatchShipment) =>
+      shipment?.dispatch
+        ? onOpenDetail(shipment.dispatch.objId)
+        : assign(shipment),
+    [onOpenDetail, assign],
+  );
+  const opened = useMemo(
+    () =>
+      board.shipments.find(
+        (shipment) => shipment?.dispatch?.objId === detail?.dispatchId,
+      ),
+    [board.shipments, detail?.dispatchId],
+  );
 
   const ComingSoonIcon = view === "board" ? undefined : COMING_SOON_ICONS[view];
   const viewLabel = DISPATCH_VIEWS.find((item) => item.value === view)?.label;
@@ -152,11 +170,17 @@ export default function DispatchPage(props: DispatchPageProps) {
             routeReady={!!board.card.origin && !!board.card.destination}
             now={now}
             onCustomize={customize}
-            onAssign={assign}
+            onOpen={open}
           />
         </QueryWrapper>
       )}
       <DispatchJobDialog data={data} shipments={board.shipments} />
+      <DispatchDetailDialog
+        shipment={opened}
+        detail={detail}
+        members={data?.members}
+        now={now}
+      />
       <DispatchCardSettings
         open={customizing}
         onOpenChange={setCustomizing}

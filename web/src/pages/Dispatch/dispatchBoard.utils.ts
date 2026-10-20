@@ -63,7 +63,8 @@ export interface DispatchPlace {
   title: string;
 }
 
-export interface DispatchDriver {
+/** A driver or vehicle, named by its table's primary field. */
+export interface DispatchResource {
   id: string;
   title: string;
   initials: string;
@@ -80,8 +81,11 @@ export interface DispatchShipment {
   details: string[];
   /** Its latest dispatch that isn't cancelled. */
   dispatch?: IDispatch;
-  driver?: DispatchDriver;
+  driver?: DispatchResource;
+  vehicle?: DispatchResource;
   stage: DispatchStage;
+  /** When the shipment record was created. */
+  bookedAt: string;
 }
 
 /** The shipment fields a card reads. */
@@ -190,7 +194,7 @@ export function lateText(dispatch: IDispatch | undefined, now: Date) {
 }
 
 /**
- * The board's shipments, each with its latest dispatch and driver, read through the card settings (see cardFieldsOf).
+ * The board's shipments, each with its latest dispatch, driver and vehicle, read through the card settings (see cardFieldsOf).
  * Locations are named by the origin field's shown field, else the location table's primary field.
  */
 export function buildDispatchBoard(
@@ -240,20 +244,22 @@ export function buildDispatchBoard(
   ) =>
     places.get(parseRecordIds(record?.values?.[field?.objId ?? ""])?.[0] ?? "");
 
-  const driverTitleField = titleFieldOf(
-    fieldsOf(lookups, sources?.driverSidebarId),
-  );
-  const drivers = new Map(
-    (lookups?.[sources?.driverSidebarId ?? ""]?.records ?? []).map(
-      (record): [string, DispatchDriver] => {
-        const title = recordTitle(record, driverTitleField, members, lookups);
-        return [
-          record.objId,
-          { id: record.objId, title, initials: initialsOf(title) },
-        ];
-      },
-    ),
-  );
+  const resourcesOf = (sidebarId?: string) => {
+    const titleField = titleFieldOf(fieldsOf(lookups, sidebarId));
+    return new Map(
+      (lookups?.[sidebarId ?? ""]?.records ?? []).map(
+        (record): [string, DispatchResource] => {
+          const title = recordTitle(record, titleField, members, lookups);
+          return [
+            record.objId,
+            { id: record.objId, title, initials: initialsOf(title) },
+          ];
+        },
+      ),
+    );
+  };
+  const drivers = resourcesOf(sources?.driverSidebarId);
+  const vehicles = resourcesOf(sources?.vehicleSidebarId);
 
   const latest = new Map<string, IDispatch>();
   dispatches.forEach((dispatch) => {
@@ -283,6 +289,8 @@ export function buildDispatchBoard(
           .filter(Boolean),
         dispatch,
         driver: dispatch ? drivers.get(dispatch.driverId) : undefined,
+        vehicle: dispatch ? vehicles.get(dispatch.vehicleId) : undefined,
+        bookedAt: record.createTime,
         stage: dispatch ? STAGE_OF_STATUS[dispatch.status] : "unassigned",
       };
     });

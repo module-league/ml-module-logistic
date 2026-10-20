@@ -8,7 +8,13 @@ import {
   getDispatchSources,
   saveDispatchSettings,
 } from "@/services/dispatches/dispatch.api";
+import { uploadAttachment } from "@/services/attachments/attachment.api";
+import {
+  createCheckpoint,
+  getCheckpoints,
+} from "@/services/checkpoints/checkpoint.api";
 import { useDispatchData, type DispatchApi } from "./useDispatchData";
+import { useDispatchDetail, type DispatchDetailApi } from "./useDispatchDetail";
 import DispatchPage from "./DispatchPage";
 
 const dispatchApi: DispatchApi = {
@@ -22,7 +28,14 @@ const dispatchApi: DispatchApi = {
   createDispatch,
 };
 
+const detailApi: DispatchDetailApi = {
+  getCheckpoints,
+  createCheckpoint,
+  uploadAttachment,
+};
+
 export default function Dispatch() {
   const data = useDispatchData(dispatchApi);
-  return <DispatchPage data={data} />;
+  const detail = useDispatchDetail(detailApi);
+  return <DispatchPage data={data} detail={detail} />;
 }

@@ -20,8 +20,8 @@ type DispatchBoardProps = {
   routeReady: boolean;
   now: Date;
   onCustomize: () => void;
-  /** An unassigned card opens the assign dialog for its shipment. */
-  onAssign: (shipment: DispatchShipment) => void;
+  /** A card opens its dispatch, or the assign dialog while it has none. */
+  onOpen: (shipment: DispatchShipment) => void;
 };
 
 const COLUMN_CLASS =
@@ -34,7 +34,7 @@ export function DispatchBoard({
   routeReady,
   now,
   onCustomize,
-  onAssign,
+  onOpen,
 }: DispatchBoardProps) {
   return (
     <div className="flex flex-col gap-3">
@@ -82,11 +82,7 @@ export function DispatchBoard({
                     shipment={shipment}
                     showRoute={routeReady}
                     now={now}
-                    onSelect={
-                      shipment.stage === "unassigned"
-                        ? () => onAssign(shipment)
-                        : undefined
-                    }
+                    onSelect={() => onOpen(shipment)}
                   />
                 ))
               ) : (
