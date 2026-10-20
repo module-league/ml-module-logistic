@@ -318,6 +318,136 @@ namespace LogisticApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LogisticApi.Models.DispatchSetting", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<Guid?>("badgeFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("badge_field_id");
+
+                    b.Property<Guid?>("destinationFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("destination_field_id");
+
+                    b.Property<string>("detailFieldIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("detail_field_ids");
+
+                    b.Property<Guid?>("originFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("origin_field_id");
+
+                    b.Property<string>("shipmentSidebarId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("shipment_sidebar_id");
+
+                    b.Property<Guid?>("titleFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("title_field_id");
+
+                    b.Property<Guid?>("weightFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("weight_field_id");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_dispatch_setting");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_dispatch_setting_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_dispatch_setting_ds_is_deleted");
+
+                    b.HasIndex("shipmentSidebarId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_dispatch_setting_shipment_sidebar_id")
+                        .HasFilter("[ds_is_deleted] = 0");
+
+                    b.ToTable("lg_dispatch_setting", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_dispatch_setting_detail_field_ids_json", "ISJSON([detail_field_ids]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_dispatch_setting_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_dispatch_setting_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+                        });
+                });
+
             modelBuilder.Entity("LogisticApi.Models.SidebarDashboard", b =>
                 {
                     b.Property<Guid>("ObjId")

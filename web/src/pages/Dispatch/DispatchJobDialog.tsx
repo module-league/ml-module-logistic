@@ -29,7 +29,8 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { errorParser } from "@/hooks/useErrorParser";
 import { parseFieldDate } from "@/lib/dateHelper";
 import { parseRecordIds, toRecordIdsValue } from "@/lib/lookupHelper";
-import type { DispatchJobData } from "./useDispatchJob";
+import type { DispatchShipment } from "./dispatchBoard.utils";
+import type { DispatchData } from "./useDispatchData";
 
 type DispatchDraft = Partial<IDispatchCreate>;
 type DispatchErrors = Partial<Record<keyof IDispatchCreate, string>>;
@@ -60,14 +61,21 @@ function draftErrors(draft: DispatchDraft): DispatchErrors {
   return errors;
 }
 
+type DispatchJobDialogProps = {
+  data: DispatchData;
+  /** Picking one fills in its origin and destination. */
+  shipments: DispatchShipment[];
+};
+
 /**
  * Plans a dispatch: the shipment, its driver and vehicle, the planned pickup and delivery, and where it goes from and to.
+ * Opens with data.dialog.draft filled in.
  * @example
- * <DispatchJobDialog job={useDispatchJob(dispatchApi)} />
+ * <DispatchJobDialog data={useDispatchData(dispatchApi)} shipments={shipments} />
  */
-export function DispatchJobDialog({ job }: { job: DispatchJobData }) {
+export function DispatchJobDialog({ data, shipments }: DispatchJobDialogProps) {
   return (
-    <Dialog open={job.open} onOpenChange={job.onOpenChange}>
+    <Dialog open={data?.dialog?.open} onOpenChange={data?.onDialogOpenChange}>
       <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 border-b p-4 pr-10 pb-3">
           <DialogTitle>Dispatch job</DialogTitle>
@@ -76,22 +84,24 @@ export function DispatchJobDialog({ job }: { job: DispatchJobData }) {
           </DialogDescription>
         </DialogHeader>
         <QueryWrapper
-          isLoading={job.isLoading}
-          error={job.error}
-          onRetry={job.onRetry}
+          isLoading={data?.isLoading}
+          error={data?.error}
+          onRetry={data?.onRetry}
           loadingText="Loading shipments, drivers and vehicles…"
         >
-          <DispatchJobForm job={job} />
+          <DispatchJobForm data={data} shipments={shipments} />
         </QueryWrapper>
       </DialogContent>
     </Dialog>
   );
 }
 
-function DispatchJobForm({ job }: { job: DispatchJobData }) {
-  const { sources, lookupSources, lookups, members, onCreateDispatch } = job;
-  const onOpenChange = job.onOpenChange;
-  const [draft, setDraft] = useState<DispatchDraft>({});
+function DispatchJobForm({ data, shipments }: DispatchJobDialogProps) {
+  const { sources, lookupSources, lookups, members, onCreateDispatch } = data;
+  const onOpenChange = data?.onDialogOpenChange;
+  const [draft, setDraft] = useState<DispatchDraft>(
+    () => data?.dialog?.draft ?? {},
+  );
   const [submitted, setSubmitted] = useState(false);
   const errors = useMemo(
     () => (submitted ? draftErrors(draft) : {}),
@@ -103,9 +113,21 @@ function DispatchJobForm({ job }: { job: DispatchJobData }) {
   );
 
   const change = useCallback(
-    (key: keyof IDispatchCreate, value?: string) =>
-      setDraft((current) => ({ ...current, [key]: value || undefined })),
-    [],
+    (key: keyof IDispatchCreate, value?: string) => {
+      const shipment =
+        key === "shipmentId"
+          ? shipments?.find((entry) => entry?.id === value)
+          : undefined;
+      setDraft((current) => ({
+        ...current,
+        [key]: value || undefined,
+        ...(shipment?.origin && { originId: shipment.origin.id }),
+        ...(shipment?.destination && {
+          destinationId: shipment.destination.id,
+        }),
+      }));
+    },
+    [shipments],
   );
   const submit = useCallback(
     async (event: FormEvent) => {
@@ -193,13 +215,13 @@ function DispatchJobForm({ job }: { job: DispatchJobData }) {
           <Button
             variant="outline"
             size="sm"
-            disabled={job.isCreating}
+            disabled={data?.isCreating}
             onClick={() => onOpenChange(false)}
           >
             Cancel
           </Button>
-          <Button type="submit" size="sm" disabled={job.isCreating}>
-            {job.isCreating ? "Dispatching…" : "Dispatch"}
+          <Button type="submit" size="sm" disabled={data?.isCreating}>
+            {data?.isCreating ? "Dispatching…" : "Dispatch"}
           </Button>
         </DialogFooter>
       </form>

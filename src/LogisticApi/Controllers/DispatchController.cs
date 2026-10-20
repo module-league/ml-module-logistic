@@ -18,6 +18,19 @@ namespace LogisticApi.Controllers
         [HttpGet("sources")]
         public DispatchSourcesResponse GetSources() => dispatches.Sources();
 
+        /// <summary>Which shipment fields the board reads; versionNo 0 until first saved.</summary>
+        [HttpGet("settings")]
+        public Task<DispatchSettingsResponse> GetSettings(CancellationToken ct) =>
+            dispatches.GetSettingsAsync(ct);
+
+        /// <summary>Saves which shipment fields the board reads. Send the versionNo you last read, 0 for the first save.</summary>
+        [HttpPut("settings")]
+        [ProducesResponseType<DispatchSettingsResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+        public Task<DispatchSettingsResponse> SaveSettings([FromBody] DispatchSettingsRequest request, CancellationToken ct) =>
+            dispatches.SaveSettingsAsync(request, ct);
+
         [HttpGet("{objId:guid}")]
         [ProducesResponseType<DispatchResponse>(StatusCodes.Status200OK)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

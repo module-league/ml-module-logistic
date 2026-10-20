@@ -30,6 +30,30 @@ declare global {
     createTime: string;
   };
 
+  /** Which shipment fields the Dispatch board reads (lg_dispatch_setting); ids are fields of IDispatchSources.shipmentSidebarId. */
+  type IDispatchSettings = {
+    /** Left out until first saved. */
+    objId?: string;
+    shipmentSidebarId: string;
+    /** Left out, the primary field. */
+    titleFieldId?: string;
+    /** A link field to the location table. */
+    originFieldId?: string;
+    destinationFieldId?: string;
+    badgeFieldId?: string;
+    /** A number field in kg, checked against vehicle capacity. */
+    weightFieldId?: string;
+    /** Up to 4, in display order. */
+    detailFieldIds: string[];
+    /** 0 until first saved; the board then picks the fields itself. */
+    versionNo: number;
+  };
+
+  type IDispatchSettingsInput = Omit<
+    IDispatchSettings,
+    "objId" | "shipmentSidebarId"
+  >;
+
   /** A new dispatch starts as "planned". */
   type IDispatchCreate = Pick<
     IDispatch,

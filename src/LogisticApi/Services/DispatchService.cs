@@ -1,6 +1,8 @@
+using System.Text.Json;
 using LogisticApi.Context;
 using LogisticApi.Models;
 using LogisticApi.MVVM;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -80,6 +82,83 @@ namespace LogisticApi.Services
             await db.SaveChangesAsync(ct);
             return DispatchResponse.From(dispatch);
         }
+
+        public async Task<DispatchSettingsResponse> GetSettingsAsync(CancellationToken ct)
+        {
+            var setting = await db.DispatchSettings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.shipmentSidebarId == sources.ShipmentSidebarId, ct);
+            return setting is null ? DispatchSettingsResponse.Empty(sources.ShipmentSidebarId) : DispatchSettingsResponse.From(setting);
+        }
+
+        /// <summary>Adds the setting on the first save (versionNo 0) and replaces it after that.</summary>
+        public async Task<DispatchSettingsResponse> SaveSettingsAsync(DispatchSettingsRequest request, CancellationToken ct)
+        {
+            var fields = await db.SidebarFields
+                .AsNoTracking()
+                .Where(f => f.sidebarId == sources.ShipmentSidebarId)
+                .ToDictionaryAsync(f => f.ObjId, ct);
+            SidebarField FieldOf(Guid id, string role) =>
+                fields.GetValueOrDefault(id)
+                ?? throw ApiProblemException.BadRequest($"Unknown {role} field.", $"'{sources.ShipmentSidebarId}' has no field '{id}'.");
+            void CheckLocationLink(Guid id, string role)
+            {
+                var field = FieldOf(id, role);
+                if (!FieldTypes.IsLink(field.type) || FieldSettings.Read(field.settings).lookupSidebarId != sources.LocationSidebarId)
+                    throw ApiProblemException.BadRequest($"The {role} needs a link to the location table.", $"'{field.sidebarName}' doesn't link to '{sources.LocationSidebarId}'.");
+            }
+
+            var originId = request.originFieldId!.Value;
+            var destinationId = request.destinationFieldId!.Value;
+            CheckLocationLink(originId, "origin");
+            CheckLocationLink(destinationId, "destination");
+            if (originId == destinationId)
+                throw ApiProblemException.BadRequest("Origin and destination are the same field.", "Pick a different field for each.");
+            if (request.titleFieldId is { } titleId) FieldOf(titleId, "title");
+            if (request.badgeFieldId is { } badgeId) FieldOf(badgeId, "badge");
+            if (request.weightFieldId is { } weightId && !FieldTypes.IsNumeric(FieldOf(weightId, "weight").type))
+                throw ApiProblemException.BadRequest("The weight needs a number field.", $"'{fields[weightId].sidebarName}' is a {fields[weightId].type} field.");
+            var detailIds = request.detailFieldIds.Distinct().ToList();
+            detailIds.ForEach(id => FieldOf(id, "detail"));
+
+            var setting = await db.DispatchSettings.FirstOrDefaultAsync(s => s.shipmentSidebarId == sources.ShipmentSidebarId, ct);
+            if (setting is null)
+            {
+                if (request.versionNo != 0) throw StaleSettings();
+                setting = new DispatchSetting { ObjId = Guid.CreateVersion7(), shipmentSidebarId = sources.ShipmentSidebarId };
+                db.DispatchSettings.Add(setting);
+            }
+            else
+            {
+                if (setting.VersionNo != request.versionNo) throw StaleSettings();
+                db.Entry(setting).Property(s => s.VersionNo).OriginalValue = request.versionNo;
+            }
+
+            setting.titleFieldId = request.titleFieldId;
+            setting.originFieldId = originId;
+            setting.destinationFieldId = destinationId;
+            setting.badgeFieldId = request.badgeFieldId;
+            setting.weightFieldId = request.weightFieldId;
+            setting.detailFieldIds = JsonSerializer.Serialize(detailIds);
+
+            try
+            {
+                await db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw StaleSettings();
+            }
+            // Two first saves at once: the one-setting index keeps the second out
+            catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 })
+            {
+                throw StaleSettings();
+            }
+            return DispatchSettingsResponse.From(setting);
+        }
+
+        private static ApiProblemException StaleSettings() =>
+            ApiProblemException.Conflict("The card settings were changed by someone else.", "Reload the page and change them again.");
 
         /// <summary>Each id must be a record of its sidebar.</summary>
         private async Task CheckRecordsAsync(List<(string label, Guid id, string sidebarId)> picks, CancellationToken ct)

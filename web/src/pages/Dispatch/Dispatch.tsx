@@ -3,20 +3,26 @@ import { getRecords } from "@/services/records/record.api";
 import { getMembers } from "@/services/user/user.api";
 import {
   createDispatch,
+  getDispatches,
+  getDispatchSettings,
   getDispatchSources,
+  saveDispatchSettings,
 } from "@/services/dispatches/dispatch.api";
-import { useDispatchJob, type DispatchJobApi } from "./useDispatchJob";
+import { useDispatchData, type DispatchApi } from "./useDispatchData";
 import DispatchPage from "./DispatchPage";
 
-const dispatchApi: DispatchJobApi = {
+const dispatchApi: DispatchApi = {
   getFields,
   getRecords,
   getMembers,
+  getDispatches,
   getDispatchSources,
+  getDispatchSettings,
+  saveDispatchSettings,
   createDispatch,
 };
 
 export default function Dispatch() {
-  const job = useDispatchJob(dispatchApi);
-  return <DispatchPage job={job} />;
+  const data = useDispatchData(dispatchApi);
+  return <DispatchPage data={data} />;
 }
