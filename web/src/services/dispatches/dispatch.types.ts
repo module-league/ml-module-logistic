@@ -41,7 +41,7 @@ declare global {
     originFieldId?: string;
     destinationFieldId?: string;
     badgeFieldId?: string;
-    /** A number field in kg, checked against vehicle capacity. */
+    /** A number field, shown on the card in kg. */
     weightFieldId?: string;
     /** Up to 4, in display order. */
     detailFieldIds: string[];

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CalendarDays, PanelRightOpen, Truck } from "lucide-react";
+import { CalendarDays, PanelRightOpen, Settings2, Truck } from "lucide-react";
 import { Button } from "@/ui-kit";
 import {
   Empty,
@@ -15,10 +15,11 @@ import { DispatchBoard, DispatchBoardSkeleton } from "./DispatchBoard";
 import { DispatchCardSettings } from "./DispatchCardSettings";
 import { DispatchJobDialog } from "./DispatchJobDialog";
 import {
+  boardColumns,
   buildDispatchBoard,
   shipmentDraft,
   type DispatchCardPicks,
-  type DispatchStage,
+  type DispatchShipment,
 } from "./dispatchBoard.utils";
 import type { DispatchData } from "./useDispatchData";
 
@@ -54,8 +55,6 @@ export default function DispatchPage(props: DispatchPageProps) {
       ),
     [setSearchParams],
   );
-  const [stage, setStage] = useState<DispatchStage>("unassigned");
-  const [selectedId, setSelectedId] = useState<string>();
   const [now] = useState(() => new Date());
   const [customizing, setCustomizing] = useState(false);
   const picks = data?.settings?.versionNo ? data.settings : undefined;
@@ -71,48 +70,29 @@ export default function DispatchPage(props: DispatchPageProps) {
       ),
     [data?.sources, data?.lookups, data?.dispatches, data?.members, picks],
   );
-  const counts = useMemo(
-    () =>
-      board.shipments.reduce<Partial<Record<DispatchStage, number>>>(
-        (total, shipment) => ({
-          ...total,
-          [shipment.stage]: (total?.[shipment.stage] ?? 0) + 1,
-        }),
-        {},
-      ),
-    [board.shipments],
-  );
-  const shown = useMemo(
-    () => board.shipments.filter((shipment) => shipment?.stage === stage),
-    [board.shipments, stage],
-  );
-  const selected = useMemo(
-    () => shown.find((shipment) => shipment?.id === selectedId) ?? shown[0],
-    [shown, selectedId],
+  const columns = useMemo(
+    () => boardColumns(board.shipments, now),
+    [board.shipments, now],
   );
 
   const previewOf = useCallback(
-    (draft: DispatchCardPicks) => {
-      const { shipments } = buildDispatchBoard(
+    (draft: DispatchCardPicks) =>
+      buildDispatchBoard(
         data?.sources,
         data?.lookups,
         data?.dispatches,
         data?.members,
         draft,
-      );
-      return (
-        shipments.find((shipment) => shipment?.id === selected?.id) ??
-        shipments[0]
-      );
-    },
-    [data?.sources, data?.lookups, data?.dispatches, data?.members, selected],
+      ).shipments?.[0],
+    [data?.sources, data?.lookups, data?.dispatches, data?.members],
   );
 
   const onOpenDialog = data?.onOpenDialog;
-  const openFullPanel = useCallback(
-    () => onOpenDialog(selected?.dispatch ? {} : shipmentDraft(selected)),
-    [onOpenDialog, selected],
+  const assign = useCallback(
+    (shipment?: DispatchShipment) => onOpenDialog(shipmentDraft(shipment)),
+    [onOpenDialog],
   );
+  const customize = useCallback(() => setCustomizing(true), []);
 
   const ComingSoonIcon = view === "board" ? undefined : COMING_SOON_ICONS[view];
   const viewLabel = DISPATCH_VIEWS.find((item) => item.value === view)?.label;
@@ -126,15 +106,26 @@ export default function DispatchPage(props: DispatchPageProps) {
           options={DISPATCH_VIEWS}
           onChange={changeView}
         />
-        <Button
-          variant="outline"
-          size="sm"
-          startIcon={<PanelRightOpen size={14} />}
-          disabled={!data?.sources}
-          onClick={openFullPanel}
-        >
-          Open full assign panel
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            startIcon={<Settings2 size={14} />}
+            disabled={!data?.sources}
+            onClick={customize}
+          >
+            Customize card
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            startIcon={<PanelRightOpen size={14} />}
+            disabled={!data?.sources}
+            onClick={() => assign()}
+          >
+            Open full assign panel
+          </Button>
+        </div>
       </div>
       {ComingSoonIcon ? (
         <Empty>
@@ -156,20 +147,12 @@ export default function DispatchPage(props: DispatchPageProps) {
           renderLoader={<DispatchBoardSkeleton />}
         >
           <DispatchBoard
-            shown={shown}
-            counts={counts}
-            drivers={board.drivers}
-            vehicles={board.vehicles}
-            stage={stage}
-            onStageChange={setStage}
-            onCustomize={() => setCustomizing(true)}
+            columns={columns}
             configured={!!picks}
             routeReady={!!board.card.origin && !!board.card.destination}
-            selected={selected}
-            onSelect={setSelectedId}
             now={now}
-            isCreating={data?.isCreating}
-            onCreateDispatch={data?.onCreateDispatch}
+            onCustomize={customize}
+            onAssign={assign}
           />
         </QueryWrapper>
       )}
@@ -182,6 +165,7 @@ export default function DispatchPage(props: DispatchPageProps) {
         saved={picks}
         versionNo={data?.settings?.versionNo ?? 0}
         previewOf={previewOf}
+        now={now}
         onSave={data?.onSaveSettings}
       />
     </div>

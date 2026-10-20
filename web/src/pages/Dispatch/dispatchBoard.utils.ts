@@ -1,50 +1,46 @@
-import { format, isSameDay } from "date-fns";
+import { format, formatDistanceStrict, isSameDay } from "date-fns";
 import {
   recordTitle,
   tableFields,
   titleFieldOf,
-  TONE_CLASS,
 } from "@/module/dashboard/moduleDashboard.utils";
 import { recordFieldValue } from "@/module/page/modulePage.utils";
 import {
-  linkCardFields,
   lookupDisplayField,
   parseRecordIds,
-  previewableLookupFields,
   type RecordLookups,
 } from "@/lib/lookupHelper";
 import { toRecordText } from "@/lib/recordTextHelper";
 
 export type DispatchStage =
   "unassigned" | "assigned" | "en_route" | "completed";
-export type DispatchTone = "green" | "amber" | "red";
 
+/** The board's columns, in order. Completed only keeps dispatches delivered today. */
 export const DISPATCH_STAGES: {
   value: DispatchStage;
   label: string;
-  className: string;
+  hint: string;
 }[] = [
-  { value: "unassigned", label: "Unassigned", className: TONE_CLASS.amber },
+  { value: "unassigned", label: "Unassigned", hint: "Needs a driver" },
+  { value: "assigned", label: "Assigned", hint: "Waiting for pickup" },
+  { value: "en_route", label: "En route", hint: "Picked up, not delivered" },
   {
-    value: "assigned",
-    label: "Assigned",
-    className:
-      "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300",
+    value: "completed",
+    label: "Delivered today",
+    hint: "Waiting for POD and billing",
   },
-  {
-    value: "en_route",
-    label: "En route",
-    className:
-      "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/60 dark:bg-violet-950/40 dark:text-violet-300",
-  },
-  { value: "completed", label: "Completed", className: TONE_CLASS.green },
 ];
 
-export const TONE_TEXT_CLASS: Record<DispatchTone, string> = {
-  green: "text-emerald-700 dark:text-emerald-400",
-  amber: "text-amber-700 dark:text-amber-400",
-  red: "text-red-600 dark:text-red-400",
-};
+/** The steps a dispatch goes through; a card shows how many are done and names the next. */
+export const DISPATCH_STEPS = [
+  "Booked",
+  "Assigned",
+  "Picked up",
+  "Out for delivery",
+  "Arrived",
+  "Delivered",
+  "Billed",
+];
 
 const STAGE_OF_STATUS: Record<IDispatchStatus, DispatchStage> = {
   planned: "assigned",
@@ -54,30 +50,41 @@ const STAGE_OF_STATUS: Record<IDispatchStatus, DispatchStage> = {
   cancelled: "unassigned",
 };
 
+const STEPS_DONE: Record<IDispatchStatus, number> = {
+  planned: 1,
+  dispatched: 2,
+  in_transit: 3,
+  delivered: 4,
+  cancelled: 0,
+};
+
 export interface DispatchPlace {
   id: string;
   title: string;
-  details: string[];
-  /** "HH:mm", from the location's first time field. */
-  opens?: string;
-  opensText?: string;
+}
+
+export interface DispatchDriver {
+  id: string;
+  title: string;
+  initials: string;
 }
 
 export interface DispatchShipment {
   id: string;
   title: string;
+  /** The dispatch's stops once dispatched, else the shipment's origin and destination fields. */
   origin?: DispatchPlace;
   destination?: DispatchPlace;
   badge?: string;
-  /** The text of each detail field that has a value, in order. */
+  /** The weight in kg, then the text of each detail field that has a value. */
   details: string[];
-  weight?: number;
   /** Its latest dispatch that isn't cancelled. */
   dispatch?: IDispatch;
+  driver?: DispatchDriver;
   stage: DispatchStage;
 }
 
-/** The shipment fields the card and assign panel read. */
+/** The shipment fields a card reads. */
 export interface DispatchCardFields {
   title?: ISidebarField;
   origin?: ISidebarField;
@@ -89,27 +96,13 @@ export interface DispatchCardFields {
 
 export type DispatchCardPicks = Omit<IDispatchSettingsInput, "versionNo">;
 
-/** A driver or vehicle; trip is its open dispatch. */
-export interface DispatchResource {
-  id: string;
-  title: string;
-  initials: string;
-  detail: string;
-  capacity?: number;
-  /** Drivers only: the vehicle their link field to the vehicle table picks. */
-  vehicleId?: string;
-  trip?: IDispatch;
-}
-
-const isOpen = (dispatch?: IDispatch) =>
-  !!dispatch && !["delivered", "cancelled"].includes(dispatch.status);
-
 const fieldsOf = (lookups: RecordLookups, sidebarId?: string) =>
   tableFields(lookups?.[sidebarId ?? ""]).filter(
     (field) => !field?.isSystemField,
   );
 
-const linkTo = (fields: ISidebarField[], sidebarId?: string) =>
+/** Link fields of the shipment table a card can read its origin and destination from. */
+export const locationLinks = (fields: ISidebarField[], sidebarId?: string) =>
   fields.filter(
     (field) =>
       field?.type === "link_table" &&
@@ -124,18 +117,6 @@ const initialsOf = (title: string) =>
     .map((word) => word[0])
     .join("")
     .toUpperCase() || "?";
-
-function firstBy<T>(items: T[], keyOf: (item: T) => string | undefined) {
-  const byKey = new Map<string, T>();
-  items.forEach((item) => {
-    const key = keyOf(item);
-    if (key && !byKey.has(key)) byKey.set(key, item);
-  });
-  return byKey;
-}
-
-/** Link fields of the shipment table a card can read its origin and destination from. */
-export const locationLinks = linkTo;
 
 /** The shipment fields the board reads, as picked in the card settings; until they are saved, only the primary field as the title. */
 export function cardFieldsOf(
@@ -170,9 +151,47 @@ export function shortTime(value: string | undefined, now: Date) {
   return format(date, isSameDay(date, now) ? "h:mm a" : "d MMM h:mm a");
 }
 
+/** "JOB-0042" from the dispatch's running number. */
+export const jobNumber = (dispatch: IDispatch) =>
+  `JOB-${String(dispatch?.docId ?? 0).padStart(4, "0")}`;
+
+/** How many DISPATCH_STEPS are done. */
+export const stepsDone = (dispatch?: IDispatch) =>
+  dispatch ? STEPS_DONE[dispatch.status] : 0;
+
+/** The time a card shows top right: the planned pickup, the ETA, or when it was delivered. */
+export function cardTime(dispatch: IDispatch | undefined, now: Date) {
+  if (dispatch?.status === "planned") {
+    return `Pickup ${shortTime(dispatch.plannedPickupAt, now)}`;
+  }
+  if (dispatch?.status === "delivered") {
+    return dispatch.actualDeliveryAt
+      ? `Done ${shortTime(dispatch.actualDeliveryAt, now)}`
+      : "";
+  }
+  return dispatch?.plannedDeliveryAt
+    ? `ETA ${shortTime(dispatch.plannedDeliveryAt, now)}`
+    : "";
+}
+
+/** "Pickup late 20 minutes" or "Late 2 hours" once the planned pickup or delivery has passed. */
+export function lateText(dispatch: IDispatch | undefined, now: Date) {
+  const due =
+    dispatch?.status === "planned"
+      ? dispatch.plannedPickupAt
+      : dispatch?.status === "dispatched" || dispatch?.status === "in_transit"
+        ? dispatch.plannedDeliveryAt
+        : undefined;
+  if (!due || new Date(due) >= now) return "";
+  const late = formatDistanceStrict(new Date(due), now);
+  return dispatch?.status === "planned"
+    ? `Pickup late ${late}`
+    : `Late ${late}`;
+}
+
 /**
- * The board's shipments, drivers and vehicles from the dispatch tables' records. Shipments read the fields in picks (see cardFieldsOf);
- * a vehicle's first single select is its type and first number its capacity, and a location's first time field is when it opens.
+ * The board's shipments, each with its latest dispatch and driver, read through the card settings (see cardFieldsOf).
+ * Locations are named by the origin field's shown field, else the location table's primary field.
  */
 export function buildDispatchBoard(
   sources: IDispatchSources | undefined,
@@ -185,17 +204,13 @@ export function buildDispatchBoard(
     field
       ? toRecordText(field, recordFieldValue(field, record), members, lookups)
       : "";
-  const numberOf = (
-    field: ISidebarField | undefined,
-    record: ISidebarRecord,
-  ) => {
-    const value = field && recordFieldValue(field, record);
-    return value ? Number(value) : undefined;
-  };
 
   const shipmentFields = fieldsOf(lookups, sources?.shipmentSidebarId);
   const card = cardFieldsOf(shipmentFields, picks);
-  const originField = card.origin;
+  const detailFields =
+    card.weight && !card.details.some((field) => field === card.weight)
+      ? [card.weight, ...card.details]
+      : card.details;
   const detailText = (field: ISidebarField, record: ISidebarRecord) => {
     const text = textOf(field, record);
     if (!text) return "";
@@ -205,14 +220,9 @@ export function buildDispatchBoard(
       : text;
   };
 
-  const locationFields = fieldsOf(lookups, sources?.locationSidebarId);
-  const placeTitleField = originField
-    ? lookupDisplayField(originField, lookups)
-    : titleFieldOf(locationFields);
-  const placeDetailFields = originField
-    ? linkCardFields(originField, lookups)
-    : [];
-  const opensField = locationFields.find((field) => field?.type === "time");
+  const placeTitleField = card.origin
+    ? lookupDisplayField(card.origin, lookups)
+    : titleFieldOf(fieldsOf(lookups, sources?.locationSidebarId));
   const places = new Map(
     (lookups?.[sources?.locationSidebarId ?? ""]?.records ?? []).map(
       (record): [string, DispatchPlace] => [
@@ -220,23 +230,38 @@ export function buildDispatchBoard(
         {
           id: record.objId,
           title: recordTitle(record, placeTitleField, members, lookups),
-          details: placeDetailFields
-            .map((field) => textOf(field, record))
-            .filter(Boolean),
-          opens:
-            opensField && (record?.values?.[opensField.objId] ?? undefined),
-          opensText: textOf(opensField, record) || undefined,
         },
       ],
     ),
   );
-  const placeOf = (field: ISidebarField | undefined, record: ISidebarRecord) =>
+  const linkedPlace = (
+    field: ISidebarField | undefined,
+    record: ISidebarRecord,
+  ) =>
     places.get(parseRecordIds(record?.values?.[field?.objId ?? ""])?.[0] ?? "");
 
-  const latest = firstBy(
-    dispatches.filter((dispatch) => dispatch?.status !== "cancelled"),
-    (dispatch) => dispatch?.shipmentId,
+  const driverTitleField = titleFieldOf(
+    fieldsOf(lookups, sources?.driverSidebarId),
   );
+  const drivers = new Map(
+    (lookups?.[sources?.driverSidebarId ?? ""]?.records ?? []).map(
+      (record): [string, DispatchDriver] => {
+        const title = recordTitle(record, driverTitleField, members, lookups);
+        return [
+          record.objId,
+          { id: record.objId, title, initials: initialsOf(title) },
+        ];
+      },
+    ),
+  );
+
+  const latest = new Map<string, IDispatch>();
+  dispatches.forEach((dispatch) => {
+    if (dispatch?.status !== "cancelled" && !latest.has(dispatch?.shipmentId)) {
+      latest.set(dispatch.shipmentId, dispatch);
+    }
+  });
+
   const shipments = [
     ...(lookups?.[sources?.shipmentSidebarId ?? ""]?.records ?? []),
   ]
@@ -246,129 +271,37 @@ export function buildDispatchBoard(
       return {
         id: record.objId,
         title: recordTitle(record, card.title, members, lookups),
-        origin: placeOf(card.origin, record),
-        destination: placeOf(card.destination, record),
+        origin: dispatch
+          ? places.get(dispatch.originId)
+          : linkedPlace(card.origin, record),
+        destination: dispatch
+          ? places.get(dispatch.destinationId)
+          : linkedPlace(card.destination, record),
         badge: textOf(card.badge, record) || undefined,
-        details: card.details
+        details: detailFields
           .map((field) => detailText(field, record))
           .filter(Boolean),
-        weight: numberOf(card.weight, record),
         dispatch,
+        driver: dispatch ? drivers.get(dispatch.driverId) : undefined,
         stage: dispatch ? STAGE_OF_STATUS[dispatch.status] : "unassigned",
       };
     });
 
-  const openDispatches = dispatches.filter(isOpen);
-  const driverTrips = firstBy(openDispatches, (dispatch) => dispatch?.driverId);
-  const vehicleTrips = firstBy(
-    openDispatches,
-    (dispatch) => dispatch?.vehicleId,
-  );
-
-  const vehicleFields = fieldsOf(lookups, sources?.vehicleSidebarId);
-  const vehicleTitleField = titleFieldOf(vehicleFields);
-  const vehicleTypeField = vehicleFields.find(
-    (field) => field?.type === "single_select",
-  );
-  const capacityField = vehicleFields.find((field) => field?.isNumeric);
-  const vehicles = (
-    lookups?.[sources?.vehicleSidebarId ?? ""]?.records ?? []
-  ).map((record): DispatchResource => {
-    const title = recordTitle(record, vehicleTitleField, members, lookups);
-    const capacity = numberOf(capacityField, record);
-    return {
-      id: record.objId,
-      title,
-      initials: initialsOf(title),
-      detail: [
-        textOf(vehicleTypeField, record),
-        title,
-        capacity === undefined ? "" : `${textOf(capacityField, record)} kg`,
-      ]
-        .filter(Boolean)
-        .join(" · "),
-      capacity,
-      trip: vehicleTrips.get(record.objId),
-    };
-  });
-  const vehicleById = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle]));
-
-  const driverFields = fieldsOf(lookups, sources?.driverSidebarId);
-  const driverTitleField = titleFieldOf(driverFields);
-  const [vehicleLinkField] = linkTo(driverFields, sources?.vehicleSidebarId);
-  const driverDetailFields = previewableLookupFields(driverFields)
-    .filter((field) => field?.objId !== driverTitleField?.objId)
-    .slice(0, 2);
-  const drivers = (
-    lookups?.[sources?.driverSidebarId ?? ""]?.records ?? []
-  ).map((record): DispatchResource => {
-    const title = recordTitle(record, driverTitleField, members, lookups);
-    const vehicleId = parseRecordIds(
-      record?.values?.[vehicleLinkField?.objId ?? ""],
-    )?.[0];
-    const vehicle = vehicleById.get(vehicleId);
-    return {
-      id: record.objId,
-      title,
-      initials: initialsOf(title),
-      detail:
-        vehicle?.detail ??
-        driverDetailFields
-          .map((field) => textOf(field, record))
-          .filter(Boolean)
-          .join(" · "),
-      capacity: vehicle?.capacity,
-      vehicleId: vehicle?.id,
-      trip: driverTrips.get(record.objId),
-    };
-  });
-
-  return { shipments, drivers, vehicles, card, shipmentFields };
+  return { shipments, card, shipmentFields };
 }
 
-/** Whether a driver or vehicle can take a shipment of this weight now, and the short text its card shows. */
-export function availability(
-  resource: DispatchResource | undefined,
-  weight: number | undefined,
-  now: Date,
-): { tone: DispatchTone; text: string; free: boolean } {
-  if (
-    resource?.capacity !== undefined &&
-    weight !== undefined &&
-    weight > resource.capacity
-  ) {
-    return { tone: "red", text: "Over capacity", free: false };
-  }
-  const trip = resource?.trip;
-  if (trip?.status === "planned") {
-    return {
-      tone: "amber",
-      text: `Booked · ${shortTime(trip.plannedPickupAt, now)}`,
-      free: false,
-    };
-  }
-  if (trip) {
-    const freeAt = shortTime(trip.plannedDeliveryAt, now);
-    return {
-      tone: "amber",
-      text: freeAt ? `On trip · free ${freeAt}` : "On trip",
-      free: false,
-    };
-  }
-  return { tone: "green", text: "Available", free: true };
-}
-
-/** When the origin next opens, from now; the next full hour when it has no opening time. */
-export function nextPickup(opens: string | undefined, now: Date) {
-  const at = new Date(now);
-  const [hours, minutes] = opens?.split(":").map(Number) ?? [];
-  if (Number.isFinite(hours) && Number.isFinite(minutes)) {
-    at.setHours(hours, minutes, 0, 0);
-    if (at <= now) at.setDate(at.getDate() + 1);
-    return at;
-  }
-  at.setHours(at.getHours() + 1, 0, 0, 0);
-  return at;
+/** The shipments of each column; delivered ones only on the day they were delivered. */
+export function boardColumns(shipments: DispatchShipment[], now: Date) {
+  return DISPATCH_STAGES.map((stage) => ({
+    ...stage,
+    shipments: shipments.filter(
+      (shipment) =>
+        shipment?.stage === stage.value &&
+        (stage.value !== "completed" ||
+          (!!shipment?.dispatch?.actualDeliveryAt &&
+            isSameDay(new Date(shipment.dispatch.actualDeliveryAt), now))),
+    ),
+  }));
 }
 
 /** What the full assign dialog opens with for a shipment. */

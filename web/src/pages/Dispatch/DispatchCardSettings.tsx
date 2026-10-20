@@ -43,12 +43,13 @@ type DispatchCardSettingsProps = {
   versionNo: number;
   /** A shipment as the card would show it with these picks. */
   previewOf: (picks: DispatchCardPicks) => DispatchShipment | undefined;
+  now: Date;
   onSave: (body: IDispatchSettingsInput) => Promise<IDispatchSettings>;
 };
 
 /**
- * Picks which shipment fields the Dispatch board reads: the route a dispatch takes, what each shipment card shows,
- * and the weight checked against vehicle capacity. The preview follows each change.
+ * Picks which shipment fields the Dispatch board reads: the route a dispatch takes and what each shipment card shows.
+ * The preview follows each change.
  */
 export function DispatchCardSettings(props: DispatchCardSettingsProps) {
   return (
@@ -74,6 +75,7 @@ function DispatchCardSettingsForm({
   saved,
   versionNo,
   previewOf,
+  now,
   onSave,
 }: DispatchCardSettingsProps) {
   const [draft, setDraft] = useState<DispatchCardPicks>(() =>
@@ -165,6 +167,15 @@ function DispatchCardSettingsForm({
                 />
               </SettingsField>
             </div>
+            <SettingsField label="Weight" hint="number field, shown in kg">
+              <DashboardFieldSelect
+                fields={fields}
+                accepts={(field) => !!field?.isNumeric}
+                value={draft?.weightFieldId}
+                onChange={(weightFieldId) => set({ weightFieldId })}
+                noneLabel="No weight"
+              />
+            </SettingsField>
             <SettingsField label="Details" hint={`up to ${MAX_DETAILS}`}>
               <DetailFieldList
                 fields={fields}
@@ -172,22 +183,6 @@ function DispatchCardSettingsForm({
                 onChange={(detailFieldIds) => set({ detailFieldIds })}
               />
             </SettingsField>
-          </SettingsSection>
-
-          <SettingsSection title="Capacity">
-            <SettingsField label="Weight" hint="number field in kg">
-              <DashboardFieldSelect
-                fields={fields}
-                accepts={(field) => !!field?.isNumeric}
-                value={draft?.weightFieldId}
-                onChange={(weightFieldId) => set({ weightFieldId })}
-                noneLabel="Don't check capacity"
-              />
-            </SettingsField>
-            <p className="text-xs text-muted-foreground">
-              Drivers whose vehicle can't carry the weight show as over
-              capacity.
-            </p>
           </SettingsSection>
         </div>
 
@@ -199,8 +194,7 @@ function DispatchCardSettingsForm({
             <DispatchShipmentCard
               shipment={preview}
               showRoute={!!draft?.originFieldId && !!draft?.destinationFieldId}
-              selected={false}
-              onSelect={() => {}}
+              now={now}
             />
           ) : (
             <p className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">

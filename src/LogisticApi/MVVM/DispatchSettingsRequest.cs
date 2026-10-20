@@ -18,7 +18,7 @@ namespace LogisticApi.MVVM
 
         public Guid? badgeFieldId { get; set; }
 
-        /// <summary>A number field, in kg; null skips the capacity check.</summary>
+        /// <summary>A number field, shown on the card in kg; null shows no weight.</summary>
         public Guid? weightFieldId { get; set; }
 
         /// <summary>Up to 4, in display order.</summary>

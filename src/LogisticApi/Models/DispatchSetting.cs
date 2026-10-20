@@ -16,7 +16,7 @@ namespace LogisticApi.Models
         public Guid? destinationFieldId { get; set; }
         /// <summary>Shown as a badge, e.g. the shipment mode.</summary>
         public Guid? badgeFieldId { get; set; }
-        /// <summary>A number field, in kg, checked against the vehicle capacity.</summary>
+        /// <summary>A number field, shown on the card in kg.</summary>
         public Guid? weightFieldId { get; set; }
         /// <summary>JSON array of up to MaxDetailFields field ids, in display order.</summary>
         public string detailFieldIds { get; set; } = "[]";
