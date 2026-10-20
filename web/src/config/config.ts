@@ -72,6 +72,20 @@ export const moduleConfig: IModuleConfig = {
               sidebarIcon: Package,
               page: lazy(() => import("@/pages/Logistic/ShipmentException")),
             },
+             {
+              sidebarId: "shipment-driver",
+              sidebarText: "Driver",
+              sidebarDesc: "Track shipments from origin to destination.",
+              sidebarIcon: Package,
+              page: lazy(() => import("@/pages/Logistic/Driver")),
+            },
+             {
+              sidebarId: "shipment-vehicle",
+              sidebarText: "Vehicle",
+              sidebarDesc: "Track shipments from origin to destination.",
+              sidebarIcon: Package,
+              page: lazy(() => import("@/pages/Logistic/Vehicle")),
+            },
           ]
         },
         {
