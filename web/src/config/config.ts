@@ -80,7 +80,7 @@ export const moduleConfig: IModuleConfig = {
           sidebarDesc: "Pending shipments waiting to be dispatched.",
           sidebarIcon: Truck,
           // className: "text-amber-700",
-          page: lazy(() => import("@/pages/Dispatch")),
+          page: lazy(() => import("@/pages/Dispatch/Dispatch")),
         },
         {
           sidebarId: "exeptions",

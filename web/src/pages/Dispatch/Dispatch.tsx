@@ -24,6 +24,7 @@ import {
 } from "@/services/forms/form.api";
 import { getMembers } from "@/services/user/user.api";
 import { uploadAttachment } from "@/services/attachments/attachment.api";
+import DispatchPage from "./DispatchPage";
 
 const pageApi: ModuleDataApi = {
   getFields,
@@ -46,6 +47,5 @@ const pageApi: ModuleDataApi = {
 
 export default function Dispatch() {
   const sidebarId = useCurrentNavItem()?.sidebarId;
-  const data = useModuleData(sidebarId, pageApi);
-  return <ModulePage data={data} />;
+  return <DispatchPage sidebarId={sidebarId} />;
 }
