@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { Check } from "lucide-react";
+import { Circle, CircleCheck, CircleDot } from "lucide-react";
 import {
   Button,
   cn,
@@ -268,7 +268,7 @@ function HeaderFact({
   );
 }
 
-/** Booked, then each dispatch step, ticked once done, with when it happened where that's known. */
+/** Each dispatch step as a bar: solid once done, outlined for the current one; with when it happened where that's known. */
 function DispatchStepper({
   shipment,
   dispatch,
@@ -278,46 +278,66 @@ function DispatchStepper({
   dispatch: IDispatch;
   now: Date;
 }) {
-  const done = 1 + stepsDone(dispatch);
+  const done = stepsDone(dispatch);
   const times = [
     shipment?.bookedAt,
     dispatch?.createTime,
     dispatch?.actualPickupAt,
     undefined,
+    undefined,
     dispatch?.actualDeliveryAt,
     undefined,
   ];
   return (
-    <ol className="flex shrink-0 overflow-x-auto border-b px-4 py-3">
-      {["Booked", ...DISPATCH_STEPS].map((step, index) => (
-        <li key={step} className="flex min-w-28 flex-1 flex-col gap-1.5">
-          <span className="flex items-center">
+    <ol className="flex shrink-0 gap-2 overflow-x-auto border-b px-4 py-3">
+      {DISPATCH_STEPS.map((step, index) => {
+        const isDone = index < done;
+        const isCurrent = index === done;
+        const time = shortTime(times[index], now);
+        return (
+          <li
+            key={step + "dispatch_step"}
+            aria-current={isCurrent ? "step" : undefined}
+            className="flex min-w-28 flex-1 flex-col gap-2"
+          >
             <span
+              aria-hidden
               className={cn(
-                "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
-                index < done
-                  ? "border-emerald-600 bg-emerald-600 text-white"
-                  : "bg-background text-muted-foreground",
+                "h-1.5 rounded-full",
+                isDone
+                  ? "bg-emerald-600"
+                  : isCurrent
+                    ? "bg-emerald-600/25 ring-1 ring-emerald-600 ring-inset"
+                    : "bg-muted",
               )}
-            >
-              {index < done ? <Check className="size-4" /> : index + 1}
-            </span>
-            {index < DISPATCH_STEPS.length && (
+            />
+            <span className="flex min-w-0 items-center gap-1.5 text-xs">
+              {isDone ? (
+                <CircleCheck className="size-4 shrink-0 fill-emerald-600 text-background" />
+              ) : isCurrent ? (
+                <CircleDot className="size-4 shrink-0 text-emerald-600" />
+              ) : (
+                <Circle className="size-4 shrink-0 text-muted-foreground/50" />
+              )}
               <span
-                aria-hidden
                 className={cn(
-                  "h-0.5 flex-1",
-                  index + 1 < done ? "bg-emerald-600" : "bg-border",
+                  "truncate",
+                  isCurrent
+                    ? "font-semibold"
+                    : !isDone && "text-muted-foreground",
                 )}
-              />
-            )}
-          </span>
-          <span className="text-xs font-medium">{step}</span>
-          <span className="text-[11px] text-muted-foreground">
-            {shortTime(times[index], now) || (index < done ? "" : "—")}
-          </span>
-        </li>
-      ))}
+              >
+                {step}
+              </span>
+              {time && (
+                <span className="shrink-0 text-[11px] text-muted-foreground">
+                  {time}
+                </span>
+              )}
+            </span>
+          </li>
+        );
+      })}
     </ol>
   );
 }

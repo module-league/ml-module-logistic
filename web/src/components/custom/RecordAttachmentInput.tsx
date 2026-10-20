@@ -446,7 +446,10 @@ function AttachmentTextLabel({
   );
 }
 
-/** One file as a card: its tile, name and details in a raised panel that opens it, with the footer's controls below. */
+/**
+ * One file as a card: its tile, name and details in a raised panel that opens it, with the footer's controls below.
+ * Compact puts it all on one row and the whole card opens it; the controls sit above that so they keep their own clicks.
+ */
 function AttachmentCard({
   media,
   title,
@@ -458,18 +461,19 @@ function AttachmentCard({
 }: AttachmentCardProps) {
   if (size === "compact") {
     return (
-      <div className="flex w-64 max-w-full items-start gap-2 rounded-lg border bg-background p-1.5">
+      <div className="relative flex w-64 max-w-full items-start gap-2 rounded-lg border bg-background p-1.5 transition-colors">
         <button
           type="button"
           tabIndex={-1}
           aria-label={`Open ${title}`}
           disabled={uploading}
           onClick={onOpen}
-          className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-card text-muted-foreground enabled:cursor-pointer enabled:hover:border-primary/40"
-        >
+          className="absolute inset-0 rounded-lg transition-colors enabled:cursor-pointer enabled:hover:bg-muted/40"
+        />
+        <span className="pointer-events-none relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-card text-muted-foreground h-full">
           {media}
-        </button>
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        </span>
+        <div className="pointer-events-none relative flex min-w-0 flex-1 flex-col gap-0.5">
           <span
             title={title}
             className={cn(
@@ -483,7 +487,9 @@ function AttachmentCard({
             {description}
           </span>
           {children && (
-            <div className="flex min-h-6 items-center gap-1.5">{children}</div>
+            <div className="flex min-h-6 items-center gap-1.5 *:pointer-events-auto">
+              {children}
+            </div>
           )}
         </div>
       </div>

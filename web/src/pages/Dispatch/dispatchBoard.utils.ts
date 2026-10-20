@@ -51,11 +51,11 @@ const STAGE_OF_STATUS: Record<IDispatchStatus, DispatchStage> = {
 };
 
 const STEPS_DONE: Record<IDispatchStatus, number> = {
-  planned: 1,
-  dispatched: 2,
-  in_transit: 3,
-  delivered: 4,
-  cancelled: 0,
+  planned: 2,
+  dispatched: 3,
+  in_transit: 4,
+  delivered: 6,
+  cancelled: 1,
 };
 
 export interface DispatchPlace {
@@ -159,9 +159,9 @@ export function shortTime(value: string | undefined, now: Date) {
 export const jobNumber = (dispatch: IDispatch) =>
   `JOB-${String(dispatch?.docId ?? 0).padStart(4, "0")}`;
 
-/** How many DISPATCH_STEPS are done. */
+/** How many DISPATCH_STEPS are done; a shipment on the board is always booked. */
 export const stepsDone = (dispatch?: IDispatch) =>
-  dispatch ? STEPS_DONE[dispatch.status] : 0;
+  dispatch ? STEPS_DONE[dispatch.status] : 1;
 
 /** The time a card shows top right: the planned pickup, the ETA, or when it was delivered. */
 export function cardTime(dispatch: IDispatch | undefined, now: Date) {
