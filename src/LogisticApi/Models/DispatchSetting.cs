@@ -18,6 +18,8 @@ namespace LogisticApi.Models
         public Guid? badgeFieldId { get; set; }
         /// <summary>A number field, shown on the card in kg.</summary>
         public Guid? weightFieldId { get; set; }
+        /// <summary>An attachment field whose labels the checkpoint log's files can take; null gives them no label.</summary>
+        public Guid? attachmentLabelFieldId { get; set; }
         /// <summary>JSON array of up to MaxDetailFields field ids, in display order.</summary>
         public string detailFieldIds { get; set; } = "[]";
     }

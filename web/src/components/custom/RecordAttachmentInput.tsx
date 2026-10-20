@@ -49,6 +49,8 @@ export function RecordAttachmentInput({
   onBlur,
   onUpload,
   options,
+  trigger = "dropzone",
+  cardSize = "default",
 }: RecordAttachmentInputProps) {
   const attachments = useMemo(() => parseAttachments(value), [value]);
   const [pending, setPending] = useState<PendingUpload[]>([]);
@@ -133,6 +135,7 @@ export function RecordAttachmentInput({
   const uploading = pending.length > 0;
   const canUpload = !!onUpload && !disabled;
   const hasFiles = attachments.length > 0 || uploading;
+  const compact = cardSize === "compact";
   const maxSizeLabel = formatFileSize(bytesToKilobytes(ATTACHMENT_MAX_BYTES));
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDropAccepted: upload,
@@ -157,7 +160,7 @@ export function RecordAttachmentInput({
       >
         <input {...getInputProps({ id })} />
         {canUpload &&
-          (hasFiles ? (
+          (hasFiles || trigger === "button" ? (
             <Button
               variant="outline"
               size="xs"
@@ -183,14 +186,15 @@ export function RecordAttachmentInput({
             </button>
           ))}
         {hasFiles && (
-          <div className="flex flex-wrap gap-3">
+          <div className={cn("flex flex-wrap", compact ? "gap-2" : "gap-3")}>
             {attachments.map((attachment, index) => (
               <AttachmentCard
                 key={attachment.id}
+                size={cardSize}
                 media={
                   <AttachmentThumbnail
                     attachment={attachment}
-                    iconSize="lg"
+                    iconSize={compact ? "sm" : "lg"}
                     className="size-full object-cover"
                   />
                 }
@@ -230,7 +234,8 @@ export function RecordAttachmentInput({
             {pending.map((file) => (
               <AttachmentCard
                 key={file.key}
-                media={<Spinner className="size-5" />}
+                size={cardSize}
+                media={<Spinner className={compact ? "size-4" : "size-5"} />}
                 title={file.name}
                 description={`Uploading · ${formatFileSize(file.fileSize)}`}
                 uploading
@@ -315,7 +320,41 @@ function AttachmentCard({
   uploading = false,
   onOpen,
   children,
+  size = "default",
 }: AttachmentCardProps) {
+  if (size === "compact") {
+    return (
+      <div className="flex w-64 max-w-full items-start gap-2 rounded-lg border bg-background p-1.5">
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label={`Open ${title}`}
+          disabled={uploading}
+          onClick={onOpen}
+          className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-card text-muted-foreground enabled:cursor-pointer enabled:hover:border-primary/40"
+        >
+          {media}
+        </button>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span
+            title={title}
+            className={cn(
+              "truncate text-xs font-semibold text-foreground",
+              uploading && "animate-pulse",
+            )}
+          >
+            {title}
+          </span>
+          <span className="truncate text-[11px] text-muted-foreground">
+            {description}
+          </span>
+          {children && (
+            <div className="flex min-h-6 items-center gap-1.5">{children}</div>
+          )}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex w-58 max-w-full flex-col gap-1.5 rounded-xl border bg-muted/50 p-1.5">
       <button

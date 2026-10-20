@@ -104,6 +104,13 @@ export default function DispatchPage(props: DispatchPageProps) {
         : assign(shipment),
     [onOpenDetail, assign],
   );
+  const labelOptions = useMemo(
+    () =>
+      board.shipmentFields.find(
+        (field) => field?.objId === picks?.attachmentLabelFieldId,
+      )?.dropDownValues,
+    [board.shipmentFields, picks?.attachmentLabelFieldId],
+  );
   const opened = useMemo(
     () =>
       board.shipments.find(
@@ -179,6 +186,7 @@ export default function DispatchPage(props: DispatchPageProps) {
         shipment={opened}
         detail={detail}
         members={data?.members}
+        labelOptions={labelOptions}
         now={now}
       />
       <DispatchCardSettings

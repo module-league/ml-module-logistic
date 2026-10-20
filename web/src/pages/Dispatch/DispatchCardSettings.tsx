@@ -184,6 +184,27 @@ function DispatchCardSettingsForm({
               />
             </SettingsField>
           </SettingsSection>
+
+          <SettingsSection title="Checkpoint log">
+            <SettingsField
+              label="Attachment labels"
+              hint="labels of an attachment field"
+            >
+              <DashboardFieldSelect
+                fields={fields}
+                accepts={(field) => field?.type === "attachment"}
+                value={draft?.attachmentLabelFieldId}
+                onChange={(attachmentLabelFieldId) =>
+                  set({ attachmentLabelFieldId })
+                }
+                noneLabel="No labels"
+              />
+            </SettingsField>
+            <p className="text-xs text-muted-foreground">
+              Files posted to a dispatch's checkpoint log can take one of these
+              labels, e.g. proof of delivery.
+            </p>
+          </SettingsSection>
         </div>
 
         <aside className="flex flex-col gap-2 md:sticky md:top-0 md:self-start">

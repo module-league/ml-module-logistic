@@ -32,6 +32,9 @@ namespace LogisticApi.Context.Configurations
             b.Property(e => e.weightFieldId)
              .HasColumnName("weight_field_id");
 
+            b.Property(e => e.attachmentLabelFieldId)
+             .HasColumnName("attachment_label_field_id");
+
             b.Property(e => e.detailFieldIds)
              .HasColumnName("detail_field_ids")
              .IsRequired();

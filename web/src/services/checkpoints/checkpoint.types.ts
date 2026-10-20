@@ -12,8 +12,8 @@ declare global {
     createTime: string;
   };
 
-  /** Needs a note or a file; files are uploaded with refId set to the dispatch's objId. */
+  /** Needs a note or a file; files are uploaded with refId set to the dispatch's objId, each with an optional label. */
   type ICheckpointLogCreate = Pick<ICheckpointLog, "note" | "internalOnly"> & {
-    attachmentIds: string[];
+    attachments: Pick<IAttachment, "id" | "optionId">[];
   };
 }

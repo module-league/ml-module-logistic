@@ -145,6 +145,7 @@ export const toCardPicks = (saved?: DispatchCardPicks): DispatchCardPicks => ({
   destinationFieldId: saved?.destinationFieldId,
   badgeFieldId: saved?.badgeFieldId,
   weightFieldId: saved?.weightFieldId,
+  attachmentLabelFieldId: saved?.attachmentLabelFieldId,
   detailFieldIds: saved?.detailFieldIds ?? [],
 });
 

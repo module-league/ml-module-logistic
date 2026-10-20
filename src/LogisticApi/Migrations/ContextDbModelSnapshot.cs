@@ -509,6 +509,10 @@ namespace LogisticApi.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ds_version_no");
 
+                    b.Property<Guid?>("attachmentLabelFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("attachment_label_field_id");
+
                     b.Property<Guid?>("badgeFieldId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("badge_field_id");

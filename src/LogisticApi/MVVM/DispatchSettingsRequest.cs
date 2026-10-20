@@ -21,6 +21,9 @@ namespace LogisticApi.MVVM
         /// <summary>A number field, shown on the card in kg; null shows no weight.</summary>
         public Guid? weightFieldId { get; set; }
 
+        /// <summary>An attachment field whose labels the checkpoint log's files can take; null gives them no label.</summary>
+        public Guid? attachmentLabelFieldId { get; set; }
+
         /// <summary>Up to 4, in display order.</summary>
         [MaxLength(4)]
         public List<Guid> detailFieldIds { get; set; } = [];

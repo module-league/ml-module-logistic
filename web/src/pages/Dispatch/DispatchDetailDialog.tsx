@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
-import { Check, Paperclip, X } from "lucide-react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { Check } from "lucide-react";
 import {
   Button,
   cn,
@@ -15,7 +15,8 @@ import QueryWrapper from "@/components/custom/QueryWrapper";
 import { AttachmentChipList } from "@/components/custom/AttachmentChip";
 import { errorParser } from "@/hooks/useErrorParser";
 import { findMember } from "@/lib/memberHelper";
-import { ATTACHMENT_MAX_BYTES } from "@/services/attachments/attachment.api";
+import { parseAttachments } from "@/lib/attachmentHelper";
+import { RecordAttachmentInput } from "@/components/custom/RecordAttachmentInput";
 import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
 import {
   DISPATCH_STAGES,
@@ -35,6 +36,8 @@ type DispatchDetailDialogProps = {
   shipment?: DispatchShipment;
   detail: DispatchDetailData;
   members: IUserInfo[];
+  /** The labels of the attachment field picked in the card settings; left out, files have no label. */
+  labelOptions?: IFieldDropDownValue[];
   now: Date;
 };
 
@@ -47,13 +50,12 @@ const STAGE_CLASS: Record<DispatchStage, string> = {
   completed: TONE_CLASS.green,
 };
 
-const MAX_FILES = 10;
-
 /** One dispatch opened from its card: where it stands, its checkpoint log and its details. */
 export function DispatchDetailDialog({
   shipment,
   detail,
   members,
+  labelOptions,
   now,
 }: DispatchDetailDialogProps) {
   const onClose = detail?.onClose;
@@ -73,6 +75,7 @@ export function DispatchDetailDialog({
             dispatch={shipment.dispatch}
             detail={detail}
             members={members}
+            labelOptions={labelOptions}
             now={now}
           />
         ) : (
@@ -88,8 +91,9 @@ function DispatchDetail({
   dispatch,
   detail,
   members,
+  labelOptions,
   now,
-}: Required<Omit<DispatchDetailDialogProps, "shipment">> & {
+}: Omit<DispatchDetailDialogProps, "shipment"> & {
   shipment: DispatchShipment;
   dispatch: IDispatch;
 }) {
@@ -148,7 +152,7 @@ function DispatchDetail({
       <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
         <section className="flex min-h-0 flex-col gap-3 rounded-xl border p-3">
           <h3 className="shrink-0 text-sm font-semibold">Checkpoint log</h3>
-          <CheckpointComposer detail={detail} />
+          <CheckpointComposer detail={detail} labelOptions={labelOptions} />
           <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2">
             <QueryWrapper
               isLoading={detail?.isLoading}
@@ -167,7 +171,10 @@ function DispatchDetail({
                     note={log.note}
                   >
                     {!!log.attachments?.length && (
-                      <AttachmentChipList attachments={log.attachments} />
+                      <AttachmentChipList
+                        attachments={log.attachments}
+                        options={labelOptions}
+                      />
                     )}
                   </CheckpointEntry>
                 ))}
@@ -305,53 +312,31 @@ function DispatchStepper({
   );
 }
 
-/** Writes a note and attaches files, then posts them to the log, for the team only unless switched off. */
-function CheckpointComposer({ detail }: { detail: DispatchDetailData }) {
+/** Writes a note and attaches files, each with a label, then posts them to the log, for the team only unless switched off. */
+function CheckpointComposer({
+  detail,
+  labelOptions,
+}: {
+  detail: DispatchDetailData;
+  labelOptions?: IFieldDropDownValue[];
+}) {
   const { onUpload, onAddCheckpoint, isPosting } = detail;
-  const fileInput = useRef<HTMLInputElement>(null);
   const [note, setNote] = useState("");
   const [internalOnly, setInternalOnly] = useState(true);
-  const [files, setFiles] = useState<IAttachment[]>([]);
-  const [uploading, setUploading] = useState(0);
+  const [filesValue, setFilesValue] = useState("");
+  const files = useMemo(() => parseAttachments(filesValue), [filesValue]);
 
-  const attach = useCallback(
-    async (picked: FileList | null) => {
-      const list = Array.from(picked ?? []);
-      if (fileInput.current) fileInput.current.value = "";
-      for (const file of list) {
-        if (file.size > ATTACHMENT_MAX_BYTES) {
-          toast.error(`${file.name} is too large`, {
-            description: `Files can be up to ${ATTACHMENT_MAX_BYTES / (1024 * 1024)} MB.`,
-          });
-          continue;
-        }
-        setUploading((count) => count + 1);
-        try {
-          const uploaded = await onUpload(file);
-          setFiles((current) => [...current, uploaded].slice(0, MAX_FILES));
-        } catch (error) {
-          toast.error(`Couldn't upload ${file.name}`, {
-            description: errorParser(error)?.message,
-          });
-        } finally {
-          setUploading((count) => count - 1);
-        }
-      }
-    },
-    [onUpload],
-  );
-
-  const canPost = (!!note.trim() || !!files.length) && !uploading && !isPosting;
+  const canPost = (!!note.trim() || !!files.length) && !isPosting;
   const post = useCallback(async () => {
     if (!canPost) return;
     try {
       await onAddCheckpoint({
         note: note.trim() || undefined,
         internalOnly,
-        attachmentIds: files.map((file) => file.id),
+        attachments: files.map(({ id, optionId }) => ({ id, optionId })),
       });
       setNote("");
-      setFiles([]);
+      setFilesValue("");
     } catch (error) {
       toast.error("Couldn't post to the log", {
         description: errorParser(error)?.message,
@@ -360,7 +345,7 @@ function CheckpointComposer({ detail }: { detail: DispatchDetailData }) {
   }, [canPost, onAddCheckpoint, note, internalOnly, files]);
 
   return (
-    <div className="flex shrink-0 flex-col gap-2 rounded-lg border bg-muted/30 p-2.5">
+    <div className="flex max-h-[50%] shrink-0 flex-col gap-2 overflow-y-auto rounded-lg border bg-muted/30 p-2.5">
       <Textarea
         aria-label="Add a note"
         placeholder="Add a note or file"
@@ -370,63 +355,32 @@ function CheckpointComposer({ detail }: { detail: DispatchDetailData }) {
         onChange={(event) => setNote(event.target.value)}
         className="bg-background"
       />
-      {(!!files.length || !!uploading) && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {files.map((file) => (
-            <span
-              key={file.id}
-              className="inline-flex max-w-48 items-center gap-1 rounded-md border bg-background py-0.5 pr-0.5 pl-2 text-xs"
-            >
-              <span className="truncate">{file.name}</span>
-              <button
-                type="button"
-                aria-label={`Remove ${file.name}`}
-                className="cursor-pointer rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                onClick={() =>
-                  setFiles((current) =>
-                    current.filter((entry) => entry.id !== file.id),
-                  )
-                }
-              >
-                <X className="size-3" />
-              </button>
-            </span>
-          ))}
-          {!!uploading && (
-            <span className="text-xs text-muted-foreground">Uploading…</span>
-          )}
-        </div>
-      )}
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          ref={fileInput}
-          type="file"
-          multiple
-          hidden
-          onChange={(event) => attach(event.target.files)}
+      <div className="flex items-start gap-3">
+        <RecordAttachmentInput
+          value={filesValue}
+          onChange={setFilesValue}
+          onUpload={onUpload}
+          options={labelOptions}
+          trigger="button"
+          cardSize="compact"
+          className="flex-1"
         />
+        <label className="flex shrink-0 cursor-pointer items-center gap-2 pt-0.5 text-xs">
+          Internal only
+          <Switch
+            checked={internalOnly}
+            onCheckedChange={setInternalOnly}
+            size="sm"
+          />
+        </label>
         <Button
-          variant="outline"
-          size="xs"
-          startIcon={<Paperclip size={13} />}
-          disabled={files.length >= MAX_FILES}
-          onClick={() => fileInput.current?.click()}
+          size="sm"
+          className="shrink-0"
+          disabled={!canPost}
+          onClick={post}
         >
-          Attach file
+          {isPosting ? "Posting…" : "Post"}
         </Button>
-        <div className="ml-auto flex items-center gap-3">
-          <label className="flex cursor-pointer items-center gap-2 text-xs">
-            Internal only
-            <Switch
-              checked={internalOnly}
-              onCheckedChange={setInternalOnly}
-              size="sm"
-            />
-          </label>
-          <Button size="sm" disabled={!canPost} onClick={post}>
-            {isPosting ? "Posting…" : "Post"}
-          </Button>
-        </div>
       </div>
     </div>
   );

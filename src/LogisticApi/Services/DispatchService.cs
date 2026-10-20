@@ -118,6 +118,8 @@ namespace LogisticApi.Services
             if (request.badgeFieldId is { } badgeId) FieldOf(badgeId, "badge");
             if (request.weightFieldId is { } weightId && !FieldTypes.IsNumeric(FieldOf(weightId, "weight").type))
                 throw ApiProblemException.BadRequest("The weight needs a number field.", $"'{fields[weightId].sidebarName}' is a {fields[weightId].type} field.");
+            if (request.attachmentLabelFieldId is { } labelId && FieldOf(labelId, "attachment label").type != "attachment")
+                throw ApiProblemException.BadRequest("The labels need an attachment field.", $"'{fields[labelId].sidebarName}' is a {fields[labelId].type} field.");
             var detailIds = request.detailFieldIds.Distinct().ToList();
             detailIds.ForEach(id => FieldOf(id, "detail"));
 
@@ -139,6 +141,7 @@ namespace LogisticApi.Services
             setting.destinationFieldId = destinationId;
             setting.badgeFieldId = request.badgeFieldId;
             setting.weightFieldId = request.weightFieldId;
+            setting.attachmentLabelFieldId = request.attachmentLabelFieldId;
             setting.detailFieldIds = JsonSerializer.Serialize(detailIds);
 
             try

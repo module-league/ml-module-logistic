@@ -16,6 +16,10 @@ export interface RecordAttachmentInputProps {
   onUpload?: AttachmentUploadHandler;
   /** The attachment field's labels; each file can take one. Left out or empty, files have no label. */
   options?: IFieldDropDownValue[];
+  /** "dropzone" shows a drop box while there are no files; "button" always shows the Attach File button. Files can be dropped on the input either way. @default "dropzone" */
+  trigger?: "dropzone" | "button";
+  /** "compact" shows each file as a small row card, for tight spaces like a comment box. @default "default" */
+  cardSize?: AttachmentCardProps["size"];
 }
 
 export interface AttachmentCardProps {
@@ -28,6 +32,8 @@ export interface AttachmentCardProps {
   onOpen?: () => void;
   /** The footer's controls, e.g. the label picker and the file's actions. */
   children?: ReactNode;
+  /** "compact" is a small row card: the tile beside the name, details and controls. @default "default" */
+  size?: "default" | "compact";
 }
 
 export interface AttachmentLabelSelectProps {
