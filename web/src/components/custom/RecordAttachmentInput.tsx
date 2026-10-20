@@ -12,6 +12,12 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   attachmentOption,
   bytesToKilobytes,
@@ -26,6 +32,7 @@ import { SelectionNode } from "./RecordValueNode";
 import type {
   AttachmentCardProps,
   AttachmentLabelSelectProps,
+  AttachmentTextLabelProps,
   RecordAttachmentInputProps,
 } from "./RecordAttachmentInput.types";
 import { Button } from "@/ui-kit";
@@ -51,6 +58,9 @@ export function RecordAttachmentInput({
   options,
   trigger = "dropzone",
   cardSize = "default",
+  labelMode = "options",
+  labelSuggestions,
+  removable = true,
 }: RecordAttachmentInputProps) {
   const attachments = useMemo(() => parseAttachments(value), [value]);
   const [pending, setPending] = useState<PendingUpload[]>([]);
@@ -117,12 +127,15 @@ export function RecordAttachmentInput({
   );
 
   const label = useCallback(
-    (attachmentId: string, optionId?: string) => {
+    (
+      attachmentId: string,
+      patch: Pick<IAttachment, "optionId"> | Pick<IAttachment, "label">,
+    ) => {
       onChange?.(
         toAttachmentValue(
           attachments.map((attachment) =>
             attachment?.id === attachmentId
-              ? { ...attachment, optionId }
+              ? { ...attachment, ...patch }
               : attachment,
           ),
         ),
@@ -207,17 +220,29 @@ export function RecordAttachmentInput({
                   .join(" · ")}
                 onOpen={() => openPreview(attachments, index)}
               >
-                {!!options?.length && (
-                  <AttachmentLabelSelect
+                {labelMode === "text" ? (
+                  <AttachmentTextLabel
                     name={attachment.name}
-                    options={options}
-                    value={attachmentOption(attachment, options)?.id}
+                    value={attachment.label}
+                    suggestions={labelSuggestions}
                     disabled={disabled}
-                    onChange={(optionId) => label(attachment.id, optionId)}
+                    onChange={(text) => label(attachment.id, { label: text })}
                   />
+                ) : (
+                  !!options?.length && (
+                    <AttachmentLabelSelect
+                      name={attachment.name}
+                      options={options}
+                      value={attachmentOption(attachment, options)?.id}
+                      disabled={disabled}
+                      onChange={(optionId) =>
+                        label(attachment.id, { optionId })
+                      }
+                    />
+                  )
                 )}
                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                  {!disabled && (
+                  {!disabled && removable && (
                     <Button
                       variant="outline"
                       size="icon-xs"
@@ -309,6 +334,115 @@ function AttachmentLabelSelect({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+/** A label typed for one file: "Add label", or the label, opens a box to type or pick a suggestion; it sits above the card's open trigger. */
+function AttachmentTextLabel({
+  name,
+  value,
+  suggestions,
+  disabled,
+  onChange,
+}: AttachmentTextLabelProps) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const offered = useMemo(() => {
+    const term = draft.trim().toLowerCase();
+    return (suggestions ?? [])
+      .filter(
+        (suggestion) =>
+          suggestion !== value && suggestion.toLowerCase().includes(term),
+      )
+      .slice(0, 6);
+  }, [suggestions, draft, value]);
+  const changeOpen = useCallback(
+    (next: boolean) => {
+      if (next) setDraft(value ?? "");
+      setOpen(next);
+    },
+    [value],
+  );
+  const save = useCallback(
+    (text?: string) => {
+      const next = text?.trim() || undefined;
+      if (next !== value) onChange(next);
+      setOpen(false);
+    },
+    [value, onChange],
+  );
+  if (disabled && !value) return null;
+  return (
+    <Popover open={open} onOpenChange={changeOpen}>
+      <PopoverTrigger asChild disabled={disabled}>
+        <button
+          type="button"
+          aria-label={`Label for ${name}`}
+          className="flex h-6 max-w-full min-w-0 cursor-pointer items-center rounded-md text-xs focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none disabled:cursor-default"
+        >
+          {value ? (
+            <span className="flex h-6 min-w-0 items-center gap-1 rounded-md bg-primary-10 px-2 font-medium text-primary">
+              <Tag className="size-3 shrink-0" />
+              <span className="truncate">{value}</span>
+            </span>
+          ) : (
+            <span className="flex h-6 items-center gap-1 rounded-md border bg-background px-2 font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+              <Tag className="size-3" />
+              Add label
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="flex w-60 flex-col gap-2 p-2">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            save(draft);
+          }}
+        >
+          <Input
+            autoFocus
+            aria-label={`Label for ${name}`}
+            placeholder="e.g. Proof of delivery"
+            maxLength={60}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            className="h-8 text-sm"
+          />
+        </form>
+        {!!offered.length && (
+          <div className="flex flex-wrap gap-1">
+            {offered.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => save(suggestion)}
+                className="max-w-full cursor-pointer truncate rounded-md border px-2 py-0.5 text-xs hover:border-primary hover:text-primary"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-2">
+          {value ? (
+            <Button
+              variant="ghost"
+              size="xs"
+              className="text-muted-foreground"
+              onClick={() => save(undefined)}
+            >
+              Remove label
+            </Button>
+          ) : (
+            <span />
+          )}
+          <Button size="xs" onClick={() => save(draft)}>
+            Save
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 

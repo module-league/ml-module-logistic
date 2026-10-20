@@ -14,7 +14,6 @@ namespace LogisticApi.MVVM
         public Guid? destinationFieldId { get; set; }
         public Guid? badgeFieldId { get; set; }
         public Guid? weightFieldId { get; set; }
-        public Guid? attachmentLabelFieldId { get; set; }
         public List<Guid> detailFieldIds { get; set; } = [];
         /// <summary>0 until first saved; the web app then picks the fields itself.</summary>
         public int versionNo { get; set; }
@@ -30,7 +29,6 @@ namespace LogisticApi.MVVM
             destinationFieldId = setting.destinationFieldId,
             badgeFieldId = setting.badgeFieldId,
             weightFieldId = setting.weightFieldId,
-            attachmentLabelFieldId = setting.attachmentLabelFieldId,
             detailFieldIds = JsonSerializer.Deserialize<List<Guid>>(setting.detailFieldIds) ?? [],
             versionNo = setting.VersionNo,
         };

@@ -20,7 +20,16 @@ namespace LogisticApi.MVVM
         [Required]
         public Guid? id { get; set; }
 
-        /// <summary>One of the labels of the dispatch settings' attachmentLabelFieldId; null for none.</summary>
-        public Guid? optionId { get; set; }
+        /// <summary>Any text, e.g. "Proof of delivery"; blank for none.</summary>
+        [MaxLength(60)]
+        public string? label { get; set; }
+    }
+
+    /// <summary>Changes the label of one file of a posted entry.</summary>
+    public class CheckpointLabelRequest
+    {
+        /// <summary>Blank removes the label.</summary>
+        [MaxLength(60)]
+        public string? label { get; set; }
     }
 }

@@ -12,10 +12,9 @@ import {
   toast,
 } from "@moduleleague/ui";
 import QueryWrapper from "@/components/custom/QueryWrapper";
-import { AttachmentChipList } from "@/components/custom/AttachmentChip";
 import { errorParser } from "@/hooks/useErrorParser";
 import { findMember } from "@/lib/memberHelper";
-import { parseAttachments } from "@/lib/attachmentHelper";
+import { parseAttachments, toAttachmentValue } from "@/lib/attachmentHelper";
 import { RecordAttachmentInput } from "@/components/custom/RecordAttachmentInput";
 import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
 import {
@@ -36,8 +35,6 @@ type DispatchDetailDialogProps = {
   shipment?: DispatchShipment;
   detail: DispatchDetailData;
   members: IUserInfo[];
-  /** The labels of the attachment field picked in the card settings; left out, files have no label. */
-  labelOptions?: IFieldDropDownValue[];
   now: Date;
 };
 
@@ -55,7 +52,6 @@ export function DispatchDetailDialog({
   shipment,
   detail,
   members,
-  labelOptions,
   now,
 }: DispatchDetailDialogProps) {
   const onClose = detail?.onClose;
@@ -75,7 +71,6 @@ export function DispatchDetailDialog({
             dispatch={shipment.dispatch}
             detail={detail}
             members={members}
-            labelOptions={labelOptions}
             now={now}
           />
         ) : (
@@ -91,7 +86,6 @@ function DispatchDetail({
   dispatch,
   detail,
   members,
-  labelOptions,
   now,
 }: Omit<DispatchDetailDialogProps, "shipment"> & {
   shipment: DispatchShipment;
@@ -102,6 +96,18 @@ function DispatchDetail({
     [shipment?.stage],
   );
   const late = lateText(dispatch, now);
+  const labelSuggestions = useMemo(
+    () =>
+      [
+        ...new Set(
+          detail?.checkpoints?.flatMap(
+            (log) =>
+              log?.attachments?.flatMap((file) => file?.label ?? []) ?? [],
+          ),
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
+    [detail?.checkpoints],
+  );
 
   return (
     <>
@@ -152,7 +158,10 @@ function DispatchDetail({
       <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
         <section className="flex min-h-0 flex-col gap-3 rounded-xl border p-3">
           <h3 className="shrink-0 text-sm font-semibold">Checkpoint log</h3>
-          <CheckpointComposer detail={detail} labelOptions={labelOptions} />
+          <CheckpointComposer
+            detail={detail}
+            labelSuggestions={labelSuggestions}
+          />
           <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2">
             <QueryWrapper
               isLoading={detail?.isLoading}
@@ -171,9 +180,10 @@ function DispatchDetail({
                     note={log.note}
                   >
                     {!!log.attachments?.length && (
-                      <AttachmentChipList
-                        attachments={log.attachments}
-                        options={labelOptions}
+                      <CheckpointFiles
+                        log={log}
+                        labelSuggestions={labelSuggestions}
+                        onLabel={detail?.onLabel}
                       />
                     )}
                   </CheckpointEntry>
@@ -312,13 +322,55 @@ function DispatchStepper({
   );
 }
 
-/** Writes a note and attaches files, each with a label, then posts them to the log, for the team only unless switched off. */
+/** The files of a posted entry; each one's label can be added or changed, which saves straight away. */
+function CheckpointFiles({
+  log,
+  labelSuggestions,
+  onLabel,
+}: {
+  log: ICheckpointLog;
+  labelSuggestions: string[];
+  onLabel: DispatchDetailData["onLabel"];
+}) {
+  const value = useMemo(
+    () => toAttachmentValue(log?.attachments),
+    [log?.attachments],
+  );
+  const change = useCallback(
+    (next: string) => {
+      const changed = parseAttachments(next).find(
+        (file) =>
+          file?.label !==
+          log?.attachments?.find((saved) => saved?.id === file?.id)?.label,
+      );
+      if (!changed) return;
+      onLabel(log.objId, changed.id, changed.label).catch((error) =>
+        toast.error("Couldn't change the label", {
+          description: errorParser(error)?.message,
+        }),
+      );
+    },
+    [log, onLabel],
+  );
+  return (
+    <RecordAttachmentInput
+      value={value}
+      onChange={change}
+      cardSize="compact"
+      labelMode="text"
+      labelSuggestions={labelSuggestions}
+      removable={false}
+    />
+  );
+}
+
+/** Writes a note and attaches files, each with a typed label, then posts them to the log, for the team only unless switched off. */
 function CheckpointComposer({
   detail,
-  labelOptions,
+  labelSuggestions,
 }: {
   detail: DispatchDetailData;
-  labelOptions?: IFieldDropDownValue[];
+  labelSuggestions: string[];
 }) {
   const { onUpload, onAddCheckpoint, isPosting } = detail;
   const [note, setNote] = useState("");
@@ -333,7 +385,7 @@ function CheckpointComposer({
       await onAddCheckpoint({
         note: note.trim() || undefined,
         internalOnly,
-        attachments: files.map(({ id, optionId }) => ({ id, optionId })),
+        attachments: files.map(({ id, label }) => ({ id, label })),
       });
       setNote("");
       setFilesValue("");
@@ -360,7 +412,8 @@ function CheckpointComposer({
           value={filesValue}
           onChange={setFilesValue}
           onUpload={onUpload}
-          options={labelOptions}
+          labelMode="text"
+          labelSuggestions={labelSuggestions}
           trigger="button"
           cardSize="compact"
           className="flex-1"

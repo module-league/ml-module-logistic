@@ -6,14 +6,15 @@ declare global {
     note?: string;
     /** Seen by the team only. */
     internalOnly: boolean;
+    /** Each with the label typed for it, if any. */
     attachments: IAttachment[];
     /** The poster's user id; all zeros until sign-in is wired up. */
     createdBy: string;
     createTime: string;
   };
 
-  /** Needs a note or a file; files are uploaded with refId set to the dispatch's objId, each with an optional label. */
+  /** Needs a note or a file; files are uploaded with refId set to the dispatch's objId, each with an optional typed label. */
   type ICheckpointLogCreate = Pick<ICheckpointLog, "note" | "internalOnly"> & {
-    attachments: Pick<IAttachment, "id" | "optionId">[];
+    attachments: Pick<IAttachment, "id" | "label">[];
   };
 }

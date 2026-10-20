@@ -12,5 +12,7 @@ declare global {
     attachmentVersion: number;
     /** The label picked for the file in a record: the id of one of its attachment field's options. */
     optionId?: string;
+    /** A label typed for the file, e.g. "Proof of delivery"; checkpoint log files use it instead of optionId. */
+    label?: string;
   };
 }

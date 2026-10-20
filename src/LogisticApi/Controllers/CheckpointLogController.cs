@@ -29,5 +29,19 @@ namespace LogisticApi.Controllers
             var created = await checkpoints.CreateAsync(dispatchId, request, ct);
             return StatusCode(StatusCodes.Status201Created, created);
         }
+
+        /// <summary>Sets or clears the label of one file of a posted entry.</summary>
+        [HttpPut("{objId:guid}/attachments/{attachmentId:guid}/label")]
+        [ProducesResponseType<CheckpointLogResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+        public Task<CheckpointLogResponse> UpdateLabel(
+            Guid dispatchId,
+            Guid objId,
+            Guid attachmentId,
+            [FromBody] CheckpointLabelRequest request,
+            CancellationToken ct) =>
+            checkpoints.UpdateLabelAsync(dispatchId, objId, attachmentId, request, ct);
     }
 }

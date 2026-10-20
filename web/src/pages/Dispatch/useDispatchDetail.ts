@@ -8,6 +8,12 @@ export interface DispatchDetailApi {
     dispatchId: string,
     body: ICheckpointLogCreate,
   ) => Promise<ICheckpointLog>;
+  updateCheckpointLabel: (
+    dispatchId: string,
+    objId: string,
+    attachmentId: string,
+    label?: string,
+  ) => Promise<ICheckpointLog>;
   uploadAttachment: (refId: string, file: File) => Promise<IAttachment>;
 }
 
@@ -15,7 +21,7 @@ const NO_CHECKPOINTS: ICheckpointLog[] = [];
 
 /**
  * Backs the dispatch detail dialog: which dispatch is open, its checkpoint log (GET /dispatches/{id}/checkpoints),
- * posting to it, which puts the new entry first in the cached log, and uploading files for it.
+ * posting to it, which puts the new entry first in the cached log, relabelling a posted file, and uploading files for it.
  * Pass a module-level api object so it stays the same between renders.
  * @example
  * const detail = useDispatchDetail(detailApi);
@@ -41,6 +47,29 @@ export function useDispatchDetail(api: DispatchDetailApi) {
       ),
   });
 
+  const { mutateAsync: relabel } = useMutation({
+    mutationFn: ({
+      objId,
+      attachmentId,
+      label,
+    }: {
+      objId: string;
+      attachmentId: string;
+      label?: string;
+    }) => api.updateCheckpointLabel(id, objId, attachmentId, label),
+    onSuccess: (updated) =>
+      queryClient.setQueryData<ICheckpointLog[]>(
+        checkpointKeys.list(updated.dispatchId),
+        (current) =>
+          current?.map((log) => (log.objId === updated.objId ? updated : log)),
+      ),
+  });
+  const onLabel = useCallback(
+    (objId: string, attachmentId: string, label?: string) =>
+      relabel({ objId, attachmentId, label }),
+    [relabel],
+  );
+
   const upload = api.uploadAttachment;
   const onUpload = useCallback((file: File) => upload(id, file), [upload, id]);
   const onClose = useCallback(() => setDispatchId(undefined), []);
@@ -60,6 +89,7 @@ export function useDispatchDetail(api: DispatchDetailApi) {
       onRetry,
       onAddCheckpoint: addCheckpoint,
       isPosting,
+      onLabel,
       onUpload,
     }),
     [
@@ -71,6 +101,7 @@ export function useDispatchDetail(api: DispatchDetailApi) {
       onRetry,
       addCheckpoint,
       isPosting,
+      onLabel,
       onUpload,
     ],
   );

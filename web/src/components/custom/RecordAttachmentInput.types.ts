@@ -20,6 +20,12 @@ export interface RecordAttachmentInputProps {
   trigger?: "dropzone" | "button";
   /** "compact" shows each file as a small row card, for tight spaces like a comment box. @default "default" */
   cardSize?: AttachmentCardProps["size"];
+  /** "options" picks a label from options (optionId); "text" types one (label). @default "options" */
+  labelMode?: "options" | "text";
+  /** Labels offered while typing one, e.g. those used before; "text" label mode only. */
+  labelSuggestions?: string[];
+  /** Shows each file's remove button. @default true */
+  removable?: boolean;
 }
 
 export interface AttachmentCardProps {
@@ -44,6 +50,15 @@ export interface AttachmentLabelSelectProps {
   value?: string;
   disabled?: boolean;
   onChange: (optionId?: string) => void;
+}
+
+export interface AttachmentTextLabelProps {
+  /** The file's name, for the input's label. */
+  name: string;
+  value?: string;
+  suggestions?: string[];
+  disabled?: boolean;
+  onChange: (label?: string) => void;
 }
 
 export interface AttachmentChipProps {

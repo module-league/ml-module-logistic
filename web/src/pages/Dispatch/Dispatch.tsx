@@ -12,6 +12,7 @@ import { uploadAttachment } from "@/services/attachments/attachment.api";
 import {
   createCheckpoint,
   getCheckpoints,
+  updateCheckpointLabel,
 } from "@/services/checkpoints/checkpoint.api";
 import { useDispatchData, type DispatchApi } from "./useDispatchData";
 import { useDispatchDetail, type DispatchDetailApi } from "./useDispatchDetail";
@@ -31,6 +32,7 @@ const dispatchApi: DispatchApi = {
 const detailApi: DispatchDetailApi = {
   getCheckpoints,
   createCheckpoint,
+  updateCheckpointLabel,
   uploadAttachment,
 };
 

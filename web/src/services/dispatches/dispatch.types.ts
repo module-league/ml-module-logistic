@@ -43,8 +43,6 @@ declare global {
     badgeFieldId?: string;
     /** A number field, shown on the card in kg. */
     weightFieldId?: string;
-    /** An attachment field whose labels the checkpoint log's files can take. */
-    attachmentLabelFieldId?: string;
     /** Up to 4, in display order. */
     detailFieldIds: string[];
     /** 0 until first saved; the board then picks the fields itself. */
