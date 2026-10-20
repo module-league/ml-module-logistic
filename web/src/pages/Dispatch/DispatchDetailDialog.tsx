@@ -407,7 +407,7 @@ function CheckpointComposer({
         onChange={(event) => setNote(event.target.value)}
         className="bg-background"
       />
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         <RecordAttachmentInput
           value={filesValue}
           onChange={setFilesValue}
@@ -427,7 +427,7 @@ function CheckpointComposer({
           />
         </label>
         <Button
-          size="sm"
+          size="xs"
           className="shrink-0"
           disabled={!canPost}
           onClick={post}
