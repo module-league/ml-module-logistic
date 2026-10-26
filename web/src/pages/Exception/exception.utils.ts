@@ -132,6 +132,12 @@ const statusText = (status?: IExceptionFacts["status"]) =>
       ? "Not dispatched"
       : statusLabel(status);
 
+/** "the invoice", "A and B", "A, B and C". */
+const listText = (items: string[] = []) =>
+  items.length < 2
+    ? (items[0] ?? "the papers")
+    : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+
 /** One sentence on what tripped the rule, from the facts when it opened. */
 export function whyText(exception: IException) {
   const facts = exception.facts ?? {};
@@ -150,6 +156,10 @@ export function whyText(exception: IException) {
       return `Weighed ${facts.pickupWeight} kg at pickup; the record says ${facts.recordWeight} kg, ${facts.differencePercent}% off.`;
     case "arrived_before_opening":
       return `Arrived ${stamp(facts.arrivedAt)}, before the destination opens at ${stamp(facts.opensAt)}.`;
+    case "missing_document":
+      return `Dispatched before ${listText(facts.missing)} ${facts.missing?.length === 1 ? "was" : "were"} verified, so it can't be picked up.`;
+    case "pod_not_verified":
+      return `Delivered, but ${listText(facts.missing)} ${facts.missing?.length === 1 ? "isn't" : "aren't"} verified, so it can't be billed.`;
     case "delivery_attempt_failed":
       return `Delivery failed: ${labelOf(ATTEMPT_REASONS, facts.reason).toLowerCase() || "no reason given"}.`;
     default:
@@ -178,6 +188,8 @@ export function factCards(exception: IException) {
       ["Arrived", stamp(facts.arrivedAt)],
       ["Opens", stamp(facts.opensAt)],
     ],
+    missing_document: [["Not verified", facts.missing?.join(", ")]],
+    pod_not_verified: [["Not verified", facts.missing?.join(", ")]],
     delivery_attempt_failed: [
       ["Reason", labelOf(ATTEMPT_REASONS, facts.reason)],
       ["Attempt", stamp(facts.attemptAt)],

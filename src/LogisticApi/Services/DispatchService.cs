@@ -11,7 +11,7 @@ namespace LogisticApi.Services
     /// <summary>
     /// Dispatches (lg_dispatch): a shipment, driver, vehicle, origin and destination, each a record of its sidebar in DispatchOptions.
     /// </summary>
-    public class DispatchService(ContextDb db, IOptions<DispatchOptions> options, ExceptionRuleEngine rules)
+    public class DispatchService(ContextDb db, IOptions<DispatchOptions> options, ExceptionRuleEngine rules, DocumentChecklistService documents)
     {
         private readonly DispatchOptions sources = options.Value;
 
@@ -130,7 +130,8 @@ namespace LogisticApi.Services
 
         /// <summary>
         /// Moves an open dispatch ahead in Dispatch.Flow, skipping steps if need be, or cancels it, and posts the move to its checkpoint log.
-        /// Reaching picked_up or later stamps the pickup time if it isn't set; delivered stamps the delivery time.
+        /// Reaching picked_up or later stamps the pickup time if it isn't set; delivered stamps the delivery time. A step a document gates
+        /// can't be reached until that document is verified (DocumentRequirement.Blocks).
         /// </summary>
         public async Task<DispatchStatusResponse> MoveAsync(Guid objId, DispatchStatusRequest request, CancellationToken ct)
         {
@@ -148,6 +149,15 @@ namespace LogisticApi.Services
                 throw ApiProblemException.BadRequest($"The dispatch is already past {status}.", "A dispatch can only move ahead.");
 
             var now = DateTime.UtcNow;
+            if (status != Dispatch.Cancelled)
+            {
+                var checklist = (await documents.BuildAsync(ct, [dispatch.shipmentId])).GetValueOrDefault(dispatch.shipmentId);
+                if (checklist?.Blocking(dispatch.status, status, now) is { Count: > 0 } unverified)
+                    throw ApiProblemException.BadRequest(
+                        $"Verify the papers for {GateNames.GetValueOrDefault(unverified[0].Requirement.Blocks!, "this step")} first.",
+                        $"{Sentence(unverified.Select(i => i.Type.Title).ToList())} {(unverified.Count == 1 ? "isn't" : "aren't")} verified yet. Verify them on the Documents page.");
+            }
+
             db.Entry(dispatch).Property(d => d.VersionNo).OriginalValue = request.versionNo!.Value;
             dispatch.status = status;
             var pickedUp = reached >= Array.IndexOf(Dispatch.Flow, Dispatch.PickedUp);
@@ -178,6 +188,18 @@ namespace LogisticApi.Services
             await rules.EvaluateAsync(ct);
             return new DispatchStatusResponse { dispatch = DispatchResponse.From(dispatch), checkpoint = CheckpointLogResponse.From(log) };
         }
+
+        private static readonly Dictionary<string, string> GateNames = new()
+        {
+            [Dispatch.PickedUp] = "pickup",
+            ["in_transit"] = "transit",
+            [Dispatch.Arrived] = "arrival",
+            [Dispatch.Delivered] = "delivery",
+        };
+
+        /// <summary>"A", "A and B", "A, B and C".</summary>
+        private static string Sentence(List<string> items) =>
+            items.Count < 2 ? string.Concat(items) : $"{string.Join(", ", items[..^1])} and {items[^1]}";
 
         private static ApiProblemException StaleDispatch() =>
             ApiProblemException.Conflict("The dispatch was changed by someone else.", "Reload it and try again.");

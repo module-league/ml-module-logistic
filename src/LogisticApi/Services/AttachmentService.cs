@@ -17,6 +17,14 @@ namespace LogisticApi.Services
             if (file.Length > options.Value.MaxBytes)
                 throw ApiProblemException.BadRequest("File too large.", $"Files can be up to {options.Value.MaxBytes / (1024 * 1024)} MB.");
 
+            await using var content = file.OpenReadStream();
+            var attachment = await SaveAsync(refId, file.FileName, file.ContentType, content, file.Length, ct);
+            return AttachmentResponse.From(attachment);
+        }
+
+        /// <summary>Writes the file to disk and adds its row, e.g. for a file the API made itself.</summary>
+        public async Task<Attachment> SaveAsync(string refId, string fileName, string? contentType, Stream content, long length, CancellationToken ct)
+        {
             var objId = Guid.CreateVersion7();
             var storagePath = Path.Combine(DateTime.UtcNow.ToString("yyyy"), DateTime.UtcNow.ToString("MM"), objId.ToString("N"));
             var fullPath = Path.Combine(Root, storagePath);
@@ -24,18 +32,18 @@ namespace LogisticApi.Services
 
             await using (var target = File.Create(fullPath))
             {
-                await file.CopyToAsync(target, ct);
+                await content.CopyToAsync(target, ct);
             }
 
-            var fileName = CleanFileName(file.FileName);
+            var name = CleanFileName(fileName);
             var attachment = new Attachment
             {
                 ObjId = objId,
                 refId = refId,
-                fileName = fileName,
-                fileType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
-                fileExtension = ExtensionOf(fileName),
-                fileSize = ToKilobytes(file.Length),
+                fileName = name,
+                fileType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType,
+                fileExtension = ExtensionOf(name),
+                fileSize = ToKilobytes(length),
                 attachmentVersion = 1,
                 storagePath = storagePath,
             };
@@ -49,7 +57,7 @@ namespace LogisticApi.Services
                 File.Delete(fullPath);
                 throw;
             }
-            return AttachmentResponse.From(attachment);
+            return attachment;
         }
 
         public async Task<(Attachment attachment, Stream content)> OpenAsync(Guid objId, CancellationToken ct)

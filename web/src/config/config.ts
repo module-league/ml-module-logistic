@@ -107,10 +107,10 @@ export const moduleConfig: IModuleConfig = {
         {
           sidebarId: "documents",
           sidebarText: "Documents",
-          sidebarDesc: "",
+          sidebarDesc: "Papers each shipment needs, collected and verified.",
           sidebarIcon: FileText,
           hidePageSeparator: false,
-          page: lazy(() => import("@/pages/Document")),
+          page: lazy(() => import("@/pages/Document/Document")),
         },
         {
           sidebarId: "billing",

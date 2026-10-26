@@ -7,7 +7,7 @@ export const DEMO_USER: IUserInfo = {
   email: "demoUser@email.com",
 };
 
-export const DEMO_USER1:IUserInfo = {
+export const DEMO_USER1: IUserInfo = {
   id: "00000000-0000-0000-0000-000000000002",
   displayName: "Demo User1",
   userRole: "Logistic admin1",
@@ -19,3 +19,10 @@ export const DEMO_USER1:IUserInfo = {
 export function useCurrentUser(): IUserInfo {
   return DEMO_USER;
 }
+
+/** Who did something the API logged: "system" without an actor, else the member's name; "Team member" until sign-in is wired up. */
+export const actorName = (members: IUserInfo[], actorId?: string) =>
+  !actorId
+    ? "system"
+    : (members.find((member) => member?.id === actorId)?.displayName ??
+      "Team member");

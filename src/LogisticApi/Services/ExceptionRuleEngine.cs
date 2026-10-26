@@ -14,16 +14,18 @@ namespace LogisticApi.Services
     /// Checks every active rule against the shipments, dispatches and locations, then opens an exception for each condition that
     /// holds and has none unresolved, auto-closes those whose condition cleared, and reopens snoozed ones whose time is up.
     /// A condition someone resolved with the same facts isn't reopened, so a false alarm stays closed until its values change.
-    /// Runs every minute (ExceptionMonitor) and right after a dispatch changes.
+    /// Runs every minute (ExceptionMonitor) and right after a dispatch or a document changes.
     /// </summary>
     public class ExceptionRuleEngine(
         ContextDb db,
         IOptions<ExceptionRuleOptions> ruleOptions,
         IOptions<DispatchOptions> dispatchOptions,
+        DocumentChecklistService documents,
         ILogger<ExceptionRuleEngine> logger)
     {
         /// <summary>The rules with a coded condition; the rest are raised by hand or wait for data that doesn't exist yet.</summary>
-        public static readonly string[] Evaluated = ["delayed", "late_pickup", "missing_destination", "weight_mismatch", "arrived_before_opening"];
+        public static readonly string[] Evaluated =
+            ["delayed", "late_pickup", "missing_destination", "missing_document", "weight_mismatch", "arrived_before_opening", "pod_not_verified"];
 
         private static readonly SemaphoreSlim Gate = new(1, 1);
         private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
@@ -31,8 +33,6 @@ namespace LogisticApi.Services
         private readonly DispatchOptions sources = dispatchOptions.Value;
 
         private sealed record Candidate(string RuleKey, Guid ShipmentId, Guid? DispatchId, string Facts, string Key);
-
-        private sealed record Row(Guid Id, DateTime CreateTime, Dictionary<Guid, string?> Values);
 
         public async Task EvaluateAsync(CancellationToken ct)
         {
@@ -52,8 +52,8 @@ namespace LogisticApi.Services
             var zone = TimeZoneInfo.FindSystemTimeZoneById(config.TimeZone);
             var roles = await db.ExceptionSettings.AsNoTracking().FirstOrDefaultAsync(s => s.shipmentSidebarId == sources.ShipmentSidebarId, ct);
             var card = await db.DispatchSettings.AsNoTracking().FirstOrDefaultAsync(s => s.shipmentSidebarId == sources.ShipmentSidebarId, ct);
-            var shipments = await RowsAsync(sources.ShipmentSidebarId, ct);
-            var locations = (await RowsAsync(sources.LocationSidebarId, ct)).ToDictionary(r => r.Id);
+            var shipments = await RecordRow.LoadAsync(db, sources.ShipmentSidebarId, ct);
+            var locations = (await RecordRow.LoadAsync(db, sources.LocationSidebarId, ct)).ToDictionary(r => r.Id);
             var dispatches = await db.Dispatches.AsNoTracking().OrderByDescending(d => d.DocId).ToListAsync(ct);
             var latest = dispatches
                 .Where(d => d.status != Dispatch.Cancelled)
@@ -65,19 +65,20 @@ namespace LogisticApi.Services
                     .ToListAsync(ct))
                 .GroupBy(l => l.dispatchId)
                 .ToDictionary(g => g.Key, g => g.MaxBy(l => l.DocId)!);
+            var checklists = await documents.BuildAsync(ct);
             var modes = roles?.modeFieldId is { } modeField
                 ? await db.SidebarFieldOptions.AsNoTracking().Where(o => o.fieldObjId == modeField).ToDictionaryAsync(o => o.ObjId.ToString(), o => o.value, ct)
                 : [];
 
             List<Candidate> candidates = [];
             // The facts are what triggered it plus what the shipment looked like then; only the trigger is compared later
-            void Add(string ruleKey, Row shipment, Dispatch? dispatch, DateTime since, object trigger)
+            void Add(string ruleKey, RecordRow shipment, Dispatch? dispatch, DateTime since, object trigger)
             {
                 var rule = config.Find(ruleKey);
                 if (rule is not { IsActive: true, Manual: false } || since.AddMinutes(rule.GracePeriodMinutes) > now) return;
                 var facts = JsonSerializer.SerializeToNode(trigger, Json)!.AsObject();
                 facts["status"] = dispatch?.status ?? "not_dispatched";
-                facts["mode"] = modes.GetValueOrDefault(ValueOf(shipment, roles?.modeFieldId) ?? "");
+                facts["mode"] = modes.GetValueOrDefault(shipment.Value(roles?.modeFieldId) ?? "");
                 if (dispatch is not null && checkpoints.GetValueOrDefault(dispatch.ObjId) is { } last)
                     facts["lastCheckpoint"] = new JsonObject { ["at"] = Iso(last.CreateTime), ["status"] = last.status, ["note"] = last.note };
                 candidates.Add(new(ruleKey, shipment.Id, dispatch?.ObjId, facts.ToJsonString(Json), JsonSerializer.Serialize(trigger, Json)));
@@ -97,8 +98,19 @@ namespace LogisticApi.Services
                     Add("late_pickup", shipment, dispatch, dispatch.plannedPickupAt, new { plannedPickupAt = Iso(dispatch.plannedPickupAt) });
 
                 // Missing destination: booked without one, so it can't be dispatched
-                if (card?.destinationFieldId is { } destinationField && dispatch is null && LinkOf(shipment, destinationField) is null)
+                if (card?.destinationFieldId is { } destinationField && dispatch is null && shipment.Link(destinationField) is null)
                     Add("missing_destination", shipment, null, shipment.CreateTime, new { });
+
+                // Missing document: dispatched, and papers that gate the pickup aren't verified
+                var checklist = checklists.GetValueOrDefault(shipment.Id);
+                if (dispatch is { status: Dispatch.DefaultStatus }
+                    && checklist?.Blocking(Dispatch.DefaultStatus, Dispatch.PickedUp, now) is { Count: > 0 } papers)
+                    Add("missing_document", shipment, dispatch, DateTime.SpecifyKind(dispatch.CreateTime, DateTimeKind.Utc), new { missing = papers.Select(p => p.Type.Title) });
+
+                // POD not verified: delivered, and papers that gate billing aren't verified
+                if (dispatch is { status: Dispatch.Delivered, actualDeliveryAt: { } deliveredAt }
+                    && checklist?.Blocking(Dispatch.Delivered, DocumentSteps.Billed, now) is { Count: > 0 } proof)
+                    Add("pod_not_verified", shipment, dispatch, deliveredAt, new { missing = proof.Select(p => p.Type.Title) });
 
                 // Weight mismatch: the pickup weight differs from the chargeable weight by more than the tolerance
                 if (dispatch is { pickupWeight: { } pickupWeight, actualPickupAt: { } pickedUpAt }
@@ -200,55 +212,21 @@ namespace LogisticApi.Services
                 body = body,
             });
 
-        private async Task<List<Row>> RowsAsync(string sidebarId, CancellationToken ct)
-        {
-            var records = await db.SidebarRecords
-                .AsNoTracking()
-                .Where(r => r.sidebarId == sidebarId)
-                .Select(r => new { r.ObjId, r.CreateTime, r.Metadata })
-                .ToListAsync(ct);
-            return records
-                .Select(r => new Row(
-                    r.ObjId,
-                    DateTime.SpecifyKind(r.CreateTime, DateTimeKind.Utc),
-                    (string.IsNullOrWhiteSpace(r.Metadata) ? [] : JsonSerializer.Deserialize<List<SidebarRecordValue>>(r.Metadata, Json) ?? [])
-                        .GroupBy(v => v.fieldId)
-                        .ToDictionary(g => g.Key, g => g.First().value)))
-                .ToList();
-        }
-
-        private static string? ValueOf(Row row, Guid? fieldId) =>
-            fieldId is { } id && row.Values.GetValueOrDefault(id) is { Length: > 0 } text ? text : null;
-
         /// <summary>A date-and-time value is UTC; a date-only one is midnight in the configured zone.</summary>
-        private static DateTime? DateOf(Row row, Guid? fieldId, TimeZoneInfo zone)
+        private static DateTime? DateOf(RecordRow row, Guid? fieldId, TimeZoneInfo zone)
         {
-            var text = ValueOf(row, fieldId);
+            var text = row.Value(fieldId);
             if (text is null) return null;
             if (DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day))
                 return TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified), zone);
             return DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at) ? at.UtcDateTime : null;
         }
 
-        private static decimal? NumberOf(Row row, Guid? fieldId) =>
-            decimal.TryParse(ValueOf(row, fieldId), NumberStyles.Number, CultureInfo.InvariantCulture, out var number) ? number : null;
+        private static decimal? NumberOf(RecordRow row, Guid? fieldId) =>
+            decimal.TryParse(row.Value(fieldId), NumberStyles.Number, CultureInfo.InvariantCulture, out var number) ? number : null;
 
-        private static TimeOnly? TimeOf(Row row, Guid? fieldId) =>
-            TimeOnly.TryParseExact(ValueOf(row, fieldId), ["HH:mm", "HH:mm:ss"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var time) ? time : null;
-
-        private static string? LinkOf(Row row, Guid fieldId)
-        {
-            var text = ValueOf(row, fieldId);
-            if (text is null) return null;
-            try
-            {
-                return text.StartsWith('[') ? JsonSerializer.Deserialize<List<string>>(text, Json)?.FirstOrDefault() : text;
-            }
-            catch (JsonException)
-            {
-                return null;
-            }
-        }
+        private static TimeOnly? TimeOf(RecordRow row, Guid? fieldId) =>
+            TimeOnly.TryParseExact(row.Value(fieldId), ["HH:mm", "HH:mm:ss"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var time) ? time : null;
 
         private static string Iso(DateTime value) =>
             DateTime.SpecifyKind(value, DateTimeKind.Utc).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);

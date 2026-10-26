@@ -16,6 +16,8 @@ declare global {
     opensAt?: string;
     reason?: IExceptionAttemptReason;
     attemptAt?: string;
+    /** The papers that weren't verified, by title. */
+    missing?: string[];
     status?: IDispatchStatus | "not_dispatched";
     mode?: string | null;
     lastCheckpoint?: { at: string; status?: IDispatchStatus; note?: string };

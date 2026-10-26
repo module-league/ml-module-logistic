@@ -196,7 +196,11 @@ function Fix(props: FixProps) {
     }
     default:
       return (
-        <FixButton disabled title="The Documents page isn't built yet">
+        <FixButton
+          onClick={() =>
+            navigate(`/documents?shipment=${exception.shipmentId}`)
+          }
+        >
           {label}
         </FixButton>
       );

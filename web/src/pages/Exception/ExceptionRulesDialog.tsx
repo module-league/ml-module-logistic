@@ -256,10 +256,7 @@ function RulesForm({
                         </div>
                         <div className="text-muted-foreground">
                           {rule.ruleKey}
-                          {!rule.isActive &&
-                            (rule.evaluated
-                              ? " · off"
-                              : " · waits for the Documents page")}
+                          {!rule.isActive && " · off"}
                           {rule.manual && " · raised by hand"}
                         </div>
                       </td>
@@ -323,7 +320,8 @@ function RulesForm({
   );
 }
 
-function RoleSelect({
+/** One field role: a field of the table, of a type the role accepts, or none. */
+export function RoleSelect({
   label,
   hint,
   fields,

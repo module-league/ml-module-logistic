@@ -581,6 +581,255 @@ namespace LogisticApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LogisticApi.Models.DocumentActivity", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<Guid?>("actorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("actor_id");
+
+                    b.Property<Guid?>("attachmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("attachment_id");
+
+                    b.Property<string>("body")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("body");
+
+                    b.Property<Guid>("documentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("document_id");
+
+                    b.Property<string>("kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("shipmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("shipment_id");
+
+                    b.Property<string>("source")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("source");
+
+                    b.Property<int?>("version")
+                        .HasColumnType("int")
+                        .HasColumnName("version");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_document_activity");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_document_activity_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_document_activity_ds_is_deleted");
+
+                    b.HasIndex("documentId")
+                        .HasDatabaseName("ix_lg_document_activity_document_id");
+
+                    b.HasIndex("shipmentId")
+                        .HasDatabaseName("ix_lg_document_activity_shipment_id");
+
+                    b.ToTable("lg_document_activity", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_document_activity_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_document_activity_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_document_activity_kind", "[kind] IN ('uploaded', 'verified', 'rejected')");
+
+                            t.HasCheckConstraint("ck_lg_document_activity_upload_file", "[kind] <> 'uploaded' OR [attachment_id] IS NOT NULL");
+                        });
+                });
+
+            modelBuilder.Entity("LogisticApi.Models.DocumentSetting", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<Guid?>("attachmentFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("attachment_field_id");
+
+                    b.Property<Guid?>("incotermFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("incoterm_field_id");
+
+                    b.Property<string>("shipmentSidebarId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("shipment_sidebar_id");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_document_setting");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_document_setting_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_document_setting_ds_is_deleted");
+
+                    b.HasIndex("shipmentSidebarId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_document_setting_shipment_sidebar_id")
+                        .HasFilter("[ds_is_deleted] = 0");
+
+                    b.ToTable("lg_document_setting", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_document_setting_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_document_setting_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+                        });
+                });
+
             modelBuilder.Entity("LogisticApi.Models.ExceptionActivity", b =>
                 {
                     b.Property<Guid>("ObjId")
@@ -1013,6 +1262,170 @@ namespace LogisticApi.Migrations
                             t.HasCheckConstraint("ck_lg_exception_setting_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
 
                             t.HasCheckConstraint("ck_lg_exception_setting_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+                        });
+                });
+
+            modelBuilder.Entity("LogisticApi.Models.ShipmentDocument", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<Guid?>("currentAttachmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("current_attachment_id");
+
+                    b.Property<Guid?>("dispatchId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("dispatch_id");
+
+                    b.Property<string>("docType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("doc_type");
+
+                    b.Property<DateTime?>("expiresAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("rejectReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("reject_reason");
+
+                    b.Property<Guid>("shipmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("shipment_id");
+
+                    b.Property<string>("source")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("missing")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("verifiedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("verified_at");
+
+                    b.Property<Guid?>("verifiedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("verified_by");
+
+                    b.Property<int>("version")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0)
+                        .HasColumnName("version");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_shipment_document");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_shipment_document_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_shipment_document_ds_is_deleted");
+
+                    b.HasIndex("status")
+                        .HasDatabaseName("ix_lg_shipment_document_status");
+
+                    b.HasIndex("shipmentId", "docType")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_shipment_document_shipment_doc_type")
+                        .HasFilter("[doc_type] <> 'other' AND [ds_is_deleted] = 0");
+
+                    b.ToTable("lg_shipment_document", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_shipment_document_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_shipment_document_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_shipment_document_file", "[status] = 'missing' OR [current_attachment_id] IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_lg_shipment_document_rejected", "[status] <> 'rejected' OR [reject_reason] IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_lg_shipment_document_source", "[source] IS NULL OR [source] IN ('upload', 'generated', 'driver_app', 'dispatcher')");
+
+                            t.HasCheckConstraint("ck_lg_shipment_document_status", "[status] IN ('missing', 'uploaded', 'verified', 'rejected')");
+
+                            t.HasCheckConstraint("ck_lg_shipment_document_verified", "[status] <> 'verified' OR [verified_at] IS NOT NULL");
                         });
                 });
 

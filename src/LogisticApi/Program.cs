@@ -44,6 +44,11 @@ builder.Services.AddScoped<ExceptionRuleEngine>();
 builder.Services.AddScoped<ExceptionCaseService>();
 builder.Services.AddHostedService<ExceptionMonitor>();
 
+// Shipment documents: the checklist from the "Documents" workflow config gates dispatch steps and billing
+builder.Services.Configure<DocumentOptions>(builder.Configuration.GetSection(DocumentOptions.SectionName));
+builder.Services.AddScoped<DocumentChecklistService>();
+builder.Services.AddScoped<DocumentService>();
+
 // Expected failures (400/404/409) thrown as ApiProblemException become ProblemDetails responses
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiProblemHandler>();

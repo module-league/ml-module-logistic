@@ -5,6 +5,7 @@ import QueryWrapper from "@/components/custom/QueryWrapper";
 import { errorParser } from "@/hooks/useErrorParser";
 import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControls";
 import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
+import { actorName } from "@/services/user/current.user";
 import { CHIP_CLASS } from "./ExceptionList";
 import { ExceptionFixActions } from "./ExceptionFixActions";
 import {
@@ -24,7 +25,6 @@ import {
 } from "./exception.utils";
 import type { ExceptionActivityData, ExceptionData } from "./useExceptionData";
 
-const NOBODY = "00000000-0000-0000-0000-000000000000";
 const OTHER = "__other";
 
 const STATUS_CLASS: Record<IExceptionStatus, string> = {
@@ -346,13 +346,7 @@ function ActivityLog({
     [activity.entries],
   );
   const actorOf = useCallback(
-    (entry: IExceptionActivity) =>
-      !entry.actorId
-        ? "system"
-        : entry.actorId === NOBODY
-          ? "Team member"
-          : (members.find((member) => member?.id === entry.actorId)
-              ?.displayName ?? "Team member"),
+    (entry: IExceptionActivity) => actorName(members, entry.actorId),
     [members],
   );
   const post = useCallback(
