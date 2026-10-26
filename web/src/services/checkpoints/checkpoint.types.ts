@@ -3,6 +3,8 @@ declare global {
   type ICheckpointLog = {
     objId: string;
     dispatchId: string;
+    /** The status the dispatch moved to; left out for a note or files. */
+    status?: IDispatchStatus;
     note?: string;
     /** Seen by the team only. */
     internalOnly: boolean;

@@ -31,4 +31,23 @@ namespace LogisticApi.MVVM
         [MaxLength(1000)]
         public string? notes { get; set; }
     }
+
+    /// <summary>Moves a dispatch to a later status of Dispatch.Flow, or cancels it; posts an entry to its checkpoint log.</summary>
+    public class DispatchStatusRequest
+    {
+        /// <summary>picked_up, in_transit, arrived, delivered or cancelled.</summary>
+        [Required]
+        public string? status { get; set; }
+
+        /// <summary>The versionNo last read; a stale one is rejected with 409.</summary>
+        [Required]
+        public int? versionNo { get; set; }
+
+        /// <summary>Shown on the log entry, e.g. why it was cancelled.</summary>
+        [MaxLength(2000)]
+        public string? note { get; set; }
+
+        /// <summary>Hides the log entry from the customer.</summary>
+        public bool internalOnly { get; set; }
+    }
 }

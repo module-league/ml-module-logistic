@@ -45,6 +45,13 @@ namespace LogisticApi.MVVM
         private static DateTime? Utc(DateTime? value) => value is { } at ? Utc(at) : null;
     }
 
+    /// <summary>Matches IDispatchStatusResult: the moved dispatch and the log entry posted for it.</summary>
+    public class DispatchStatusResponse
+    {
+        public DispatchResponse dispatch { get; set; } = new();
+        public CheckpointLogResponse checkpoint { get; set; } = new();
+    }
+
     /// <summary>Matches IDispatchSources: the sidebars a dispatch picks its records from.</summary>
     public class DispatchSourcesResponse
     {

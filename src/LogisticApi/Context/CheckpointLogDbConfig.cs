@@ -16,6 +16,10 @@ namespace LogisticApi.Context.Configurations
              .HasColumnName("dispatch_id")
              .IsRequired();
 
+            b.Property(e => e.status)
+             .HasColumnName("status")
+             .HasMaxLength(20);
+
             b.Property(e => e.note)
              .HasColumnName("note")
              .HasMaxLength(2000);
@@ -29,7 +33,11 @@ namespace LogisticApi.Context.Configurations
              .HasColumnName("attachments")
              .IsRequired();
 
-            b.ToTable(t => t.HasCheckConstraint(Ck("attachments_json"), "ISJSON([attachments]) = 1"));
+            b.ToTable(t =>
+            {
+                t.HasCheckConstraint(Ck("attachments_json"), "ISJSON([attachments]) = 1");
+                t.HasCheckConstraint(Ck("status"), $"[status] IS NULL OR [status] IN ({string.Join(", ", Dispatch.Statuses.Select(s => $"'{s}'"))})");
+            });
 
             b.HasIndex(e => e.dispatchId).HasDatabaseName(Ix("dispatch_id"));
         }

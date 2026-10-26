@@ -48,5 +48,14 @@ namespace LogisticApi.Controllers
             var created = await dispatches.CreateAsync(request, ct);
             return CreatedAtAction(nameof(GetDispatch), new { objId = created.objId }, created);
         }
+
+        /// <summary>Moves the dispatch ahead (picked_up, in_transit, arrived, delivered) or cancels it, and posts the move to its checkpoint log.</summary>
+        [HttpPut("{objId:guid}/status")]
+        [ProducesResponseType<DispatchStatusResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+        public Task<DispatchStatusResponse> MoveDispatch(Guid objId, [FromBody] DispatchStatusRequest request, CancellationToken ct) =>
+            dispatches.MoveAsync(objId, request, ct);
     }
 }

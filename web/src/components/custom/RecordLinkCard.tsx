@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { Check } from "lucide-react";
-import { cn, FieldTypeIcon } from "@/ui-kit";
+import { cn } from "@/ui-kit";
 import { RecordValueNode } from "./RecordValueNode";
 import type { RecordLinkCardProps } from "./RecordLookupInput.types";
+import { FieldTypeIcon } from "./fieldTypeIcon";
 
 /**
  * One record of a link field as a card: its title, then up to three fields with their values.

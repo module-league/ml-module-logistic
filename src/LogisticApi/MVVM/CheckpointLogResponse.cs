@@ -11,6 +11,9 @@ namespace LogisticApi.MVVM
 
         public Guid objId { get; set; }
         public Guid dispatchId { get; set; }
+        /// <summary>The status the dispatch moved to; left out for a note or files.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? status { get; set; }
         public string? note { get; set; }
         public bool internalOnly { get; set; }
         public List<CheckpointAttachmentResponse> attachments { get; set; } = [];
@@ -22,6 +25,7 @@ namespace LogisticApi.MVVM
         {
             objId = log.ObjId,
             dispatchId = log.dispatchId,
+            status = log.status,
             note = log.note,
             internalOnly = log.internalOnly,
             attachments = JsonSerializer.Deserialize<List<CheckpointAttachmentResponse>>(log.attachments, Json) ?? [],

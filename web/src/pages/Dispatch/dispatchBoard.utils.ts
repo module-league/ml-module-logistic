@@ -44,19 +44,30 @@ export const DISPATCH_STEPS = [
 
 const STAGE_OF_STATUS: Record<IDispatchStatus, DispatchStage> = {
   planned: "assigned",
-  dispatched: "en_route",
+  picked_up: "en_route",
   in_transit: "en_route",
+  arrived: "en_route",
   delivered: "completed",
   cancelled: "unassigned",
 };
 
-const STEPS_DONE: Record<IDispatchStatus, number> = {
-  planned: 2,
-  dispatched: 3,
-  in_transit: 4,
-  delivered: 6,
-  cancelled: 1,
+/** Which of DISPATCH_STEPS each status reaches; a cancelled dispatch is back to booked. */
+const STEP_OF_STATUS: Record<IDispatchStatus, number> = {
+  planned: 1,
+  picked_up: 2,
+  in_transit: 3,
+  arrived: 4,
+  delivered: 5,
+  cancelled: 0,
 };
+
+/** What a planned dispatch moves through, in order; it can skip ahead but never go back. */
+const DISPATCH_MOVES: IDispatchMove["status"][] = [
+  "picked_up",
+  "in_transit",
+  "arrived",
+  "delivered",
+];
 
 export interface DispatchPlace {
   id: string;
@@ -161,7 +172,20 @@ export const jobNumber = (dispatch: IDispatch) =>
 
 /** How many DISPATCH_STEPS are done; a shipment on the board is always booked. */
 export const stepsDone = (dispatch?: IDispatch) =>
-  dispatch ? STEPS_DONE[dispatch.status] : 1;
+  (dispatch ? STEP_OF_STATUS[dispatch.status] : 0) + 1;
+
+/** "Picked up", "Cancelled": the step a status reaches. */
+export const statusLabel = (status: IDispatchStatus) =>
+  status === "cancelled" ? "Cancelled" : DISPATCH_STEPS[STEP_OF_STATUS[status]];
+
+/** The statuses an open dispatch can move to, nearest first; none once delivered or cancelled. */
+export function nextStatuses(dispatch?: IDispatch) {
+  const status = dispatch?.status;
+  if (!status || status === "delivered" || status === "cancelled") return [];
+  return DISPATCH_MOVES.slice(
+    DISPATCH_MOVES.findIndex((move) => move === status) + 1,
+  );
+}
 
 /** The time a card shows top right: the planned pickup, the ETA, or when it was delivered. */
 export function cardTime(dispatch: IDispatch | undefined, now: Date) {
@@ -183,8 +207,8 @@ export function lateText(dispatch: IDispatch | undefined, now: Date) {
   const due =
     dispatch?.status === "planned"
       ? dispatch.plannedPickupAt
-      : dispatch?.status === "dispatched" || dispatch?.status === "in_transit"
-        ? dispatch.plannedDeliveryAt
+      : nextStatuses(dispatch).length
+        ? dispatch?.plannedDeliveryAt
         : undefined;
   if (!due || new Date(due) >= now) return "";
   const late = formatDistanceStrict(new Date(due), now);

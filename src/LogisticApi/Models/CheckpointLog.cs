@@ -8,6 +8,8 @@ namespace LogisticApi.Models
         public const int MaxAttachments = 10;
 
         public Guid dispatchId { get; set; }
+        /// <summary>The Dispatch status this entry moved the dispatch to; null for a note or files.</summary>
+        public string? status { get; set; }
         public string? note { get; set; }
         /// <summary>Seen by the team only, not shared with the customer.</summary>
         public bool internalOnly { get; set; }

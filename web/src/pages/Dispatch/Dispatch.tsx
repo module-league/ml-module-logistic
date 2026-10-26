@@ -6,6 +6,7 @@ import {
   getDispatches,
   getDispatchSettings,
   getDispatchSources,
+  moveDispatch,
   saveDispatchSettings,
 } from "@/services/dispatches/dispatch.api";
 import { uploadAttachment } from "@/services/attachments/attachment.api";
@@ -34,6 +35,7 @@ const detailApi: DispatchDetailApi = {
   createCheckpoint,
   updateCheckpointLabel,
   uploadAttachment,
+  moveDispatch,
 };
 
 export default function Dispatch() {

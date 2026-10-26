@@ -83,6 +83,54 @@ namespace LogisticApi.Services
             return DispatchResponse.From(dispatch);
         }
 
+        /// <summary>
+        /// Moves an open dispatch ahead in Dispatch.Flow, skipping steps if need be, or cancels it, and posts the move to its checkpoint log.
+        /// Reaching picked_up or later stamps the pickup time if it isn't set; delivered stamps the delivery time.
+        /// </summary>
+        public async Task<DispatchStatusResponse> MoveAsync(Guid objId, DispatchStatusRequest request, CancellationToken ct)
+        {
+            var status = request.status!;
+            if (!Dispatch.Statuses.Contains(status) || status == Dispatch.DefaultStatus)
+                throw ApiProblemException.BadRequest("Unknown status.", $"Use one of {string.Join(", ", Dispatch.Statuses.Skip(1))}.");
+
+            var dispatch = await db.Dispatches.FirstOrDefaultAsync(d => d.ObjId == objId, ct)
+                ?? throw ApiProblemException.NotFound("Dispatch not found.");
+            if (dispatch.VersionNo != request.versionNo) throw StaleDispatch();
+            if (Dispatch.ClosedStatuses.Contains(dispatch.status))
+                throw ApiProblemException.BadRequest($"The dispatch is already {dispatch.status}.", "A closed dispatch can't change; dispatch the shipment again instead.");
+            var reached = Array.IndexOf(Dispatch.Flow, status);
+            if (status != Dispatch.Cancelled && reached <= Array.IndexOf(Dispatch.Flow, dispatch.status))
+                throw ApiProblemException.BadRequest($"The dispatch is already past {status}.", "A dispatch can only move ahead.");
+
+            var now = DateTime.UtcNow;
+            db.Entry(dispatch).Property(d => d.VersionNo).OriginalValue = request.versionNo!.Value;
+            dispatch.status = status;
+            if (reached >= Array.IndexOf(Dispatch.Flow, Dispatch.PickedUp)) dispatch.actualPickupAt ??= now;
+            if (status == Dispatch.Delivered) dispatch.actualDeliveryAt = now;
+
+            var log = new CheckpointLog
+            {
+                ObjId = Guid.CreateVersion7(),
+                dispatchId = objId,
+                status = status,
+                note = string.IsNullOrWhiteSpace(request.note) ? null : request.note.Trim(),
+                internalOnly = request.internalOnly,
+            };
+            db.CheckpointLogs.Add(log);
+            try
+            {
+                await db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw StaleDispatch();
+            }
+            return new DispatchStatusResponse { dispatch = DispatchResponse.From(dispatch), checkpoint = CheckpointLogResponse.From(log) };
+        }
+
+        private static ApiProblemException StaleDispatch() =>
+            ApiProblemException.Conflict("The dispatch was changed by someone else.", "Reload it and try again.");
+
         public async Task<DispatchSettingsResponse> GetSettingsAsync(CancellationToken ct)
         {
             var setting = await db.DispatchSettings

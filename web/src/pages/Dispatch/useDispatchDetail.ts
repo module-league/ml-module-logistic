@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { checkpointKeys } from "@/services/checkpoints/checkpoint.api";
+import { dispatchKeys } from "@/services/dispatches/dispatch.api";
 
 export interface DispatchDetailApi {
   getCheckpoints: (dispatchId: string) => Promise<ICheckpointLog[]>;
@@ -15,13 +16,19 @@ export interface DispatchDetailApi {
     label?: string,
   ) => Promise<ICheckpointLog>;
   uploadAttachment: (refId: string, file: File) => Promise<IAttachment>;
+  moveDispatch: (
+    objId: string,
+    body: IDispatchMove,
+  ) => Promise<IDispatchMoveResult>;
 }
 
 const NO_CHECKPOINTS: ICheckpointLog[] = [];
 
 /**
  * Backs the dispatch detail dialog: which dispatch is open, its checkpoint log (GET /dispatches/{id}/checkpoints),
- * posting to it, which puts the new entry first in the cached log, relabelling a posted file, and uploading files for it.
+ * posting to it, which puts the new entry first in the cached log, relabelling a posted file, uploading files for it, and moving
+ * it to another status (PUT /dispatches/{id}/status), which updates the board's dispatch and logs the move; a cancelled
+ * dispatch leaves the board, so the dialog closes, and a failed move reloads the dispatches in case they are stale.
  * Pass a module-level api object so it stays the same between renders.
  * @example
  * const detail = useDispatchDetail(detailApi);
@@ -70,6 +77,30 @@ export function useDispatchDetail(api: DispatchDetailApi) {
     [relabel],
   );
 
+  const { mutateAsync: move, isPending: isMoving } = useMutation({
+    mutationFn: ({ objId, ...body }: IDispatchMove & { objId: string }) =>
+      api.moveDispatch(objId, body),
+    onSuccess: ({ dispatch, checkpoint }) => {
+      queryClient.setQueryData<IDispatch[]>(dispatchKeys.list(), (current) =>
+        current?.map((entry) =>
+          entry.objId === dispatch.objId ? dispatch : entry,
+        ),
+      );
+      queryClient.setQueryData<ICheckpointLog[]>(
+        checkpointKeys.list(dispatch.objId),
+        (current) => [checkpoint, ...(current ?? [])],
+      );
+      if (dispatch.status === "cancelled") setDispatchId(undefined);
+    },
+    onError: () =>
+      queryClient.invalidateQueries({ queryKey: dispatchKeys.list() }),
+  });
+  const onMove = useCallback(
+    (dispatch: IDispatch, change: Omit<IDispatchMove, "versionNo">) =>
+      move({ objId: dispatch.objId, versionNo: dispatch.versionNo, ...change }),
+    [move],
+  );
+
   const upload = api.uploadAttachment;
   const onUpload = useCallback((file: File) => upload(id, file), [upload, id]);
   const onClose = useCallback(() => setDispatchId(undefined), []);
@@ -91,6 +122,8 @@ export function useDispatchDetail(api: DispatchDetailApi) {
       isPosting,
       onLabel,
       onUpload,
+      onMove,
+      isMoving,
     }),
     [
       dispatchId,
@@ -103,6 +136,8 @@ export function useDispatchDetail(api: DispatchDetailApi) {
       isPosting,
       onLabel,
       onUpload,
+      onMove,
+      isMoving,
     ],
   );
 }

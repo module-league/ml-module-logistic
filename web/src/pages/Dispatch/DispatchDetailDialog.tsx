@@ -1,11 +1,24 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { Circle, CircleCheck, CircleDot } from "lucide-react";
+import { ChevronDown, Circle, CircleCheck, CircleDot } from "lucide-react";
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Button,
+  ButtonGroup,
   cn,
   Dialog,
   DialogContent,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Skeleton,
   Switch,
   Textarea,
@@ -22,7 +35,9 @@ import {
   DISPATCH_STEPS,
   jobNumber,
   lateText,
+  nextStatuses,
   shortTime,
+  statusLabel,
   stepsDone,
   type DispatchPlace,
   type DispatchShipment,
@@ -74,7 +89,9 @@ export function DispatchDetailDialog({
             now={now}
           />
         ) : (
-          <DialogTitle className="p-6">Dispatch not found</DialogTitle>
+          detail?.dispatchId && (
+            <DialogTitle className="p-6">Dispatch not found</DialogTitle>
+          )
         )}
       </DialogContent>
     </Dialog>
@@ -153,7 +170,15 @@ function DispatchDetail({
         </dl>
       </header>
 
-      <DispatchStepper shipment={shipment} dispatch={dispatch} now={now} />
+      <div className="flex shrink-0 items-center gap-3 border-b py-3 pr-4">
+        <DispatchStepper
+          shipment={shipment}
+          dispatch={dispatch}
+          checkpoints={detail?.checkpoints}
+          now={now}
+        />
+        <DispatchActions dispatch={dispatch} detail={detail} />
+      </div>
 
       <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
         <section className="flex min-h-0 flex-col gap-3 rounded-xl border p-3">
@@ -170,24 +195,42 @@ function DispatchDetail({
               renderLoader={<CheckpointSkeleton />}
             >
               <ol className="flex flex-col">
-                {detail?.checkpoints?.map((log) => (
-                  <CheckpointEntry
-                    key={log.objId}
-                    dotClassName="bg-primary"
-                    title={`Note from ${findMember(members, log.createdBy)?.displayName ?? "Team member"}`}
-                    when={whenText(log.createTime, now)}
-                    meta={[log.internalOnly && "Internal, team only"]}
-                    note={log.note}
-                  >
-                    {!!log.attachments?.length && (
-                      <CheckpointFiles
-                        log={log}
-                        labelSuggestions={labelSuggestions}
-                        onLabel={detail?.onLabel}
-                      />
-                    )}
-                  </CheckpointEntry>
-                ))}
+                {detail?.checkpoints?.map((log) => {
+                  const author =
+                    findMember(members, log.createdBy)?.displayName ??
+                    "Team member";
+                  return (
+                    <CheckpointEntry
+                      key={log.objId}
+                      dotClassName={
+                        !log.status
+                          ? "bg-primary"
+                          : log.status === "cancelled"
+                            ? "bg-destructive"
+                            : "bg-emerald-600"
+                      }
+                      title={
+                        log.status
+                          ? statusLabel(log.status)
+                          : `Note from ${author}`
+                      }
+                      when={whenText(log.createTime, now)}
+                      meta={[
+                        log.status && `By ${author}`,
+                        log.internalOnly && "Internal, team only",
+                      ]}
+                      note={log.note}
+                    >
+                      {!!log.attachments?.length && (
+                        <CheckpointFiles
+                          log={log}
+                          labelSuggestions={labelSuggestions}
+                          onLabel={detail?.onLabel}
+                        />
+                      )}
+                    </CheckpointEntry>
+                  );
+                })}
                 <CheckpointEntry
                   dotClassName="bg-emerald-600"
                   title={`Assigned to ${shipment?.driver?.title ?? "a driver"}`}
@@ -268,28 +311,37 @@ function HeaderFact({
   );
 }
 
-/** Each dispatch step as a bar: solid once done, outlined for the current one; with when it happened where that's known. */
+/**
+ * Each dispatch step as a bar: solid once done, outlined for the current one; with when it happened where that's known,
+ * the in-between steps from when they were logged.
+ */
 function DispatchStepper({
   shipment,
   dispatch,
+  checkpoints,
   now,
 }: {
   shipment: DispatchShipment;
   dispatch: IDispatch;
+  checkpoints: ICheckpointLog[];
   now: Date;
 }) {
   const done = stepsDone(dispatch);
-  const times = [
-    shipment?.bookedAt,
-    dispatch?.createTime,
-    dispatch?.actualPickupAt,
-    undefined,
-    undefined,
-    dispatch?.actualDeliveryAt,
-    undefined,
-  ];
+  const times = useMemo(() => {
+    const loggedAt = (status: IDispatchStatus) =>
+      checkpoints?.find((log) => log?.status === status)?.createTime;
+    return [
+      shipment?.bookedAt,
+      dispatch?.createTime,
+      dispatch?.actualPickupAt,
+      loggedAt("in_transit"),
+      loggedAt("arrived"),
+      dispatch?.actualDeliveryAt,
+      undefined,
+    ];
+  }, [shipment?.bookedAt, dispatch, checkpoints]);
   return (
-    <ol className="flex shrink-0 gap-2 overflow-x-auto border-b px-4 py-3">
+    <ol className="flex min-w-0 flex-1 gap-2 overflow-x-auto pl-4">
       {DISPATCH_STEPS.map((step, index) => {
         const isDone = index < done;
         const isCurrent = index === done;
@@ -339,6 +391,157 @@ function DispatchStepper({
         );
       })}
     </ol>
+  );
+}
+
+/** Moves an open dispatch on: the next step as the main button, later steps and Cancel dispatch in its menu. */
+function DispatchActions({
+  dispatch,
+  detail,
+}: {
+  dispatch: IDispatch;
+  detail: DispatchDetailData;
+}) {
+  const { onMove, isMoving } = detail;
+  const [cancelling, setCancelling] = useState(false);
+  const [first, ...later] = nextStatuses(dispatch);
+  const move = useCallback(
+    (status: IDispatchMove["status"]) =>
+      onMove(dispatch, { status, internalOnly: false }).catch((error) =>
+        toast.error("Couldn't update the dispatch", {
+          description: errorParser(error)?.message,
+        }),
+      ),
+    [onMove, dispatch],
+  );
+  if (!first) return null;
+  return (
+    <>
+      <ButtonGroup className="shrink-0">
+        <Button size="sm" isLoading={isMoving} onClick={() => move(first)}>
+          Mark as {statusLabel(first).toLowerCase()}
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              aria-label="More dispatch actions"
+              disabled={isMoving}
+              className="border-l border-primary-foreground/30 px-2"
+            >
+              <ChevronDown className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            {!!later.length && (
+              <>
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  Skip ahead
+                </DropdownMenuLabel>
+                {later.map((status) => (
+                  <DropdownMenuItem key={status} onSelect={() => move(status)}>
+                    Mark as {statusLabel(status).toLowerCase()}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+              </>
+            )}
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={() => setCancelling(true)}
+            >
+              Cancel dispatch
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </ButtonGroup>
+      <CancelDispatchDialog
+        open={cancelling}
+        onOpenChange={setCancelling}
+        dispatch={dispatch}
+        detail={detail}
+      />
+    </>
+  );
+}
+
+/** Asks for an optional reason, logged for the team only, then cancels; the shipment goes back to Unassigned. */
+function CancelDispatchDialog({
+  open,
+  onOpenChange,
+  dispatch,
+  detail,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  dispatch: IDispatch;
+  detail: DispatchDetailData;
+}) {
+  const { onMove, isMoving } = detail;
+  const [reason, setReason] = useState("");
+  const changeOpen = useCallback(
+    (next: boolean) => {
+      if (isMoving) return;
+      if (!next) setReason("");
+      onOpenChange(next);
+    },
+    [isMoving, onOpenChange],
+  );
+  const cancel = useCallback(async () => {
+    try {
+      await onMove(dispatch, {
+        status: "cancelled",
+        note: reason.trim() || undefined,
+        internalOnly: true,
+      });
+      toast.success(`${jobNumber(dispatch)} cancelled`, {
+        description: "The shipment is back in Unassigned.",
+      });
+    } catch (error) {
+      toast.error("Couldn't cancel the dispatch", {
+        description: errorParser(error)?.message,
+      });
+    }
+  }, [onMove, dispatch, reason]);
+
+  return (
+    <AlertDialog open={open} onOpenChange={changeOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancel {jobNumber(dispatch)}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            The shipment goes back to Unassigned so it can be dispatched again.
+            This can't be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Textarea
+          aria-label="Reason"
+          placeholder="Reason (optional, team only)"
+          rows={3}
+          maxLength={2000}
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+        />
+        <AlertDialogFooter>
+          <Button
+            variant="outline"
+            size="xs"
+            disabled={isMoving}
+            onClick={() => changeOpen(false)}
+          >
+            Keep dispatch
+          </Button>
+          <Button
+            variant="destructive"
+            size="xs"
+            isLoading={isMoving}
+            onClick={cancel}
+          >
+            Cancel dispatch
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

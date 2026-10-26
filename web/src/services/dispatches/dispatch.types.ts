@@ -1,6 +1,11 @@
 declare global {
   type IDispatchStatus =
-    "planned" | "dispatched" | "in_transit" | "delivered" | "cancelled";
+    | "planned"
+    | "picked_up"
+    | "in_transit"
+    | "arrived"
+    | "delivered"
+    | "cancelled";
 
   /** The sidebars a dispatch picks its records from, set in the API's appsettings ("Dispatch"). */
   type IDispatchSources = {
@@ -66,4 +71,15 @@ declare global {
     | "plannedDeliveryAt"
     | "notes"
   >;
+
+  /** Moves a dispatch ahead, skipping steps if need be, or cancels it; the note goes on the log entry posted for it. */
+  type IDispatchMove = Pick<IDispatch, "versionNo"> &
+    Pick<ICheckpointLog, "note" | "internalOnly"> & {
+      status: Exclude<IDispatchStatus, "planned">;
+    };
+
+  type IDispatchMoveResult = {
+    dispatch: IDispatch;
+    checkpoint: ICheckpointLog;
+  };
 }

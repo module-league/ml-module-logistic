@@ -35,6 +35,15 @@ export async function saveDispatchSettings(body: IDispatchSettingsInput) {
   return data;
 }
 
+/** Send the versionNo last read; a stale one is rejected with 409, a move backwards or on a closed dispatch with 400. */
+export async function moveDispatch(objId: string, body: IDispatchMove) {
+  const { data } = await apiClient.put<IDispatchMoveResult>(
+    `/dispatches/${encodeURIComponent(objId)}/status`,
+    body,
+  );
+  return data;
+}
+
 /** A shipment with an open dispatch is rejected with 409. */
 export async function createDispatch(body: IDispatchCreate) {
   const { data } = await apiClient.post<IDispatch>("/dispatches", body);

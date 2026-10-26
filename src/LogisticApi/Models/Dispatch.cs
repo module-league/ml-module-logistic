@@ -6,9 +6,14 @@ namespace LogisticApi.Models
     public class Dispatch : MLEntityBase
     {
         public const string DefaultStatus = "planned";
-        public static readonly string[] Statuses = ["planned", "dispatched", "in_transit", "delivered", "cancelled"];
+        public const string PickedUp = "picked_up";
+        public const string Delivered = "delivered";
+        public const string Cancelled = "cancelled";
+        /// <summary>The statuses a dispatch moves through, in order; it can skip ahead but never go back.</summary>
+        public static readonly string[] Flow = [DefaultStatus, PickedUp, "in_transit", "arrived", Delivered];
+        public static readonly string[] Statuses = [.. Flow, Cancelled];
         /// <summary>A shipment can be dispatched again once its dispatch is in one of these.</summary>
-        public static readonly string[] ClosedStatuses = ["delivered", "cancelled"];
+        public static readonly string[] ClosedStatuses = [Delivered, Cancelled];
 
         public Guid shipmentId { get; set; }
         public Guid driverId { get; set; }

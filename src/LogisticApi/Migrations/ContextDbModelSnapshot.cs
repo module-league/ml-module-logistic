@@ -252,6 +252,11 @@ namespace LogisticApi.Migrations
                         .HasColumnType("nvarchar(2000)")
                         .HasColumnName("note");
 
+                    b.Property<string>("status")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("status");
+
                     b.HasKey("ObjId")
                         .HasName("pk_lg_checkpoint_log");
 
@@ -272,6 +277,8 @@ namespace LogisticApi.Migrations
                             t.HasCheckConstraint("ck_lg_checkpoint_log_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
 
                             t.HasCheckConstraint("ck_lg_checkpoint_log_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_checkpoint_log_status", "[status] IS NULL OR [status] IN ('planned', 'picked_up', 'in_transit', 'arrived', 'delivered', 'cancelled')");
                         });
                 });
 
@@ -431,7 +438,7 @@ namespace LogisticApi.Migrations
 
                             t.HasCheckConstraint("ck_lg_dispatch_origin_destination", "[origin_id] <> [destination_id]");
 
-                            t.HasCheckConstraint("ck_lg_dispatch_status", "[status] IN ('planned', 'dispatched', 'in_transit', 'delivered', 'cancelled')");
+                            t.HasCheckConstraint("ck_lg_dispatch_status", "[status] IN ('planned', 'picked_up', 'in_transit', 'arrived', 'delivered', 'cancelled')");
                         });
                 });
 
