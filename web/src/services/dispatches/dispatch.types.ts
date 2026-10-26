@@ -28,7 +28,10 @@ declare global {
     plannedPickupAt: string;
     plannedDeliveryAt?: string;
     actualPickupAt?: string;
+    actualArrivalAt?: string;
     actualDeliveryAt?: string;
+    /** Weighed at pickup, in kg. */
+    pickupWeight?: number;
     status: IDispatchStatus;
     notes?: string;
     versionNo: number;
@@ -74,9 +77,20 @@ declare global {
 
   /** Moves a dispatch ahead, skipping steps if need be, or cancels it; the note goes on the log entry posted for it. */
   type IDispatchMove = Pick<IDispatch, "versionNo"> &
-    Pick<ICheckpointLog, "note" | "internalOnly"> & {
+    Pick<ICheckpointLog, "note" | "internalOnly"> &
+    Pick<IDispatch, "pickupWeight"> & {
       status: Exclude<IDispatchStatus, "planned">;
     };
+
+  /** Reassigns an open dispatch or moves its planned times; the note goes on its checkpoint log. */
+  type IDispatchPlan = Pick<
+    IDispatch,
+    | "driverId"
+    | "vehicleId"
+    | "plannedPickupAt"
+    | "plannedDeliveryAt"
+    | "versionNo"
+  > & { note?: string };
 
   type IDispatchMoveResult = {
     dispatch: IDispatch;

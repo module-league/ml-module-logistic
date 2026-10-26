@@ -49,5 +49,32 @@ namespace LogisticApi.MVVM
 
         /// <summary>Hides the log entry from the customer.</summary>
         public bool internalOnly { get; set; }
+
+        /// <summary>Weighed at pickup, in kg; only taken while the pickup weight isn't recorded yet.</summary>
+        [Range(typeof(decimal), "0.001", "1000000000")]
+        public decimal? pickupWeight { get; set; }
+    }
+
+    /// <summary>Reassigns an open dispatch or moves its plan: the driver, vehicle and planned times; logged on its checkpoint log.</summary>
+    public class DispatchPlanRequest
+    {
+        [Required]
+        public Guid? driverId { get; set; }
+
+        [Required]
+        public Guid? vehicleId { get; set; }
+
+        [Required]
+        public DateTimeOffset? plannedPickupAt { get; set; }
+
+        public DateTimeOffset? plannedDeliveryAt { get; set; }
+
+        /// <summary>The versionNo last read; a stale one is rejected with 409.</summary>
+        [Required]
+        public int? versionNo { get; set; }
+
+        /// <summary>What changed, for the log entry, e.g. "Reassigned to Ali".</summary>
+        [MaxLength(2000)]
+        public string? note { get; set; }
     }
 }

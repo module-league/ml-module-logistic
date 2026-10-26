@@ -10,7 +10,8 @@ namespace LogisticApi.Models
         public const string Delivered = "delivered";
         public const string Cancelled = "cancelled";
         /// <summary>The statuses a dispatch moves through, in order; it can skip ahead but never go back.</summary>
-        public static readonly string[] Flow = [DefaultStatus, PickedUp, "in_transit", "arrived", Delivered];
+        public const string Arrived = "arrived";
+        public static readonly string[] Flow = [DefaultStatus, PickedUp, "in_transit", Arrived, Delivered];
         public static readonly string[] Statuses = [.. Flow, Cancelled];
         /// <summary>A shipment can be dispatched again once its dispatch is in one of these.</summary>
         public static readonly string[] ClosedStatuses = [Delivered, Cancelled];
@@ -26,8 +27,12 @@ namespace LogisticApi.Models
         public DateTime? plannedDeliveryAt { get; set; }
         /// <summary>UTC; set when the driver picks the shipment up.</summary>
         public DateTime? actualPickupAt { get; set; }
+        /// <summary>UTC; set when the dispatch is marked arrived.</summary>
+        public DateTime? actualArrivalAt { get; set; }
         /// <summary>UTC; set when the shipment is delivered.</summary>
         public DateTime? actualDeliveryAt { get; set; }
+        /// <summary>Weighed at pickup, in kg; null when not weighed.</summary>
+        public decimal? pickupWeight { get; set; }
         /// <summary>One of Statuses.</summary>
         public string status { get; set; } = DefaultStatus;
         public string? notes { get; set; }

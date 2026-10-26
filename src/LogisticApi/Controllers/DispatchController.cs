@@ -57,5 +57,14 @@ namespace LogisticApi.Controllers
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
         public Task<DispatchStatusResponse> MoveDispatch(Guid objId, [FromBody] DispatchStatusRequest request, CancellationToken ct) =>
             dispatches.MoveAsync(objId, request, ct);
+
+        /// <summary>Reassigns the driver or vehicle, or moves the planned times, of an open dispatch.</summary>
+        [HttpPut("{objId:guid}/plan")]
+        [ProducesResponseType<DispatchResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+        public Task<DispatchResponse> PlanDispatch(Guid objId, [FromBody] DispatchPlanRequest request, CancellationToken ct) =>
+            dispatches.PlanAsync(objId, request, ct);
     }
 }

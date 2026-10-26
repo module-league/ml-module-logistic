@@ -11,7 +11,7 @@ namespace LogisticApi.Services
     /// <summary>
     /// Dispatches (lg_dispatch): a shipment, driver, vehicle, origin and destination, each a record of its sidebar in DispatchOptions.
     /// </summary>
-    public class DispatchService(ContextDb db, IOptions<DispatchOptions> options)
+    public class DispatchService(ContextDb db, IOptions<DispatchOptions> options, ExceptionRuleEngine rules)
     {
         private readonly DispatchOptions sources = options.Value;
 
@@ -80,6 +80,51 @@ namespace LogisticApi.Services
             };
             db.Dispatches.Add(dispatch);
             await db.SaveChangesAsync(ct);
+            await rules.EvaluateAsync(ct);
+            return DispatchResponse.From(dispatch);
+        }
+
+        /// <summary>Reassigns an open dispatch or moves its planned times, and logs the change on its checkpoint log.</summary>
+        public async Task<DispatchResponse> PlanAsync(Guid objId, DispatchPlanRequest request, CancellationToken ct)
+        {
+            var pickupAt = request.plannedPickupAt!.Value.UtcDateTime;
+            var deliveryAt = request.plannedDeliveryAt?.UtcDateTime;
+            if (deliveryAt < pickupAt)
+                throw ApiProblemException.BadRequest("Delivery is planned before pickup.", "Plan the delivery on or after the pickup.");
+
+            var dispatch = await db.Dispatches.FirstOrDefaultAsync(d => d.ObjId == objId, ct)
+                ?? throw ApiProblemException.NotFound("Dispatch not found.");
+            if (dispatch.VersionNo != request.versionNo) throw StaleDispatch();
+            if (Dispatch.ClosedStatuses.Contains(dispatch.status))
+                throw ApiProblemException.BadRequest($"The dispatch is already {dispatch.status}.", "A closed dispatch can't change.");
+            await CheckRecordsAsync(
+                [
+                    ("Driver", request.driverId!.Value, sources.DriverSidebarId),
+                    ("Vehicle", request.vehicleId!.Value, sources.VehicleSidebarId),
+                ],
+                ct);
+
+            db.Entry(dispatch).Property(d => d.VersionNo).OriginalValue = request.versionNo!.Value;
+            dispatch.driverId = request.driverId.Value;
+            dispatch.vehicleId = request.vehicleId.Value;
+            dispatch.plannedPickupAt = pickupAt;
+            dispatch.plannedDeliveryAt = deliveryAt;
+            db.CheckpointLogs.Add(new CheckpointLog
+            {
+                ObjId = Guid.CreateVersion7(),
+                dispatchId = objId,
+                note = string.IsNullOrWhiteSpace(request.note) ? "Plan changed." : request.note.Trim(),
+                internalOnly = true,
+            });
+            try
+            {
+                await db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw StaleDispatch();
+            }
+            await rules.EvaluateAsync(ct);
             return DispatchResponse.From(dispatch);
         }
 
@@ -105,7 +150,12 @@ namespace LogisticApi.Services
             var now = DateTime.UtcNow;
             db.Entry(dispatch).Property(d => d.VersionNo).OriginalValue = request.versionNo!.Value;
             dispatch.status = status;
-            if (reached >= Array.IndexOf(Dispatch.Flow, Dispatch.PickedUp)) dispatch.actualPickupAt ??= now;
+            var pickedUp = reached >= Array.IndexOf(Dispatch.Flow, Dispatch.PickedUp);
+            if (request.pickupWeight is not null && (!pickedUp || dispatch.pickupWeight is not null))
+                throw ApiProblemException.BadRequest("The pickup weight can't be set now.", "Weigh it when marking it picked up.");
+            if (pickedUp) dispatch.actualPickupAt ??= now;
+            dispatch.pickupWeight ??= request.pickupWeight;
+            if (status == Dispatch.Arrived) dispatch.actualArrivalAt = now;
             if (status == Dispatch.Delivered) dispatch.actualDeliveryAt = now;
 
             var log = new CheckpointLog
@@ -125,6 +175,7 @@ namespace LogisticApi.Services
             {
                 throw StaleDispatch();
             }
+            await rules.EvaluateAsync(ct);
             return new DispatchStatusResponse { dispatch = DispatchResponse.From(dispatch), checkpoint = CheckpointLogResponse.From(log) };
         }
 

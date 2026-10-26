@@ -32,8 +32,8 @@ import { parseRecordIds, toRecordIdsValue } from "@/lib/lookupHelper";
 import type { DispatchShipment } from "./dispatchBoard.utils";
 import type { DispatchData } from "./useDispatchData";
 
-type DispatchDraft = Partial<IDispatchCreate>;
-type DispatchErrors = Partial<Record<keyof IDispatchCreate, string>>;
+export type DispatchDraft = Partial<IDispatchCreate>;
+export type DispatchErrors = Partial<Record<keyof IDispatchCreate, string>>;
 
 const REQUIRED: [keyof IDispatchCreate, string][] = [
   ["shipmentId", "Pick a shipment."],
@@ -229,7 +229,7 @@ function DispatchJobForm({ data, shipments }: DispatchJobDialogProps) {
   );
 }
 
-type DispatchInputProps = {
+export type DispatchInputProps = {
   name: keyof IDispatchCreate;
   label: string;
   draft: DispatchDraft;
@@ -239,7 +239,8 @@ type DispatchInputProps = {
   className?: string;
 };
 
-function DispatchField({
+/** A labelled form field with its error below; children get the id to put on the input. */
+export function DispatchField({
   label,
   error,
   className,
@@ -261,7 +262,7 @@ function DispatchField({
 }
 
 /** Picks one record of sidebarId, with the same searchable cards a link field shows. */
-function DispatchLinkField({
+export function DispatchLinkField({
   name,
   label,
   sidebarId,
@@ -297,7 +298,7 @@ function DispatchLinkField({
   );
 }
 
-function DispatchDateField({
+export function DispatchDateField({
   name,
   label,
   draft,

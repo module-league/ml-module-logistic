@@ -15,7 +15,9 @@ namespace LogisticApi.MVVM
         public DateTime plannedPickupAt { get; set; }
         public DateTime? plannedDeliveryAt { get; set; }
         public DateTime? actualPickupAt { get; set; }
+        public DateTime? actualArrivalAt { get; set; }
         public DateTime? actualDeliveryAt { get; set; }
+        public decimal? pickupWeight { get; set; }
         public string status { get; set; } = Dispatch.DefaultStatus;
         public string? notes { get; set; }
         public int versionNo { get; set; }
@@ -33,7 +35,9 @@ namespace LogisticApi.MVVM
             plannedPickupAt = Utc(dispatch.plannedPickupAt),
             plannedDeliveryAt = Utc(dispatch.plannedDeliveryAt),
             actualPickupAt = Utc(dispatch.actualPickupAt),
+            actualArrivalAt = Utc(dispatch.actualArrivalAt),
             actualDeliveryAt = Utc(dispatch.actualDeliveryAt),
+            pickupWeight = dispatch.pickupWeight,
             status = dispatch.status,
             notes = dispatch.notes,
             versionNo = dispatch.VersionNo,

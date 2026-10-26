@@ -38,6 +38,12 @@ builder.Services.Configure<DispatchOptions>(builder.Configuration.GetSection(Dis
 builder.Services.AddScoped<DispatchService>();
 builder.Services.AddScoped<CheckpointLogService>();
 
+// Shipment exceptions: rules from the "ExceptionRules" workflow config, checked every minute
+builder.Services.Configure<ExceptionRuleOptions>(builder.Configuration.GetSection(ExceptionRuleOptions.SectionName));
+builder.Services.AddScoped<ExceptionRuleEngine>();
+builder.Services.AddScoped<ExceptionCaseService>();
+builder.Services.AddHostedService<ExceptionMonitor>();
+
 // Expected failures (400/404/409) thrown as ApiProblemException become ProblemDetails responses
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiProblemHandler>();

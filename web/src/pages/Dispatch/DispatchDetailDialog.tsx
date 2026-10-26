@@ -1,5 +1,11 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { ChevronDown, Circle, CircleCheck, CircleDot } from "lucide-react";
+import {
+  ChevronDown,
+  Circle,
+  CircleCheck,
+  CircleDot,
+  TriangleAlert,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -19,6 +25,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Input,
   Skeleton,
   Switch,
   Textarea,
@@ -44,6 +51,7 @@ import {
   type DispatchStage,
 } from "./dispatchBoard.utils";
 import type { DispatchDetailData } from "./useDispatchDetail";
+import { ExceptionReportDialog } from "../Exception/ExceptionReportDialog";
 
 type DispatchDetailDialogProps = {
   /** The shipment of the open dispatch. */
@@ -177,7 +185,12 @@ function DispatchDetail({
           checkpoints={detail?.checkpoints}
           now={now}
         />
-        <DispatchActions dispatch={dispatch} detail={detail} />
+        <DispatchActions
+          shipment={shipment}
+          dispatch={dispatch}
+          detail={detail}
+          members={members}
+        />
       </div>
 
       <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
@@ -394,27 +407,103 @@ function DispatchStepper({
   );
 }
 
-/** Moves an open dispatch on: the next step as the main button, later steps and Cancel dispatch in its menu. */
+/**
+ * Moves an open dispatch on: the next step as the main button (picking up asks for the weight), later steps, the
+ * exception reports and Cancel dispatch in its menu. A delivered dispatch only offers the exception reports.
+ */
 function DispatchActions({
+  shipment,
   dispatch,
   detail,
+  members,
 }: {
+  shipment: DispatchShipment;
   dispatch: IDispatch;
   detail: DispatchDetailData;
+  members: IUserInfo[];
 }) {
   const { onMove, isMoving } = detail;
   const [cancelling, setCancelling] = useState(false);
+  const [pickingUp, setPickingUp] = useState(false);
+  const [reporting, setReporting] = useState<string>();
   const [first, ...later] = nextStatuses(dispatch);
+  const shipments = useMemo(() => [shipment], [shipment]);
   const move = useCallback(
     (status: IDispatchMove["status"]) =>
-      onMove(dispatch, { status, internalOnly: false }).catch((error) =>
-        toast.error("Couldn't update the dispatch", {
-          description: errorParser(error)?.message,
-        }),
-      ),
+      status === "picked_up"
+        ? setPickingUp(true)
+        : onMove(dispatch, { status, internalOnly: false }).catch((error) =>
+            toast.error("Couldn't update the dispatch", {
+              description: errorParser(error)?.message,
+            }),
+          ),
     [onMove, dispatch],
   );
-  if (!first) return null;
+  const reports = (
+    <>
+      <DropdownMenuItem
+        onSelect={() => setReporting("delivery_attempt_failed")}
+      >
+        <TriangleAlert />
+        Delivery attempt failed…
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => setReporting("manual")}>
+        <TriangleAlert />
+        Report other problem…
+      </DropdownMenuItem>
+    </>
+  );
+  const dialogs = (
+    <>
+      <ExceptionReportDialog
+        key={reporting}
+        open={!!reporting}
+        onOpenChange={(open) => !open && setReporting(undefined)}
+        shipments={shipments}
+        rules={detail?.rules}
+        members={members}
+        fixed={{ shipmentId: shipment.id, dispatchId: dispatch.objId }}
+        ruleKey={reporting}
+        isSaving={detail?.isReporting}
+        onCreate={detail?.onReportException}
+      />
+      <PickupDialog
+        open={pickingUp}
+        onOpenChange={setPickingUp}
+        dispatch={dispatch}
+        detail={detail}
+      />
+      <CancelDispatchDialog
+        open={cancelling}
+        onOpenChange={setCancelling}
+        dispatch={dispatch}
+        detail={detail}
+      />
+    </>
+  );
+
+  if (!first) {
+    return (
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              startIcon={<TriangleAlert size={14} />}
+            >
+              Report exception
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            {reports}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {dialogs}
+      </>
+    );
+  }
   return (
     <>
       <ButtonGroup className="shrink-0">
@@ -432,7 +521,7 @@ function DispatchActions({
               <ChevronDown className="size-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuContent align="end" className="w-56">
             {!!later.length && (
               <>
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
@@ -446,6 +535,8 @@ function DispatchActions({
                 <DropdownMenuSeparator />
               </>
             )}
+            {reports}
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
               onSelect={() => setCancelling(true)}
@@ -455,13 +546,95 @@ function DispatchActions({
           </DropdownMenuContent>
         </DropdownMenu>
       </ButtonGroup>
-      <CancelDispatchDialog
-        open={cancelling}
-        onOpenChange={setCancelling}
-        dispatch={dispatch}
-        detail={detail}
-      />
+      {dialogs}
     </>
+  );
+}
+
+/** Marks it picked up with the weight at pickup, if weighed; a weight off the chargeable weight opens a Weight mismatch. */
+function PickupDialog({
+  open,
+  onOpenChange,
+  dispatch,
+  detail,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  dispatch: IDispatch;
+  detail: DispatchDetailData;
+}) {
+  const { onMove, isMoving } = detail;
+  const [weight, setWeight] = useState("");
+  const value = Number(weight);
+  const weighed = !!weight.trim();
+  const valid = !weighed || (Number.isFinite(value) && value > 0);
+  const changeOpen = useCallback(
+    (next: boolean) => {
+      if (isMoving) return;
+      if (!next) setWeight("");
+      onOpenChange(next);
+    },
+    [isMoving, onOpenChange],
+  );
+  const confirm = useCallback(async () => {
+    try {
+      await onMove(dispatch, {
+        status: "picked_up",
+        internalOnly: false,
+        pickupWeight: weighed ? value : undefined,
+        note: weighed ? `Weighed ${value} kg at pickup.` : undefined,
+      });
+      changeOpen(false);
+    } catch (error) {
+      toast.error("Couldn't update the dispatch", {
+        description: errorParser(error)?.message,
+      });
+    }
+  }, [onMove, dispatch, weighed, value, changeOpen]);
+
+  return (
+    <AlertDialog open={open} onOpenChange={changeOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            Mark {jobNumber(dispatch)} as picked up
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Enter the weight at pickup if it was weighed; it is checked against
+            the chargeable weight.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Input
+          type="number"
+          inputMode="decimal"
+          min={0}
+          step="any"
+          aria-label="Pickup weight in kg"
+          placeholder="Pickup weight in kg (optional)"
+          value={weight}
+          onChange={(event) => setWeight(event.target.value)}
+          aria-invalid={!valid}
+        />
+        <AlertDialogFooter>
+          <Button
+            variant="outline"
+            size="xs"
+            disabled={isMoving}
+            onClick={() => changeOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            size="xs"
+            disabled={!valid}
+            isLoading={isMoving}
+            onClick={confirm}
+          >
+            Mark as picked up
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

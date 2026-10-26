@@ -11,6 +11,10 @@ import {
 } from "@/services/dispatches/dispatch.api";
 import { uploadAttachment } from "@/services/attachments/attachment.api";
 import {
+  createException,
+  getExceptionRules,
+} from "@/services/exceptions/exception.api";
+import {
   createCheckpoint,
   getCheckpoints,
   updateCheckpointLabel,
@@ -18,6 +22,7 @@ import {
 import { useDispatchData, type DispatchApi } from "./useDispatchData";
 import { useDispatchDetail, type DispatchDetailApi } from "./useDispatchDetail";
 import DispatchPage from "./DispatchPage";
+import { useSearchParams } from "react-router-dom";
 
 const dispatchApi: DispatchApi = {
   getFields,
@@ -36,10 +41,17 @@ const detailApi: DispatchDetailApi = {
   updateCheckpointLabel,
   uploadAttachment,
   moveDispatch,
+  createException,
+  getExceptionRules,
 };
 
 export default function Dispatch() {
   const data = useDispatchData(dispatchApi);
-  const detail = useDispatchDetail(detailApi);
+  // ?dispatch=<id> opens that dispatch, e.g. from an exception's Open timeline
+  const [searchParams] = useSearchParams();
+  const detail = useDispatchDetail(
+    detailApi,
+    searchParams.get("dispatch") ?? undefined,
+  );
   return <DispatchPage data={data} detail={detail} />;
 }

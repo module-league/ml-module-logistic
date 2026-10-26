@@ -44,6 +44,15 @@ export async function moveDispatch(objId: string, body: IDispatchMove) {
   return data;
 }
 
+/** Reassigns an open dispatch or moves its planned times; logged on its checkpoint log. */
+export async function planDispatch(objId: string, body: IDispatchPlan) {
+  const { data } = await apiClient.put<IDispatch>(
+    `/dispatches/${encodeURIComponent(objId)}/plan`,
+    body,
+  );
+  return data;
+}
+
 /** A shipment with an open dispatch is rejected with 409. */
 export async function createDispatch(body: IDispatchCreate) {
   const { data } = await apiClient.post<IDispatch>("/dispatches", body);

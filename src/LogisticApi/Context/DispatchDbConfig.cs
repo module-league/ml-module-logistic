@@ -42,8 +42,15 @@ namespace LogisticApi.Context.Configurations
             b.Property(e => e.actualPickupAt)
              .HasColumnName("actual_pickup_at");
 
+            b.Property(e => e.actualArrivalAt)
+             .HasColumnName("actual_arrival_at");
+
             b.Property(e => e.actualDeliveryAt)
              .HasColumnName("actual_delivery_at");
+
+            b.Property(e => e.pickupWeight)
+             .HasColumnName("pickup_weight")
+             .HasPrecision(18, 3);
 
             b.Property(e => e.status)
              .HasColumnName("status")

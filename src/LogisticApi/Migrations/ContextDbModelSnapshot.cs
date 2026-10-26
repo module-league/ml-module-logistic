@@ -356,6 +356,10 @@ namespace LogisticApi.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ds_version_no");
 
+                    b.Property<DateTime?>("actualArrivalAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("actual_arrival_at");
+
                     b.Property<DateTime?>("actualDeliveryAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("actual_delivery_at");
@@ -380,6 +384,11 @@ namespace LogisticApi.Migrations
                     b.Property<Guid>("originId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("origin_id");
+
+                    b.Property<decimal?>("pickupWeight")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)")
+                        .HasColumnName("pickup_weight");
 
                     b.Property<DateTime?>("plannedDeliveryAt")
                         .HasColumnType("datetime2")
@@ -569,6 +578,441 @@ namespace LogisticApi.Migrations
                             t.HasCheckConstraint("ck_lg_dispatch_setting_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
 
                             t.HasCheckConstraint("ck_lg_dispatch_setting_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+                        });
+                });
+
+            modelBuilder.Entity("LogisticApi.Models.ExceptionActivity", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<Guid?>("actorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("actor_id");
+
+                    b.Property<string>("body")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("body");
+
+                    b.Property<Guid>("exceptionId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("exception_id");
+
+                    b.Property<string>("kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("kind");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_exception_activity");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_exception_activity_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_exception_activity_ds_is_deleted");
+
+                    b.HasIndex("exceptionId")
+                        .HasDatabaseName("ix_lg_exception_activity_exception_id");
+
+                    b.ToTable("lg_exception_activity", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_exception_activity_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_exception_activity_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_exception_activity_kind", "[kind] IN ('opened', 'assigned', 'note', 'action', 'resolved', 'auto_closed')");
+                        });
+                });
+
+            modelBuilder.Entity("LogisticApi.Models.ExceptionCase", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<Guid?>("dispatchId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("dispatch_id");
+
+                    b.Property<string>("facts")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("facts");
+
+                    b.Property<string>("factsKey")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("facts_key");
+
+                    b.Property<Guid?>("ownerId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("resolutionReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("resolution_reason");
+
+                    b.Property<DateTime?>("resolvedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("resolved_at");
+
+                    b.Property<Guid?>("resolvedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("resolved_by");
+
+                    b.Property<DateTime>("respondBy")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("respond_by");
+
+                    b.Property<string>("ruleKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("rule_key");
+
+                    b.Property<string>("severity")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasColumnName("severity");
+
+                    b.Property<Guid>("shipmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("shipment_id");
+
+                    b.Property<DateTime?>("snoozedUntil")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("snoozed_until");
+
+                    b.Property<string>("status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("open")
+                        .HasColumnName("status");
+
+                    b.Property<string>("title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("type");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_shipment_exception");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_shipment_exception_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_shipment_exception_ds_is_deleted");
+
+                    b.HasIndex("dispatchId")
+                        .HasDatabaseName("ix_lg_shipment_exception_dispatch_id");
+
+                    b.HasIndex("ruleKey")
+                        .HasDatabaseName("ix_lg_shipment_exception_rule_key");
+
+                    b.HasIndex("status")
+                        .HasDatabaseName("ix_lg_shipment_exception_status");
+
+                    b.HasIndex("shipmentId", "ruleKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_shipment_exception_shipment_rule_unresolved")
+                        .HasFilter("[status] <> 'resolved' AND [ds_is_deleted] = 0");
+
+                    b.ToTable("lg_shipment_exception", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_shipment_exception_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_shipment_exception_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_shipment_exception_facts_json", "ISJSON([facts]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_shipment_exception_resolved_reason", "[status] <> 'resolved' OR [resolution_reason] IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_lg_shipment_exception_severity", "[severity] IN ('low', 'medium', 'high')");
+
+                            t.HasCheckConstraint("ck_lg_shipment_exception_snoozed_until", "[status] <> 'snoozed' OR [snoozed_until] IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_lg_shipment_exception_status", "[status] IN ('open', 'snoozed', 'resolved')");
+                        });
+                });
+
+            modelBuilder.Entity("LogisticApi.Models.ExceptionSetting", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<Guid?>("chargeableWeightFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("chargeable_weight_field_id");
+
+                    b.Property<Guid?>("driverPhoneFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("driver_phone_field_id");
+
+                    b.Property<Guid?>("etaFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("eta_field_id");
+
+                    b.Property<Guid?>("locationPhoneFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("location_phone_field_id");
+
+                    b.Property<Guid?>("modeFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("mode_field_id");
+
+                    b.Property<Guid?>("openingHourFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("opening_hour_field_id");
+
+                    b.Property<string>("shipmentSidebarId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("shipment_sidebar_id");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_exception_setting");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_exception_setting_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_exception_setting_ds_is_deleted");
+
+                    b.HasIndex("shipmentSidebarId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_exception_setting_shipment_sidebar_id")
+                        .HasFilter("[ds_is_deleted] = 0");
+
+                    b.ToTable("lg_exception_setting", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_exception_setting_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_exception_setting_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
                         });
                 });
 

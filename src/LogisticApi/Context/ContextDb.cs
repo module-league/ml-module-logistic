@@ -23,6 +23,9 @@ namespace LogisticApi.Context
         public virtual DbSet<Dispatch> Dispatches { get; set; } = null!;
         public virtual DbSet<DispatchSetting> DispatchSettings { get; set; } = null!;
         public virtual DbSet<CheckpointLog> CheckpointLogs { get; set; } = null!;
+        public virtual DbSet<ExceptionCase> ExceptionCases { get; set; } = null!;
+        public virtual DbSet<ExceptionActivity> ExceptionActivities { get; set; } = null!;
+        public virtual DbSet<ExceptionSetting> ExceptionSettings { get; set; } = null!;
         //public virtual DbSet<JobOrder> JobOrders { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

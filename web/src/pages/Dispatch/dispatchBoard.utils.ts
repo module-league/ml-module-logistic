@@ -11,6 +11,7 @@ import {
   type RecordLookups,
 } from "@/lib/lookupHelper";
 import { toRecordText } from "@/lib/recordTextHelper";
+import type { KanbanColumn } from "@/components/custom/KanbanBoard";
 
 export type DispatchStage =
   "unassigned" | "assigned" | "en_route" | "completed";
@@ -319,14 +320,17 @@ export function buildDispatchBoard(
       };
     });
 
-  return { shipments, card, shipmentFields };
+  return { shipments, card, shipmentFields, drivers };
 }
 
 /** The shipments of each column; delivered ones only on the day they were delivered. */
-export function boardColumns(shipments: DispatchShipment[], now: Date) {
+export function boardColumns(
+  shipments: DispatchShipment[],
+  now: Date,
+): KanbanColumn<DispatchShipment>[] {
   return DISPATCH_STAGES.map((stage) => ({
     ...stage,
-    shipments: shipments.filter(
+    items: shipments.filter(
       (shipment) =>
         shipment?.stage === stage.value &&
         (stage.value !== "completed" ||

@@ -98,11 +98,11 @@ export const moduleConfig: IModuleConfig = {
         },
         {
           sidebarId: "exeptions",
-          sidebarText: "Exeptions",
-          sidebarDesc: "",
+          sidebarText: "Exceptions",
+          sidebarDesc: "Late dispatches and problems being worked on.",
           sidebarIcon: TriangleAlert,
           hidePageSeparator: false,
-          page: lazy(() => import("@/pages/Exeption")),
+          page: lazy(() => import("@/pages/Exception/Exception")),
         },
         {
           sidebarId: "documents",
