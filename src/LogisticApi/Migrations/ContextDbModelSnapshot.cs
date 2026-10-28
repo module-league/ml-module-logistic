@@ -22,6 +22,8 @@ namespace LogisticApi.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.HasSequence<int>("lg_invoice_no_seq");
+
             modelBuilder.Entity("LogisticApi.Models.Attachment", b =>
                 {
                     b.Property<Guid>("ObjId")
@@ -158,6 +160,141 @@ namespace LogisticApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LogisticApi.Models.BillingSetting", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<Guid?>("billToFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("bill_to_field_id");
+
+                    b.Property<Guid?>("partyAddressFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("party_address_field_id");
+
+                    b.Property<Guid?>("partyCreditTermsFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("party_credit_terms_field_id");
+
+                    b.Property<Guid?>("partyEmailFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("party_email_field_id");
+
+                    b.Property<Guid?>("partyNameFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("party_name_field_id");
+
+                    b.Property<Guid?>("partyRegistrationFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("party_registration_field_id");
+
+                    b.Property<Guid?>("partyTaxIdFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("party_tax_id_field_id");
+
+                    b.Property<string>("shipmentSidebarId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("shipment_sidebar_id");
+
+                    b.Property<Guid?>("zoneFieldId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("zone_field_id");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_billing_setting");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_billing_setting_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_billing_setting_ds_is_deleted");
+
+                    b.HasIndex("shipmentSidebarId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_billing_setting_shipment_sidebar_id")
+                        .HasFilter("[ds_is_deleted] = 0");
+
+                    b.ToTable("lg_billing_setting", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_billing_setting_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_billing_setting_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+                        });
+                });
+
             modelBuilder.Entity("LogisticApi.Models.CheckpointLog", b =>
                 {
                     b.Property<Guid>("ObjId")
@@ -278,7 +415,7 @@ namespace LogisticApi.Migrations
 
                             t.HasCheckConstraint("ck_lg_checkpoint_log_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
 
-                            t.HasCheckConstraint("ck_lg_checkpoint_log_status", "[status] IS NULL OR [status] IN ('planned', 'picked_up', 'in_transit', 'arrived', 'delivered', 'cancelled')");
+                            t.HasCheckConstraint("ck_lg_checkpoint_log_status", "[status] IS NULL OR [status] IN ('planned', 'picked_up', 'in_transit', 'arrived', 'delivered', 'cancelled', 'billed')");
                         });
                 });
 
@@ -1262,6 +1399,507 @@ namespace LogisticApi.Migrations
                             t.HasCheckConstraint("ck_lg_exception_setting_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
 
                             t.HasCheckConstraint("ck_lg_exception_setting_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+                        });
+                });
+
+            modelBuilder.Entity("LogisticApi.Models.Invoice", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<int>("creditTermsDays")
+                        .HasColumnType("int")
+                        .HasColumnName("credit_terms_days");
+
+                    b.Property<string>("currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<Guid?>("dispatchId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("dispatch_id");
+
+                    b.Property<DateOnly?>("dueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<string>("eInvoiceRef")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("e_invoice_ref");
+
+                    b.Property<DateOnly?>("issueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("issue_date");
+
+                    b.Property<DateTime?>("paidAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("paid_at");
+
+                    b.Property<string>("partyAddress")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("party_address");
+
+                    b.Property<string>("partyEmail")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("party_email");
+
+                    b.Property<Guid>("partyId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("party_id");
+
+                    b.Property<string>("partyName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("party_name");
+
+                    b.Property<string>("partyRegistrationNo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("party_registration_no");
+
+                    b.Property<string>("partyTaxId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("party_tax_id");
+
+                    b.Property<string>("pricing")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("pricing");
+
+                    b.Property<DateTime?>("sentAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("sent_at");
+
+                    b.Property<int>("sequenceNo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("sequence_no")
+                        .HasDefaultValueSql("NEXT VALUE FOR [lg_invoice_no_seq]");
+
+                    b.Property<Guid>("shipmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("shipment_id");
+
+                    b.Property<string>("status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("draft")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("subtotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("subtotal");
+
+                    b.Property<decimal>("taxAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("tax_amount");
+
+                    b.Property<decimal>("total")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("total");
+
+                    b.Property<string>("voidReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("void_reason");
+
+                    b.Property<DateTime?>("voidedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("voided_at");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_invoice");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_invoice_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_invoice_ds_is_deleted");
+
+                    b.HasIndex("sequenceNo")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_invoice_sequence_no");
+
+                    b.HasIndex("shipmentId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_invoice_shipment_not_void")
+                        .HasFilter("[status] <> 'void' AND [ds_is_deleted] = 0");
+
+                    b.HasIndex("status")
+                        .HasDatabaseName("ix_lg_invoice_status");
+
+                    b.ToTable("lg_invoice", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_invoice_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_invoice_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_invoice_paid", "[status] <> 'paid' OR [paid_at] IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_lg_invoice_pricing_json", "ISJSON([pricing]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_invoice_sent", "[status] = 'draft' OR [status] = 'void' OR ([sent_at] IS NOT NULL AND [issue_date] IS NOT NULL AND [due_date] IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_lg_invoice_status", "[status] IN ('draft', 'sent', 'paid', 'void')");
+
+                            t.HasCheckConstraint("ck_lg_invoice_total", "[total] = [subtotal] + [tax_amount]");
+
+                            t.HasCheckConstraint("ck_lg_invoice_void", "[status] <> 'void' OR [void_reason] IS NOT NULL");
+                        });
+                });
+
+            modelBuilder.Entity("LogisticApi.Models.InvoiceLine", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<decimal>("amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("basis")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("basis");
+
+                    b.Property<string>("chargeKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("charge_key");
+
+                    b.Property<string>("description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("description");
+
+                    b.Property<Guid>("invoiceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<decimal>("qty")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)")
+                        .HasColumnName("qty");
+
+                    b.Property<Guid>("shipmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("shipment_id");
+
+                    b.Property<int>("sortOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("sort_order");
+
+                    b.Property<Guid?>("sourceExceptionId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("source_exception_id");
+
+                    b.Property<decimal>("taxRate")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("tax_rate");
+
+                    b.Property<decimal>("unitPrice")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_invoice_line");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_invoice_line_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_invoice_line_ds_is_deleted");
+
+                    b.HasIndex("invoiceId")
+                        .HasDatabaseName("ix_lg_invoice_line_invoice_id");
+
+                    b.HasIndex("shipmentId")
+                        .HasDatabaseName("ix_lg_invoice_line_shipment_id");
+
+                    b.ToTable("lg_invoice_line", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_invoice_line_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_invoice_line_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+                        });
+                });
+
+            modelBuilder.Entity("LogisticApi.Models.Payment", b =>
+                {
+                    b.Property<Guid>("ObjId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_obj_id");
+
+                    b.Property<DateTime>("CreateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_create_time")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_deleted_by");
+
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_doc_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("ExtraCol1")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col1");
+
+                    b.Property<string>("ExtraCol2")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col2");
+
+                    b.Property<string>("ExtraCol3")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col3");
+
+                    b.Property<string>("ExtraCol4")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_extra_col4");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("ds_is_deleted");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_metadata");
+
+                    b.Property<string>("RawMetadata")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ds_raw_metadata");
+
+                    b.Property<DateTime?>("UpdateTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ds_update_time");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ds_updated_by");
+
+                    b.Property<int>("VersionNo")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int")
+                        .HasColumnName("ds_version_no");
+
+                    b.Property<decimal>("amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<Guid>("invoiceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<string>("method")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("method");
+
+                    b.Property<DateTime>("paidAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("paid_at");
+
+                    b.Property<string>("reference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("reference");
+
+                    b.HasKey("ObjId")
+                        .HasName("pk_lg_payment");
+
+                    b.HasIndex("DocId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_lg_payment_ds_doc_id");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_lg_payment_ds_is_deleted");
+
+                    b.HasIndex("invoiceId")
+                        .HasDatabaseName("ix_lg_payment_invoice_id");
+
+                    b.ToTable("lg_payment", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lg_payment_amount", "[amount] > 0");
+
+                            t.HasCheckConstraint("ck_lg_payment_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_payment_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
                         });
                 });
 

@@ -115,10 +115,10 @@ export const moduleConfig: IModuleConfig = {
         {
           sidebarId: "billing",
           sidebarText: "Billing",
-          sidebarDesc: "",
+          sidebarDesc: "Delivered shipments priced from the rate card and invoiced.",
           sidebarIcon: Receipt,
           hidePageSeparator: false,
-          page: lazy(() => import("@/pages/Billing")),
+          page: lazy(() => import("@/pages/Billing/Billing")),
         },
         //  {
         //   sidebarId: "master-data",

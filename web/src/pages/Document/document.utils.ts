@@ -1,5 +1,4 @@
 import { toast } from "@moduleleague/ui";
-import { errorParser } from "@/hooks/useErrorParser";
 import { ATTACHMENT_MAX_BYTES } from "@/services/attachments/attachment.api";
 import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
 import {
@@ -119,17 +118,6 @@ export const typeTitle = (
     : (rules?.types?.find((type) => type.docType === docType)?.title ??
       docType ??
       "");
-
-/** Runs a change and says when it fails; true when it worked. */
-export async function attempt(failure: string, task: () => Promise<unknown>) {
-  try {
-    await task();
-    return true;
-  } catch (error) {
-    toast.error(failure, { description: errorParser(error)?.message });
-    return false;
-  }
-}
 
 /** Uploads stop here when the file is over the API's limit, before sending it. */
 export function checkSize(file: File) {

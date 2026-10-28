@@ -1,4 +1,3 @@
-using System.Globalization;
 using LogisticApi.Context;
 using LogisticApi.Models;
 using LogisticApi.MVVM;
@@ -20,8 +19,8 @@ namespace LogisticApi.Services
         DocumentChecklistService checklists,
         AttachmentService attachments,
         ExceptionRuleEngine engine,
-        IOptions<DispatchOptions> dispatchOptions,
-        IOptions<ExceptionRuleOptions> ruleOptions)
+        RecordTextService texts,
+        IOptions<DispatchOptions> dispatchOptions)
     {
         /// <summary>The refId of files uploaded straight onto a document instead of into the shipment's attachment field.</summary>
         public const string RefId = "documents";
@@ -383,7 +382,6 @@ namespace LogisticApi.Services
         /// <summary>The shipment's title and a PDF of its fields, then its origin's and destination's.</summary>
         private async Task<(string title, byte[] pdf)> DraftAsync(Checklist checklist, DocumentType type, CancellationToken ct)
         {
-            var zone = TimeZoneInfo.FindSystemTimeZoneById(ruleOptions.Value.TimeZone);
             var card = await db.DispatchSettings.AsNoTracking().FirstOrDefaultAsync(s => s.shipmentSidebarId == sources.ShipmentSidebarId, ct);
             var shipment = checklist.Shipment;
             var originId = checklist.Dispatch?.originId ?? shipment.Link(card?.originFieldId);
@@ -391,79 +389,20 @@ namespace LogisticApi.Services
             Guid[] placeIds = [.. new[] { originId, destinationId }.OfType<Guid>()];
             var places = (await RecordRow.LoadAsync(db, sources.LocationSidebarId, ct, placeIds)).ToDictionary(r => r.Id);
 
-            var (title, shipmentRows) = await TextRowsAsync(sources.ShipmentSidebarId, shipment, zone, ct, card?.titleFieldId);
-            var (_, originRows) = await TextRowsAsync(sources.LocationSidebarId, places.GetValueOrDefault(originId ?? Guid.Empty), zone, ct);
-            var (_, destinationRows) = await TextRowsAsync(sources.LocationSidebarId, places.GetValueOrDefault(destinationId ?? Guid.Empty), zone, ct);
-            var generatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
-            var pdf = DocumentDraft.Pdf(
+            var (title, shipmentRows) = await texts.TextRowsAsync(sources.ShipmentSidebarId, shipment, ct, card?.titleFieldId);
+            var (_, originRows) = await texts.TextRowsAsync(sources.LocationSidebarId, places.GetValueOrDefault(originId ?? Guid.Empty), ct);
+            var (_, destinationRows) = await texts.TextRowsAsync(sources.LocationSidebarId, places.GetValueOrDefault(destinationId ?? Guid.Empty), ct);
+            var pdf = PdfWriter.Pdf(
                 $"{type.Title} - DRAFT",
-                $"{title} · generated {generatedAt:dd MMM yyyy HH:mm} ({ruleOptions.Value.TimeZone})",
+                $"{title} · generated {texts.LocalNow:dd MMM yyyy HH:mm} ({texts.ZoneName})",
                 [
-                    new("Shipment", shipmentRows),
-                    new("Shipper (origin)", originRows),
-                    new("Consignee (destination)", destinationRows),
+                    new PdfWriter.Section("Shipment", shipmentRows),
+                    new PdfWriter.Section("Shipper (origin)", originRows),
+                    new PdfWriter.Section("Consignee (destination)", destinationRows),
                 ],
                 "Filled from the shipment record. Check every value against the original before verifying.");
             return (title, pdf);
         }
-
-        /// <summary>The record's title and each field with a value as text, in field order; links show the linked record's title.</summary>
-        private async Task<(string title, List<(string label, string value)> rows)> TextRowsAsync(
-            string sidebarId, RecordRow? row, TimeZoneInfo zone, CancellationToken ct, Guid? titleFieldId = null)
-        {
-            if (row is null) return ("", []);
-            var fields = await db.SidebarFields
-                .AsNoTracking()
-                .Where(f => f.sidebarId == sidebarId && !f.isSystemField)
-                .OrderBy(f => f.displayOrder)
-                .ToListAsync(ct);
-            var fieldIds = fields.Select(f => f.ObjId).ToList();
-            var options = await db.SidebarFieldOptions.AsNoTracking().Where(o => fieldIds.Contains(o.fieldObjId)).ToDictionaryAsync(o => o.ObjId, o => o.value, ct);
-
-            var links = fields.Where(f => FieldTypes.IsLink(f.type)).ToDictionary(f => f.ObjId, f => Ids(row, f.ObjId));
-            var linkedIds = links.Values.SelectMany(ids => ids).Distinct().ToList();
-            var linkedTitles = new Dictionary<Guid, string>();
-            foreach (var target in fields.Where(f => FieldTypes.IsLink(f.type)).Select(f => FieldSettings.Read(f.settings).lookupSidebarId).OfType<string>().Distinct())
-            {
-                var targetFields = await db.SidebarFields.AsNoTracking().Where(f => f.sidebarId == target && !f.isSystemField).OrderBy(f => f.displayOrder).ToListAsync(ct);
-                var titleField = TitleField(targetFields);
-                foreach (var linked in await RecordRow.LoadAsync(db, target, ct, linkedIds))
-                    linkedTitles[linked.Id] = linked.Value(titleField?.ObjId) ?? "";
-            }
-
-            string? Text(SidebarField field)
-            {
-                var raw = row.Value(field.ObjId);
-                if (raw is null) return null;
-                return field.type switch
-                {
-                    "single_select" => Guid.TryParse(raw, out var option) ? options.GetValueOrDefault(option) : null,
-                    "multi_select" => string.Join(", ", Ids(row, field.ObjId).Select(id => options.GetValueOrDefault(id)).OfType<string>()),
-                    "checkbox" => raw == "true" ? "Yes" : "No",
-                    "link_table" => string.Join(", ", links[field.ObjId].Select(id => linkedTitles.GetValueOrDefault(id)).OfType<string>()),
-                    "date" => DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at)
-                        ? raw.Length == 10 ? at.ToString("dd MMM yyyy", CultureInfo.InvariantCulture) : TimeZoneInfo.ConvertTime(at, zone).ToString("dd MMM yyyy HH:mm", CultureInfo.InvariantCulture)
-                        : raw,
-                    _ when FieldTypes.IsVirtual(field.type) || field.type == "attachment" => null,
-                    _ => raw,
-                };
-            }
-            var rows = fields
-                .Select(f => (label: f.sidebarName, value: Text(f)))
-                .Where(r => !string.IsNullOrWhiteSpace(r.value))
-                .Select(r => (r.label, r.value!))
-                .ToList();
-            return (row.Value(TitleField(fields, titleFieldId)?.ObjId) ?? "", rows);
-        }
-
-        /// <summary>The field a record is named by, as the web picks it: the one picked, else the primary field, else the first that can show in a lookup.</summary>
-        private static SidebarField? TitleField(List<SidebarField> fields, Guid? pickedId = null) =>
-            fields.FirstOrDefault(f => f.ObjId == pickedId)
-            ?? fields.FirstOrDefault(f => f.isPrimaryField && FieldTypes.CanShowInLookup(f.type))
-            ?? fields.FirstOrDefault(f => FieldTypes.CanShowInLookup(f.type));
-
-        private static List<Guid> Ids(RecordRow row, Guid fieldId) =>
-            (row.Read<List<string>>(fieldId) ?? []).Select(id => Guid.TryParse(id, out var parsed) ? parsed : Guid.Empty).Where(id => id != Guid.Empty).ToList();
 
         private static ApiProblemException Stale() =>
             ApiProblemException.Conflict("The document was changed by someone else.", "Reload it and try again.");

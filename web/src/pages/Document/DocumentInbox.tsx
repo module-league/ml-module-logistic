@@ -10,17 +10,13 @@ import {
   SelectValue,
   toast,
 } from "@moduleleague/ui";
+import { attempt } from "@/lib/toastHelper";
 import { AttachmentThumbnail } from "@/components/custom/AttachmentThumbnail";
 import { AttachmentPreviewDialog } from "@/components/custom/AttachmentPreviewDialog";
 import { useAttachmentPreview } from "@/hooks/useAttachmentPreview";
 import { formatFileSize } from "@/lib/attachmentHelper";
 import { tableFields } from "@/module/dashboard/moduleDashboard.utils";
-import {
-  attempt,
-  checkSize,
-  typeTitle,
-  type DocumentRow,
-} from "./document.utils";
+import { checkSize, typeTitle, type DocumentRow } from "./document.utils";
 import type { DocumentData } from "./useDocumentData";
 
 /** The selected shipment's unclassified files beside a drop zone that adds more to its attachment field. */

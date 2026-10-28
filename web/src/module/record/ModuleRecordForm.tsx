@@ -1,13 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Button,
-  DialogFooter,
-  FieldTypeIcon,
-  Form,
-  FormField2,
-} from "@moduleleague/ui";
+import { Button, DialogFooter, Form, FormField2 } from "@moduleleague/ui";
 import { RecordInputControl } from "@/components/custom/RecordInputControl";
 import { recordValuesSchema } from "@/lib/validationHelper";
 import { formulaValue } from "@/lib/formulaHelper";
@@ -17,6 +11,7 @@ import type {
   ModuleRecordFormProps,
   ModuleRecordFormValues,
 } from "./moduleRecord.types";
+import { FieldTypeIcon } from "@/components/custom/fieldTypeIcon";
 
 export function ModuleRecordForm({
   fields,

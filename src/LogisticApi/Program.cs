@@ -48,6 +48,11 @@ builder.Services.AddHostedService<ExceptionMonitor>();
 builder.Services.Configure<DocumentOptions>(builder.Configuration.GetSection(DocumentOptions.SectionName));
 builder.Services.AddScoped<DocumentChecklistService>();
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<RecordTextService>();
+
+// Billing: rate cards, charge types and tax from the "Billing" workflow config
+builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection(BillingOptions.SectionName));
+builder.Services.AddScoped<BillingService>();
 
 // Expected failures (400/404/409) thrown as ApiProblemException become ProblemDetails responses
 builder.Services.AddProblemDetails();

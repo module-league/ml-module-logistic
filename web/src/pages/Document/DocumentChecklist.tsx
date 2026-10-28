@@ -28,6 +28,7 @@ import {
   toast,
 } from "@moduleleague/ui";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { attempt } from "@/lib/toastHelper";
 import QueryWrapper from "@/components/custom/QueryWrapper";
 import { AttachmentChip } from "@/components/custom/AttachmentChip";
 import { AttachmentPreviewDialog } from "@/components/custom/AttachmentPreviewDialog";
@@ -40,7 +41,6 @@ import { actorName } from "@/services/user/current.user";
 import { CHIP_CLASS } from "../Exception/ExceptionList";
 import { labelOf, stamp } from "../Exception/exception.utils";
 import {
-  attempt,
   checkSize,
   DOCUMENT_STATUSES,
   gateName,

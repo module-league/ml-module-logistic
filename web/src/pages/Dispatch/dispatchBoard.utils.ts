@@ -175,9 +175,13 @@ export const jobNumber = (dispatch: IDispatch) =>
 export const stepsDone = (dispatch?: IDispatch) =>
   (dispatch ? STEP_OF_STATUS[dispatch.status] : 0) + 1;
 
-/** "Picked up", "Cancelled": the step a status reaches. */
-export const statusLabel = (status: IDispatchStatus) =>
-  status === "cancelled" ? "Cancelled" : DISPATCH_STEPS[STEP_OF_STATUS[status]];
+/** "Picked up", "Cancelled", "Billed": the step a status reaches. */
+export const statusLabel = (status: ICheckpointStatus) =>
+  status === "cancelled"
+    ? "Cancelled"
+    : status === "billed"
+      ? "Billed"
+      : DISPATCH_STEPS[STEP_OF_STATUS[status]];
 
 /** The statuses an open dispatch can move to, nearest first; none once delivered or cancelled. */
 export function nextStatuses(dispatch?: IDispatch) {

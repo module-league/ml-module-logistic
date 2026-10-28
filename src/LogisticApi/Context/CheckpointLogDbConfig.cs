@@ -36,7 +36,7 @@ namespace LogisticApi.Context.Configurations
             b.ToTable(t =>
             {
                 t.HasCheckConstraint(Ck("attachments_json"), "ISJSON([attachments]) = 1");
-                t.HasCheckConstraint(Ck("status"), $"[status] IS NULL OR [status] IN ({string.Join(", ", Dispatch.Statuses.Select(s => $"'{s}'"))})");
+                t.HasCheckConstraint(Ck("status"), $"[status] IS NULL OR [status] IN ({string.Join(", ", CheckpointLog.Statuses.Select(s => $"'{s}'"))})");
             });
 
             b.HasIndex(e => e.dispatchId).HasDatabaseName(Ix("dispatch_id"));

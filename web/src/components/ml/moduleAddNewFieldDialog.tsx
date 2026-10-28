@@ -61,7 +61,7 @@ import {
 import { RecordLinkCard } from "@/components/custom/RecordLinkCard";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRecordLookups } from "@/components/custom/RecordLookup.context";
-import { FieldTypeIcon } from "../custom/fieldTypeIcon";
+import { FieldTypeIcon } from "@/components/custom/fieldTypeIcon";
 import { ConfirmDeleteDialog } from "@/components/custom/ConfirmDeleteDialog";
 import type {
   ModuleAddFieldStepsProps,

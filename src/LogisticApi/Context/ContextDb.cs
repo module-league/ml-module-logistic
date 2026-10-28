@@ -29,11 +29,16 @@ namespace LogisticApi.Context
         public virtual DbSet<ShipmentDocument> ShipmentDocuments { get; set; } = null!;
         public virtual DbSet<DocumentActivity> DocumentActivities { get; set; } = null!;
         public virtual DbSet<DocumentSetting> DocumentSettings { get; set; } = null!;
+        public virtual DbSet<Invoice> Invoices { get; set; } = null!;
+        public virtual DbSet<InvoiceLine> InvoiceLines { get; set; } = null!;
+        public virtual DbSet<Payment> Payments { get; set; } = null!;
+        public virtual DbSet<BillingSetting> BillingSettings { get; set; } = null!;
         //public virtual DbSet<JobOrder> JobOrders { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.HasSequence<int>(Configurations.InvoiceDbConfig.NumberSequence).StartsAt(1);
 
             // MLAuditFieldsInterceptor (ModuleLeague.Core 1.0.3) soft-deletes by marking every column modified,
             // and SQL Server refuses to update the ds_doc_id identity column. Remove once fixed in ml-backend-base.

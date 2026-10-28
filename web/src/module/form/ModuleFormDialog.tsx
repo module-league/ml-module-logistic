@@ -27,7 +27,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   FieldError,
-  FieldTypeIcon,
   Input,
   Separator,
   Switch,
@@ -46,7 +45,7 @@ import type {
   ModuleFormDialogProps,
   ModuleFormEditorProps,
 } from "./moduleForm.types";
-
+import { FieldTypeIcon } from "@/components/custom/fieldTypeIcon";
 /**
  * The forms of a sidebar: the list on the left, the picked form's title, flags and fields on the right.
  * @example

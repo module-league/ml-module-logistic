@@ -4,7 +4,6 @@ import {
   PageHeader,
   ModulePageToolbar,
   toast,
-  FieldTypeIcon,
   ModuleDeleteFieldDialog,
   ModuleEditFieldDialog,
 } from "@moduleleague/ui";
@@ -28,6 +27,7 @@ import type {
   ModulePageProps,
   ModuleRecordDeletion,
 } from "./modulePage.types";
+import { FieldTypeIcon } from "@/components/custom/fieldTypeIcon";
 
 const ADD_LABEL = "New record";
 const getRecordKey = (record: ISidebarRecord) => record?.objId;

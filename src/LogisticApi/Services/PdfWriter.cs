@@ -4,35 +4,63 @@ using System.Text;
 namespace LogisticApi.Services
 {
     /// <summary>
-    /// Writes a plain A4 PDF of labelled values in Helvetica, enough for a draft someone checks before verifying. Text outside
-    /// Latin-1 prints as "?".
+    /// Writes a plain A4 PDF in Helvetica: a title, then sections of labelled values and tables, enough for document drafts and
+    /// invoices. Arrows and dashes become ASCII; other text outside Latin-1 prints as "?".
     /// </summary>
-    public static class DocumentDraft
+    public static class PdfWriter
     {
-        public sealed record Section(string Heading, List<(string Label, string Value)> Rows);
+        public abstract record Block;
 
-        private sealed record Line(string Text, int Size, bool Bold, int Indent = 0, string? Value = null);
+        /// <summary>Labelled values, one per line; long values wrap.</summary>
+        public sealed record Section(string Heading, List<(string Label, string Value)> Rows) : Block;
+
+        /// <summary>Rows of cells under a header row; Bold marks rows like a total.</summary>
+        public sealed record Table(string? Heading, List<Column> Columns, List<(string[] Cells, bool Bold)> Rows) : Block;
+
+        /// <summary>X is from the left margin; a right-aligned column ends at X.</summary>
+        public sealed record Column(string Header, int X, bool Right = false);
+
+        private sealed record Cell(int X, string Text, bool Bold, bool Right = false);
+
+        private sealed record Line(int Size, List<Cell> Cells, bool Rule = false);
 
         private const int Top = 790;
         private const int Bottom = 60;
         private const int Left = 50;
+        private const int Width = 495;
         private const int WrapAt = 60;
 
-        public static byte[] Pdf(string title, string subtitle, IEnumerable<Section> sections, string footer)
+        public static byte[] Pdf(string title, string subtitle, IEnumerable<Block> blocks, string footer)
         {
-            List<Line> lines = [new(title, 18, true), new(subtitle, 10, false), new("", 10, false)];
-            foreach (var section in sections.Where(s => s.Rows.Count > 0))
+            List<Line> lines = [Plain(title, 18, true), Plain(subtitle, 10), Plain("", 10)];
+            foreach (var block in blocks)
             {
-                lines.Add(new(section.Heading, 12, true));
-                foreach (var (label, value) in section.Rows)
+                switch (block)
                 {
-                    var parts = Wrap(value);
-                    lines.Add(new(label, 10, false, 0, parts[0]));
-                    lines.AddRange(parts.Skip(1).Select(part => new Line("", 10, false, 0, part)));
+                    case Section { Rows.Count: > 0 } section:
+                        lines.Add(Plain(section.Heading, 12, true));
+                        foreach (var (label, value) in section.Rows)
+                        {
+                            var parts = Wrap(value);
+                            lines.Add(new(10, [new(0, label, false), new(170, parts[0], false)]));
+                            lines.AddRange(parts.Skip(1).Select(part => new Line(10, [new(170, part, false)])));
+                        }
+                        lines.Add(Plain("", 8));
+                        break;
+                    case Table table:
+                        if (table.Heading is not null) lines.Add(Plain(table.Heading, 12, true));
+                        if (table.Columns.Any(c => c.Header.Length > 0))
+                        {
+                            lines.Add(new(9, table.Columns.Select(c => new Cell(c.X, c.Header, true, c.Right)).ToList()));
+                            lines.Add(new(4, [], Rule: true));
+                        }
+                        foreach (var (cells, bold) in table.Rows)
+                            lines.Add(new(bold ? 11 : 10, table.Columns.Zip(cells, (c, text) => new Cell(c.X, text, bold, c.Right)).ToList()));
+                        lines.Add(Plain("", 8));
+                        break;
                 }
-                lines.Add(new("", 8, false));
             }
-            lines.Add(new(footer, 8, false));
+            lines.Add(Plain(footer, 8));
 
             List<string> pages = [];
             var content = new StringBuilder();
@@ -47,12 +75,28 @@ namespace LogisticApi.Services
                     y = Top;
                 }
                 y -= height;
-                Text(content, line.Bold ? "F2" : "F1", line.Size, Left + line.Indent, y, line.Text);
-                if (line.Value is not null) Text(content, "F1", line.Size, Left + 170, y, line.Value);
+                if (line.Rule) content.Append(CultureInfo.InvariantCulture, $"0.8 G {Left} {y + 6} m {Left + Width} {y + 6} l S 0 G\n");
+                foreach (var cell in line.Cells)
+                {
+                    var x = cell.Right ? cell.X - TextWidth(cell.Text, line.Size, cell.Bold) : cell.X;
+                    Text(content, cell.Bold ? "F2" : "F1", line.Size, Left + x, y, cell.Text);
+                }
             }
             pages.Add(content.ToString());
             return Write(pages);
         }
+
+        private static Line Plain(string text, int size, bool bold = false) => new(size, [new(0, text, bold)]);
+
+        // Close enough to Helvetica's widths to right-align amounts
+        private static int TextWidth(string text, int size, bool bold) =>
+            (int)Math.Ceiling(text.Sum(c => c switch
+            {
+                >= '0' and <= '9' => 0.556,
+                ' ' or '.' or ',' or ':' => 0.278,
+                >= 'A' and <= 'Z' => bold ? 0.722 : 0.667,
+                _ => bold ? 0.556 : 0.5,
+            }) * size);
 
         private static List<string> Wrap(string value)
         {
@@ -78,7 +122,7 @@ namespace LogisticApi.Services
         {
             if (text.Length == 0) return;
             var escaped = new StringBuilder();
-            foreach (var c in text)
+            foreach (var c in text.Replace("→", "->").Replace("–", "-").Replace("’", "'"))
             {
                 if (c is '(' or ')' or '\\') escaped.Append('\\').Append(c);
                 else escaped.Append(c is >= ' ' and <= 'ÿ' ? c : '?');

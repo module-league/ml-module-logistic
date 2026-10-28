@@ -339,9 +339,13 @@ function DispatchStepper({
   checkpoints: ICheckpointLog[];
   now: Date;
 }) {
-  const done = stepsDone(dispatch);
+  const billedAt = useMemo(
+    () => checkpoints?.find((log) => log?.status === "billed")?.createTime,
+    [checkpoints],
+  );
+  const done = billedAt ? DISPATCH_STEPS.length : stepsDone(dispatch);
   const times = useMemo(() => {
-    const loggedAt = (status: IDispatchStatus) =>
+    const loggedAt = (status: ICheckpointStatus) =>
       checkpoints?.find((log) => log?.status === status)?.createTime;
     return [
       shipment?.bookedAt,
@@ -350,9 +354,9 @@ function DispatchStepper({
       loggedAt("in_transit"),
       loggedAt("arrived"),
       dispatch?.actualDeliveryAt,
-      undefined,
+      billedAt,
     ];
-  }, [shipment?.bookedAt, dispatch, checkpoints]);
+  }, [shipment?.bookedAt, dispatch, checkpoints, billedAt]);
   return (
     <ol className="flex min-w-0 flex-1 gap-2 overflow-x-auto pl-4">
       {DISPATCH_STEPS.map((step, index) => {

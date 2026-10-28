@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import {
   cn,
-  FieldTypeIcon,
   Select,
   SelectContent,
   SelectItem,
@@ -14,6 +13,7 @@ import type {
   DashboardFieldSelectProps,
   DashboardSegmentedProps,
 } from "../moduleDashboard.types";
+import { FieldTypeIcon } from "@/components/custom/fieldTypeIcon";
 
 /** Radix Select can't hold an empty value, so "None" is this. */
 const NONE = "__none";

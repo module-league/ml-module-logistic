@@ -20,7 +20,7 @@ declare global {
     missing?: string[];
     status?: IDispatchStatus | "not_dispatched";
     mode?: string | null;
-    lastCheckpoint?: { at: string; status?: IDispatchStatus; note?: string };
+    lastCheckpoint?: { at: string; status?: ICheckpointStatus; note?: string };
   };
 
   /** One shipment problem (lg_shipment_exception), opened by a rule or by hand. Matches ExceptionResponse; times are UTC. */

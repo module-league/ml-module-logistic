@@ -90,8 +90,5 @@ export * from "./hooks/useDrawer";
 export * from "./hooks/useErrorParser";
 export * from "./hooks/useSortableRow";
 
-//Customs
-export * from "@/components/custom/fieldTypeIcon";
-
 // Helpers
 export { cn } from "./lib/utils";

@@ -11,7 +11,6 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-  FieldTypeIcon,
   Input,
   Separator,
 } from "@moduleleague/ui";
@@ -28,7 +27,7 @@ import type {
   ModuleLinkedRecordCardProps,
   ModuleLookupPreviewProps,
 } from "./moduleRecord.types";
-
+import { FieldTypeIcon } from "@/components/custom/fieldTypeIcon";
 /**
  * The records a lookup's link field links to, shown beside the open record as cards that open to show all their fields.
  * Link and lookup fields of the linked record are left out, since their own linked records aren't loaded here.
