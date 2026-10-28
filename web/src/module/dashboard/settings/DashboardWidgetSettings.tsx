@@ -177,7 +177,7 @@ export function DashboardWidgetSettings({
                     <DashboardFilterEditor
                       fields={fields}
                       filter={
-                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- widgets saved before filters existed have none
+                        // Widgets saved before filters existed have none
                         widget.filter ?? { match: "all", conditions: [] }
                       }
                       members={members}

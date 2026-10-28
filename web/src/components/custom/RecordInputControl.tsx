@@ -283,7 +283,7 @@ export function RecordInputControl(props: RecordInputControlProps) {
   }
 
   if (field.type === "single_select") {
-    const selectedDdv = field.dropDownValues.find((ddv) => ddv.id === value);
+    const selectedDdv = field.dropDownValues?.find((ddv) => ddv.id === value);
     return (
       <div className={cn("relative", props.className)}>
         <Select
@@ -329,7 +329,7 @@ export function RecordInputControl(props: RecordInputControlProps) {
                   <em>-None-</em>
                 </SelectItem>
               )}
-              {field.dropDownValues.map((ddv) => (
+              {field.dropDownValues?.map((ddv) => (
                 <SelectItem key={ddv.id} value={ddv.id} textValue={ddv.value}>
                   <SelectionNode dropDownValue={ddv}>{ddv.value}</SelectionNode>
                 </SelectItem>

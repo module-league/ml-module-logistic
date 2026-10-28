@@ -203,7 +203,7 @@ function SplitView({ node }: { node: SplitNode }) {
   const { storageKey } = useWorkspaceContext();
   const { defaultLayout, onLayoutChanged } = useDefaultLayout({
     id: `${storageKey}:${node.id}`,
-    panelIds: node.children.map((child) => child.id),
+    panelIds: node.children?.map((child) => child.id) ?? [],
   });
 
   return (
@@ -214,7 +214,7 @@ function SplitView({ node }: { node: SplitNode }) {
       resizeTargetMinimumSize={{ fine: 12, coarse: 24 }}
       disableCursor
     >
-      {node.children.map((child, index) => (
+      {node.children?.map((child, index) => (
         <Fragment key={child.id}>
           {index > 0 && (
             <ResizeSeparator

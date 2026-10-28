@@ -220,7 +220,7 @@ export function fromFormulaText(text: string, fields: ISidebarField[]) {
   const unknown: string[] = [];
   const expression = text.replace(REFERENCE, (match, name: string) => {
     const field = fields.find(
-      (entry) => entry.name.toLowerCase() === name.trim().toLowerCase(),
+      (entry) => entry.name?.toLowerCase() === name.trim().toLowerCase(),
     );
     if (!field) unknown.push(name);
     return field ? `{${field.objId}}` : match;

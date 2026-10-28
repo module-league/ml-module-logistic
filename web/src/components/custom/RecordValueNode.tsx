@@ -100,7 +100,7 @@ export function RecordValueNode({
     );
   }
   if (field.type === "single_select") {
-    const option = field.dropDownValues.find((o) => o.id === value);
+    const option = field.dropDownValues?.find((o) => o.id === value);
     return (
       <SelectionNode dropDownValue={option}>
         {option?.value ?? "Unknown"}

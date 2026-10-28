@@ -185,10 +185,10 @@ function notDoneCondition(fields: ISidebarField[]): IDashboardCondition[] {
   const field = fields.find(
     (entry) =>
       isSelectField(entry) &&
-      entry.dropDownValues.some((option) => DONE_OPTION.test(option.value)),
+      entry.dropDownValues?.some((option) => DONE_OPTION.test(option.value)),
   );
   const doneIds = field?.dropDownValues
-    .filter((option) => DONE_OPTION.test(option.value))
+    ?.filter((option) => DONE_OPTION.test(option.value))
     .map((option) => option.id);
   return field && doneIds !== undefined && doneIds.length > 0
     ? [
@@ -399,7 +399,7 @@ export function filterRecords(
   now: Date,
 ) {
   const conditions =
-    filter?.conditions.flatMap((condition) => {
+    filter?.conditions?.flatMap((condition) => {
       const field = fieldById.get(condition.fieldId);
       return field ? [{ field, condition }] : [];
     }) ?? [];
@@ -431,7 +431,7 @@ export function describeCondition(
         return parseOptionIds(condition.value)
           .map(
             (id) =>
-              field.dropDownValues.find((option) => option.id === id)?.value,
+              field.dropDownValues?.find((option) => option.id === id)?.value,
           )
           .filter(Boolean)
           .join(", ");
@@ -466,7 +466,7 @@ export function describeFilter(
 ) {
   return (
     filter?.conditions
-      .map((condition) =>
+      ?.map((condition) =>
         describeCondition(condition, fieldById.get(condition.fieldId), members),
       )
       .join(filter.match === "any" ? " or " : " · ") ?? ""
@@ -625,7 +625,7 @@ export function groupRecords(
           .map((captionField) =>
             toRecordText(
               captionField,
-              record?.values[captionField.objId],
+              record?.values?.[captionField.objId],
               members,
             ),
           )
@@ -737,7 +737,7 @@ export function pointOf(
   let values: ISidebarRecordValues | undefined = record.values;
   if (point.linkFieldId != null && point.linkFieldId !== "") {
     const linkField = fieldById.get(point.linkFieldId);
-    const [linkedId] = parseRecordIds(record.values[point.linkFieldId]);
+    const [linkedId] = parseRecordIds(record.values?.[point.linkFieldId]);
     values = lookupRecordsOf(linkField as IField, lookups)?.find(
       (linked) => linked.objId === linkedId,
     )?.values;
@@ -943,7 +943,7 @@ function typeSettings(
           showLate: true,
           doneOptionIds:
             groupBy?.dropDownValues
-              .filter((option) => DONE_OPTION.test(option.value))
+              ?.filter((option) => DONE_OPTION.test(option.value))
               .map((option) => option.id) ?? [],
           cardsPerColumn: 3,
           draggable: true,
@@ -1187,7 +1187,7 @@ export function normalizeDashboard(
     newRecordSidebarId: dashboard?.newRecordSidebarId ?? undefined,
     newRecordLabel: dashboard?.newRecordLabel ?? undefined,
     newRecordFormId: dashboard?.newRecordFormId ?? undefined,
-    widgets: dashboard?.widgets.map(withListSort) ?? [],
+    widgets: dashboard?.widgets?.map(withListSort) ?? [],
     versionNo: dashboard?.versionNo ?? 0,
     updateTime: dashboard?.updateTime ?? undefined,
   };
@@ -1236,7 +1236,7 @@ export function describeWidget(
       case "trend":
         return describeField("By", widget.trend?.dateFieldId);
       case "attention": {
-        const count = widget.attention?.rules.length ?? 0;
+        const count = widget.attention?.rules?.length ?? 0;
         return `${count} ${count === 1 ? "rule" : "rules"}`;
       }
       default:
@@ -1287,7 +1287,7 @@ export function sidebarsToLoad(
 ) {
   const ids = new Set(
     [
-      ...layout.widgets.map((widget) => widget.sidebarId),
+      ...(layout.widgets?.map((widget) => widget.sidebarId) ?? []),
       layout.newRecordSidebarId,
     ].filter((id): id is string => id != null && id !== ""),
   );

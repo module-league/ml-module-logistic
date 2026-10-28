@@ -265,7 +265,7 @@ function SettingsForm({
                 </tr>
               </thead>
               <tbody>
-                {rates?.rateCards.map((card) => (
+                {rates?.rateCards?.map((card) => (
                   <tr key={card.name} className="border-t">
                     <td className="px-3 py-2 font-medium">{card.name}</td>
                     <td className="px-3 py-2">{card.mode}</td>
@@ -319,7 +319,7 @@ function SettingsForm({
                   </td>
                   <td className="px-3 py-2">Always</td>
                 </tr>
-                {rates?.chargeTypes.map((charge) => (
+                {rates?.chargeTypes?.map((charge) => (
                   <tr key={charge.key} className="border-t">
                     <td className="px-3 py-2 font-medium">{charge.title}</td>
                     <td className="px-3 py-2">{BASIS_LABEL[charge.basis]}</td>
@@ -335,9 +335,9 @@ function SettingsForm({
                       {charge.automatic
                         ? "Every invoice"
                         : charge.fromRule != null && charge.fromRule !== ""
-                          ? `Suggested by a resolved ${charge.fromRule.replaceAll("_", " ")}${
-                              charge.fromReasons.length > 0
-                                ? ` (${charge.fromReasons.join(", ")})`
+                          ? `Suggested by a resolved ${charge.fromRule?.replaceAll("_", " ") ?? ""}${
+                              charge.fromReasons?.length > 0
+                                ? ` (${charge.fromReasons?.join(", ") ?? ""})`
                                 : ""
                             }`
                           : "By hand"}

@@ -1,6 +1,5 @@
 import { getFields } from "@/services/fields/field.api";
 import { getRecords, updateRecord } from "@/services/records/record.api";
-import { getMembers } from "@/services/user/user.api";
 import {
   getDispatches,
   getDispatchSettings,
@@ -27,7 +26,6 @@ import { ExceptionPage } from "./ExceptionPage";
 const exceptionApi: ExceptionApi = {
   getFields,
   getRecords,
-  getMembers,
   getDispatches,
   getDispatchSources,
   getDispatchSettings,

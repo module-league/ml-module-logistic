@@ -64,7 +64,7 @@ export function AttachmentPreviewDialog({
   const previewable =
     canPreviewAttachment(attachment) && failedId !== attachment.id;
   const details = [
-    attachment.fileExtension.toUpperCase(),
+    attachment.fileExtension?.toUpperCase() ?? "",
     formatFileSize(attachment.fileSize),
     count > 1 && `${index + 1} of ${count}`,
   ]

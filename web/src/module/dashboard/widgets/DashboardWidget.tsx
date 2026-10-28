@@ -39,7 +39,7 @@ export function DashboardWidget({
 }) {
   const view = useWidgetView(widget);
   const { onRetryLookup } = useDashboard();
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- saved dashboards may hold a widget type this build doesn't know
+  // Saved dashboards may hold a widget type this build doesn't know
   const Widget = WIDGETS[widget.type] ?? MetricWidget;
 
   if (

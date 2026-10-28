@@ -37,6 +37,7 @@ import type {
 } from "./RecordAttachmentInput.types";
 import { Button } from "@/ui-kit";
 import { nonEmpty } from "@/lib/stringHelper";
+import { hasContent } from "@/lib/nodeHelper";
 
 type PendingUpload = Pick<IAttachment, "name" | "fileSize"> & { key: string };
 
@@ -214,7 +215,7 @@ export function RecordAttachmentInput({
                 }
                 title={attachment.name}
                 description={[
-                  attachment.fileExtension.toUpperCase(),
+                  attachment.fileExtension?.toUpperCase() ?? "",
                   formatFileSize(attachment.fileSize),
                 ]
                   .filter(Boolean)
@@ -488,7 +489,7 @@ function AttachmentCard({
           <span className="truncate text-[11px] text-muted-foreground">
             {description}
           </span>
-          {Boolean(children) && (
+          {hasContent(children) && (
             <div className="flex min-h-6 items-center gap-1.5 *:pointer-events-auto">
               {children}
             </div>
@@ -524,7 +525,7 @@ function AttachmentCard({
           </span>
         </span>
       </button>
-      {Boolean(children) && (
+      {hasContent(children) && (
         <div className="flex min-h-6 items-center gap-1.5 px-0.5">
           {children}
         </div>

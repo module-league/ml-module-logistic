@@ -126,8 +126,8 @@ function DispatchDetail({
     () =>
       [
         ...new Set(
-          detail.checkpoints.flatMap((log) =>
-            log.attachments.flatMap((file) => file.label ?? []),
+          detail.checkpoints.flatMap(
+            (log) => log.attachments?.flatMap((file) => file.label ?? []) ?? [],
           ),
         ),
       ].sort((a, b) => a.localeCompare(b)),
@@ -234,7 +234,7 @@ function DispatchDetail({
                       ]}
                       note={log.note}
                     >
-                      {log.attachments.length > 0 && (
+                      {log.attachments?.length > 0 && (
                         <CheckpointFiles
                           log={log}
                           labelSuggestions={labelSuggestions}
@@ -753,7 +753,7 @@ function CheckpointFiles({
       const changed = parseAttachments(next).find(
         (file) =>
           file.label !==
-          log.attachments.find((saved) => saved.id === file.id)?.label,
+          log.attachments?.find((saved) => saved.id === file.id)?.label,
       );
       if (!changed) return;
       onLabel(log.objId, changed.id, changed.label).catch((error: unknown) =>

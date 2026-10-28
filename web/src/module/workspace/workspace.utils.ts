@@ -18,7 +18,9 @@ export function workspaceKey(moduleCode: string) {
 
 // ---- Tree helpers (pure) ----
 export function listPanes(node: LayoutNode): PaneNode[] {
-  return node.type === "pane" ? [node] : node.children.flatMap(listPanes);
+  return node.type === "pane"
+    ? [node]
+    : (node.children?.flatMap(listPanes) ?? []);
 }
 
 /**
@@ -49,16 +51,17 @@ function replacePane(node: LayoutNode, id: string, pane: PaneNode): LayoutNode {
   if (node.type === "pane") return node.id === id ? pane : node;
   return {
     ...node,
-    children: node.children.map((child) => replacePane(child, id, pane)),
+    children: node.children?.map((child) => replacePane(child, id, pane)) ?? [],
   };
 }
 
 /** Removes a pane; a split left with one child is replaced by that child. Null if nothing remains. */
 function removePane(node: LayoutNode, id: string): LayoutNode | null {
   if (node.type === "pane") return node.id === id ? null : node;
-  const children = node.children
-    .map((child) => removePane(child, id))
-    .filter((child): child is LayoutNode => child !== null);
+  const children =
+    node.children
+      ?.map((child) => removePane(child, id))
+      .filter((child): child is LayoutNode => child !== null) ?? [];
   const [only, ...others] = children;
   if (!only) return null;
   if (others.length === 0) return only;
@@ -77,9 +80,10 @@ function splitPane(
   const before = edge === "left" || edge === "top";
 
   if (node.type === "split") {
-    const index = node.children.findIndex(
-      (child) => child.type === "pane" && child.id === targetId,
-    );
+    const index =
+      node.children?.findIndex(
+        (child) => child.type === "pane" && child.id === targetId,
+      ) ?? 0;
     if (index >= 0 && node.orientation === orientation) {
       const children = [...node.children];
       children.splice(before ? index : index + 1, 0, newPane);
@@ -87,9 +91,10 @@ function splitPane(
     }
     return {
       ...node,
-      children: node.children.map((child) =>
-        splitPane(child, targetId, edge, newPane),
-      ),
+      children:
+        node.children?.map((child) =>
+          splitPane(child, targetId, edge, newPane),
+        ) ?? [],
     };
   }
   if (node.id !== targetId) return node;
@@ -102,16 +107,16 @@ function splitPane(
 }
 
 function withTab(pane: PaneNode, key: string): PaneNode {
-  let tabs = pane.tabs.includes(key) ? pane.tabs : [...pane.tabs, key];
+  let tabs = pane.tabs?.includes(key) ? pane.tabs : [...pane.tabs, key];
   if (tabs.length > MAX_TABS_PER_PANE) tabs = tabs.slice(-MAX_TABS_PER_PANE);
   return { ...pane, tabs, activeKey: key };
 }
 
 /** Removes a tab; if it was active, its neighbour (right, else left) becomes active, as browsers do. */
 function withoutTab(pane: PaneNode, key: string): PaneNode {
-  const index = pane.tabs.indexOf(key);
+  const index = pane.tabs?.indexOf(key) ?? 0;
   if (index < 0) return pane;
-  const tabs = pane.tabs.filter((tab) => tab !== key);
+  const tabs = pane.tabs?.filter((tab) => tab !== key) ?? [];
   const activeKey =
     pane.activeKey === key
       ? (tabs[index] ?? tabs[index - 1] ?? null)
@@ -215,8 +220,8 @@ export function useWorkspace(storageKey: string): IWorkspace {
 
 export function openTab(storageKey: string, key: string) {
   const workspace = read(storageKey);
-  const isVisited = listPanes(workspace.root).find((pane) =>
-    pane.tabs.includes(key),
+  const isVisited = listPanes(workspace.root).find(
+    (pane) => pane.tabs?.includes(key) ?? false,
   );
 
   if (isVisited) {
@@ -254,7 +259,7 @@ export function closeTab(
 
   const rest = withoutTab(pane, key);
   let next: IWorkspace;
-  if (rest.tabs.length > 0) {
+  if (rest.tabs?.length > 0) {
     next = { ...workspace, root: replacePane(workspace.root, paneId, rest) };
   } else {
     const root = removePane(workspace.root, paneId);
@@ -286,7 +291,7 @@ export function canDrop(
   if (target.zone === "center") return target.paneId !== fromPaneId;
   // Splitting needs room for another pane, and must leave something behind in the source pane
   if (listPanes(workspace.root).length >= MAX_PANES) return false;
-  return !(target.paneId === fromPaneId && from.tabs.length === 1);
+  return !(target.paneId === fromPaneId && from.tabs?.length === 1);
 }
 
 /** Moves a tab to where overKey sits in the same pane, and makes it the active tab. */
@@ -298,8 +303,8 @@ export function reorderTab(
 ): IWorkspace {
   const workspace = read(storageKey);
   const pane = findPane(workspace.root, paneId);
-  const from = pane?.tabs.indexOf(key) ?? -1;
-  const to = pane?.tabs.indexOf(overKey) ?? -1;
+  const from = pane?.tabs?.indexOf(key) ?? -1;
+  const to = pane?.tabs?.indexOf(overKey) ?? -1;
   if (!pane || from < 0 || to < 0) return workspace;
 
   const tabs = [...pane.tabs];
@@ -347,7 +352,7 @@ export function moveTab(
   }
 
   // The source pane disappears if that was its last tab
-  if (findPane(root, fromPaneId)?.tabs.length === 0)
+  if (findPane(root, fromPaneId)?.tabs?.length === 0)
     root = removePane(root, fromPaneId) ?? root;
 
   const next = { root, currentViewerId };
@@ -381,11 +386,11 @@ export function snapTab(
 ): IWorkspace {
   const workspace = read(storageKey);
   const from = findPane(workspace.root, fromPaneId);
-  if (from?.tabs.includes(key) !== true) return workspace;
+  if (from?.tabs?.includes(key) !== true) return workspace;
 
   const remaining = withoutTab(from, key);
   let rest =
-    remaining.tabs.length > 0
+    remaining.tabs?.length > 0
       ? replacePane(workspace.root, fromPaneId, remaining)
       : removePane(workspace.root, fromPaneId);
   if (!rest) return workspace;

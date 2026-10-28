@@ -67,7 +67,7 @@ export function ModuleSettings({ config, children }: ModuleSettingsProps) {
     () =>
       PRIMARY_PRESETS.find(
         (preset) =>
-          preset.primary === draft.primary.toLowerCase() &&
+          preset.primary === draft.primary?.toLowerCase() &&
           preset.background === draft.background,
       ),
     [draft.primary, draft.background],
@@ -144,7 +144,7 @@ export function ModuleSettings({ config, children }: ModuleSettingsProps) {
                 key={preset.name}
                 preset={preset}
                 selected={
-                  draft.primary.toLowerCase() === preset.primary &&
+                  draft.primary?.toLowerCase() === preset.primary &&
                   draft.background === preset.background
                 }
                 onSelect={setPreset}

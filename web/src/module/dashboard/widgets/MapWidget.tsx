@@ -137,10 +137,10 @@ export function MapWidget({ widget, view, preview }: DashboardWidgetBodyProps) {
         `${placed.length} of ${view.records.length} on the map`
       }
     >
-      {map?.from.latFieldId == null ||
-      map.from.latFieldId === "" ||
-      map.from.lngFieldId == null ||
-      map.from.lngFieldId === "" ? (
+      {map?.from?.latFieldId == null ||
+      map.from?.latFieldId === "" ||
+      map.from?.lngFieldId == null ||
+      map.from?.lngFieldId === "" ? (
         <DashboardWidgetMessage>
           Pick the latitude and longitude fields in this widget's settings.
         </DashboardWidgetMessage>

@@ -1,7 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import { getFields } from "@/services/fields/field.api";
 import { getRecords, updateRecord } from "@/services/records/record.api";
-import { getMembers } from "@/services/user/user.api";
 import { uploadAttachment } from "@/services/attachments/attachment.api";
 import {
   getDispatches,
@@ -25,7 +24,6 @@ import { DocumentPage } from "./DocumentPage";
 const documentApi: DocumentApi = {
   getFields,
   getRecords,
-  getMembers,
   getDispatches,
   getDispatchSources,
   getDispatchSettings,

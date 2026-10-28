@@ -24,7 +24,7 @@ export function ListWidget({
   const list = widget.list;
   const columns = useMemo(
     () =>
-      list?.columns.flatMap((column) => {
+      list?.columns?.flatMap((column) => {
         const field = view.fieldById.get(column.fieldId);
         return field
           ? [{ field, toField: view.fieldById.get(column.toFieldId ?? "") }]

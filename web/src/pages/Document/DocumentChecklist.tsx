@@ -220,7 +220,7 @@ function DocumentItem(props: ItemProps) {
   const detail = [
     document.when ?? (isOther ? "Classified as Other" : "Not required now"),
     document.upcoming && `needed from ${stepLabel(document.requiredAtStep)}`,
-    document.blocks !== undefined && `gates ${gateName(document.blocks)}`,
+    document.blocks !== undefined && `gates ${gateName(document?.blocks)}`,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -261,7 +261,7 @@ function DocumentItem(props: ItemProps) {
               onClick={() => document.file && onPreview(document.file)}
               className="cursor-pointer underline-offset-2 hover:text-foreground hover:underline"
             >
-              {document.file.name}
+              {document.file?.name}
             </button>
           ) : (
             "No file yet"
@@ -456,7 +456,7 @@ function RejectDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Reject {document.title.toLowerCase()}</DialogTitle>
+          <DialogTitle>Reject {document.title?.toLowerCase()}</DialogTitle>
           <DialogDescription>
             Version {document.version} stops counting. Upload a corrected
             version to verify it again.

@@ -95,9 +95,9 @@ export function BillingList({
     <div className="flex flex-col gap-4">
       <section className="flex flex-col gap-2 rounded-xl border bg-background p-3">
         <h2 className="text-sm font-semibold">Ready to bill</h2>
-        {overview?.ready.length != null && overview.ready.length > 0 ? (
-          overview.ready.map((quote) => {
-            const blocked = quote.problems.length > 0;
+        {overview?.ready?.length != null && overview.ready?.length > 0 ? (
+          (overview.ready?.map((quote) => {
+            const blocked = quote.problems?.length > 0;
             return (
               <button
                 key={quote.shipmentId}
@@ -149,17 +149,17 @@ export function BillingList({
                 </span>
               </button>
             );
-          })
+          }) ?? [])
         ) : (
           <p className="py-3 text-center text-sm text-muted-foreground">
             Nothing ready yet.
           </p>
         )}
       </section>
-      {overview?.waiting.length != null && overview.waiting.length > 0 && (
+      {overview?.waiting?.length != null && overview.waiting?.length > 0 && (
         <section className="flex flex-col gap-2 rounded-xl border bg-background p-3">
           <h2 className="text-sm font-semibold">Held back</h2>
-          {overview.waiting.map((entry) => (
+          {overview.waiting?.map((entry) => (
             <div
               key={entry.shipmentId}
               className="flex flex-col gap-1 rounded-lg border border-dashed p-3"
@@ -172,7 +172,7 @@ export function BillingList({
                   Delivered {day(entry.deliveredAt)}
                 </span>
               </span>
-              {entry.reasons.map((reason) => (
+              {entry.reasons?.map((reason) => (
                 <button
                   key={reason}
                   type="button"

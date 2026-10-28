@@ -147,7 +147,7 @@ export function cardFieldsOf(
     destination: byId(picks?.destinationFieldId),
     badge: byId(picks?.badgeFieldId),
     weight: byId(picks?.weightFieldId),
-    details: picks?.detailFieldIds.flatMap((id) => byId(id) ?? []) ?? [],
+    details: picks?.detailFieldIds?.flatMap((id) => byId(id) ?? []) ?? [],
   };
 }
 
@@ -273,7 +273,7 @@ export function buildDispatchBoard(
   const linkedPlace = (
     field: ISidebarField | undefined,
     record: ISidebarRecord,
-  ) => places.get(parseRecordIds(record.values[field?.objId ?? ""])[0] ?? "");
+  ) => places.get(parseRecordIds(record.values?.[field?.objId ?? ""])[0] ?? "");
 
   const resourcesOf = (sidebarId?: string) => {
     const titleField = titleFieldOf(fieldsOf(lookups, sidebarId));

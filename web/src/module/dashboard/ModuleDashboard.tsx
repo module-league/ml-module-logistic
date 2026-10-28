@@ -206,7 +206,7 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
     setSettingsId(widgetId);
     setSettingsOpen(true);
   }, []);
-  const settingsWidget = layout.widgets.find(
+  const settingsWidget = layout.widgets?.find(
     (widget) => widget.id === settingsId,
   );
   const onLayoutChange = data.onLayoutChange;
@@ -214,9 +214,10 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
     (next: IDashboardWidget) =>
       onLayoutChange((current) => ({
         ...current,
-        widgets: current.widgets.map((widget) =>
-          widget.id === next.id ? next : widget,
-        ),
+        widgets:
+          current.widgets?.map((widget) =>
+            widget.id === next.id ? next : widget,
+          ) ?? [],
       })),
     [onLayoutChange],
   );
@@ -293,13 +294,13 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
                   </div>
                 </header>
                 <main className="min-h-0 flex-1 overflow-y-auto p-4">
-                  {layout.widgets.length > 0 ? (
+                  {layout.widgets?.length > 0 ? (
                     <div className="grid grid-cols-12 gap-4">
-                      {layout.widgets.map((widget) => (
+                      {layout.widgets?.map((widget) => (
                         <div
                           key={widget.id}
                           className={
-                            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- saved dashboards may hold a width this build doesn't know
+                            // Saved dashboards may hold a width this build doesn't know
                             WIDTH_CLASS[widget.width] ?? WIDTH_CLASS.m
                           }
                         >

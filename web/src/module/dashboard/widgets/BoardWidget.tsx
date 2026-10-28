@@ -69,7 +69,7 @@ export function BoardWidget({
   const titleField = titleFieldOf(view.fields, board?.titleFieldId);
   const subtitleFields = useMemo(
     () =>
-      board?.subtitleFieldIds.flatMap((id) => view.fieldById.get(id) ?? []) ??
+      board?.subtitleFieldIds?.flatMap((id) => view.fieldById.get(id) ?? []) ??
       [],
     [board?.subtitleFieldIds, view.fieldById],
   );
@@ -108,8 +108,8 @@ export function BoardWidget({
           )
           .filter(Boolean)
           .join(" → "),
-        badge: badgeField?.dropDownValues.find(
-          (option) => option.id === record.values[badgeField.objId],
+        badge: badgeField?.dropDownValues?.find(
+          (option) => option.id === record.values?.[badgeField.objId],
         ),
         dateText:
           date && dateField
@@ -149,7 +149,7 @@ export function BoardWidget({
       const record = view.records.find((entry) => entry.objId === active.id);
       if (!record || !over || !groupField) return;
       const to = over.id === NO_VALUE ? "" : String(over.id);
-      if ((record.values[groupField.objId] ?? "") !== to) {
+      if ((record.values?.[groupField.objId] ?? "") !== to) {
         onMoveRecord(widget.sidebarId, record, groupField.objId, to);
       }
     },
@@ -187,7 +187,7 @@ export function BoardWidget({
         >
           <div className="flex min-w-0 gap-3 overflow-x-auto pb-1">
             {groups.map((group, index) => {
-              const done = board?.doneOptionIds.includes(group.key) ?? false;
+              const done = board?.doneOptionIds?.includes(group.key) ?? false;
               return (
                 <BoardColumn
                   key={nonEmpty(group.key) ?? NO_VALUE}
@@ -210,8 +210,8 @@ export function BoardWidget({
                 <BoardCard
                   {...cardOf(
                     dragging,
-                    board?.doneOptionIds.includes(
-                      dragging.values[groupField.objId] ?? "",
+                    board?.doneOptionIds?.includes(
+                      dragging.values?.[groupField.objId] ?? "",
                     ) ?? false,
                   )}
                   draggable={false}

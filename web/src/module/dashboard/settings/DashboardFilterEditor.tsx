@@ -42,9 +42,10 @@ export function DashboardFilterEditor({
     (index: number, condition: IDashboardCondition) =>
       onChange({
         ...filter,
-        conditions: filter.conditions.map((current, at) =>
-          at === index ? condition : current,
-        ),
+        conditions:
+          filter.conditions?.map((current, at) =>
+            at === index ? condition : current,
+          ) ?? [],
       }),
     [filter, onChange],
   );
@@ -60,14 +61,14 @@ export function DashboardFilterEditor({
     (index: number) =>
       onChange({
         ...filter,
-        conditions: filter.conditions.filter((_, at) => at !== index),
+        conditions: filter.conditions?.filter((_, at) => at !== index) ?? [],
       }),
     [filter, onChange],
   );
 
   return (
     <div className="flex flex-col gap-2">
-      {filter.conditions.length > 1 && (
+      {filter.conditions?.length > 1 && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           Match
           <Select
@@ -89,7 +90,7 @@ export function DashboardFilterEditor({
           </Select>
         </div>
       )}
-      {filter.conditions.map((condition, index) => {
+      {filter.conditions?.map((condition, index) => {
         const field = fieldById.get(condition.fieldId);
         const operators = operatorsFor(field);
         const operator = operators.find(

@@ -303,7 +303,7 @@ export const openedLine = (row: ExceptionRow) =>
 /** One hour from now, then the next of 09:00, 14:00 or 18:00 at least an hour away (or the opening time for an early arrival). */
 export function snoozeTimes(exception: IException, now: Date) {
   const hour = new Date(now.getTime() + 3_600_000);
-  const opensAt = exception.facts.opensAt;
+  const opensAt = exception.facts?.opensAt;
   const later =
     opensAt != null && opensAt !== "" && new Date(opensAt) > hour
       ? new Date(opensAt)
@@ -344,7 +344,7 @@ export function recordUpdate(
   const values = Object.fromEntries(
     tableFields(lookup)
       .filter((field) => !field.isSystemField)
-      .map((field) => [field.objId, record.values[field.objId] ?? null]),
+      .map((field) => [field.objId, record.values?.[field.objId] ?? null]),
   );
   return {
     values: { ...values, [fieldId]: value },

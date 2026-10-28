@@ -15,12 +15,14 @@ export function toOptionInputs(
   if (!["single_select", "multi_select", "attachment"].includes(field.type)) {
     return undefined;
   }
-  return field.dropDownValues.map((option) => ({
-    ...(existingIds?.has(option.id) === true ? { id: option.id } : {}),
-    value: option.value,
-    colorCode: option.colorCode,
-    displayOrder: option.displayOrder,
-  }));
+  return (
+    field.dropDownValues?.map((option) => ({
+      ...(existingIds?.has(option.id) === true ? { id: option.id } : {}),
+      value: option.value,
+      colorCode: option.colorCode,
+      displayOrder: option.displayOrder,
+    })) ?? []
+  );
 }
 
 export function putInLists(

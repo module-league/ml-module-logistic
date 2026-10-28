@@ -29,7 +29,7 @@ export function toRecordText(
   }
   if (field.type === "single_select") {
     return (
-      field.dropDownValues.find((option) => option.id === value)?.value ?? ""
+      field.dropDownValues?.find((option) => option.id === value)?.value ?? ""
     );
   }
   if (field.type === "multi_select") return optionNames(field, value);
@@ -68,7 +68,7 @@ export function linkedRecordLabel(
   if (!record) return "Unknown record";
   if (!shown) return "Untitled record";
   return (
-    nonEmpty(toRecordText(shown, record.values[shown.objId], members)) ??
+    nonEmpty(toRecordText(shown, record.values?.[shown.objId], members)) ??
     "Untitled record"
   );
 }

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { exceptionKeys } from "@/services/exceptions/exception.api";
 import { dispatchKeys } from "@/services/dispatches/dispatch.api";
 import { recordKeys } from "@/services/records/record.api";
+import { useCurrentUser } from "@/services/user/current.user";
 import {
   useDispatchRecords,
   type DispatchRecordsApi,
@@ -64,6 +65,9 @@ const NO_ACTIVITY: IExceptionActivity[] = [];
 export function useExceptionData(api: ExceptionApi) {
   const queryClient = useQueryClient();
   const records = useDispatchRecords(api);
+  // Only the signed-in user is known until the member list comes from Keycloak
+  const me = useCurrentUser();
+  const members = useMemo(() => [me], [me]);
   // The rules run every minute on the server, so new and auto-closed exceptions show up without a reload
   const exceptionsQuery = useQuery({
     queryKey: exceptionKeys.list(),
@@ -251,6 +255,7 @@ export function useExceptionData(api: ExceptionApi) {
   return useMemo(
     () => ({
       ...records,
+      members,
       exceptions: exceptionsQuery.data ?? NO_EXCEPTIONS,
       /** When the list was last loaded or changed, in ms. */
       updatedAt: exceptionsQuery.dataUpdatedAt,
@@ -282,6 +287,7 @@ export function useExceptionData(api: ExceptionApi) {
     }),
     [
       records,
+      members,
       exceptionsQuery.data,
       exceptionsQuery.dataUpdatedAt,
       exceptionsQuery.isLoading,

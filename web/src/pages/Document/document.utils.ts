@@ -59,7 +59,7 @@ export const stepLabel = (step?: IDocumentStep) =>
 
 /** "pickup", "billing": the step a document gates, as a noun. */
 export const gateName = (step?: IDocumentStep) =>
-  GATE_NAME[step ?? "booked"] ?? stepLabel(step).toLowerCase();
+  GATE_NAME[step ?? "booked"] ?? stepLabel(step)?.toLowerCase();
 
 /** A shipment with its checklist, as the list and the detail show it. */
 export interface DocumentRow {
@@ -106,11 +106,12 @@ export function reasonText(
 
 /** The checklist's documents split into on the checklist now, needed later, and filed besides. */
 export const groupDocuments = (checklist: IShipmentChecklist) => ({
-  required: checklist.documents.filter((entry) => entry.required),
-  upcoming: checklist.documents.filter((entry) => entry.upcoming),
-  extra: checklist.documents.filter(
-    (entry) => !entry.required && !entry.upcoming,
-  ),
+  required: checklist.documents?.filter((entry) => entry.required) ?? [],
+  upcoming: checklist.documents?.filter((entry) => entry.upcoming) ?? [],
+  extra:
+    checklist.documents?.filter(
+      (entry) => !entry.required && !entry.upcoming,
+    ) ?? [],
 });
 
 /** "Packing list" for packing_list, "Other" for other. */
@@ -120,7 +121,7 @@ export const typeTitle = (
 ) =>
   docType === "other"
     ? "Other"
-    : (rules?.types.find((type) => type.docType === docType)?.title ??
+    : (rules?.types?.find((type) => type.docType === docType)?.title ??
       docType ??
       "");
 

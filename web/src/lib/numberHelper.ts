@@ -22,7 +22,7 @@ export function formatNumber(
   settings?: Partial<NumberSettings>,
 ) {
   const { divisor, suffix } =
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- saved field settings may hold an abbreviation this build doesn't know
+    // Saved field settings may hold an abbreviation this build doesn't know
     NUMBER_ABBREVIATIONS[settings?.abbreviation ?? "none"] ??
     NUMBER_ABBREVIATIONS.none;
   const decimalPlaces = settings?.decimalPlaces;

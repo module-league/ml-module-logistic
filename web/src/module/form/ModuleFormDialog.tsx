@@ -337,7 +337,7 @@ function FormEditor({
     [fillableFields],
   );
   const shownFields = useMemo(
-    () => draft.fields.filter((item) => fieldById.has(item.fieldId)),
+    () => draft.fields?.filter((item) => fieldById.has(item.fieldId)) ?? [],
     [draft.fields, fieldById],
   );
   const shownIds = useMemo(
@@ -383,9 +383,10 @@ function FormEditor({
     (fieldId: string, patch: Partial<ISidebarFormField>) =>
       setDraft((current) => ({
         ...current,
-        fields: current.fields.map((item) =>
-          item.fieldId === fieldId ? { ...item, ...patch } : item,
-        ),
+        fields:
+          current.fields?.map((item) =>
+            item.fieldId === fieldId ? { ...item, ...patch } : item,
+          ) ?? [],
       })),
     [],
   );
@@ -730,7 +731,7 @@ function toFormInput(form?: ISidebarForm): ISidebarFormInput {
     isHidden: form?.isHidden === true,
     isDefault: form?.isDefault === true,
     fields:
-      form?.fields.map((item) => ({
+      form?.fields?.map((item) => ({
         fieldId: item.fieldId,
         placeholder: item.placeholder ?? "",
         defaultValue: item.defaultValue ?? "",

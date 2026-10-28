@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Button, cn, Skeleton } from "@moduleleague/ui";
 import { errorParser } from "@/hooks/useErrorParser";
+import { hasContent } from "@/lib/nodeHelper";
 import type { DashboardWidgetFrameProps } from "../moduleDashboard.types";
 
 /** The card every widget but a metric sits in: its title, an aside on the right, then its body. */
@@ -19,7 +20,7 @@ export function DashboardWidgetFrame({
     >
       <header className="flex min-w-0 items-center justify-between gap-3">
         <h2 className="truncate text-sm font-semibold">{title}</h2>
-        {Boolean(aside) && (
+        {hasContent(aside) && (
           <div className="shrink-0 truncate text-xs text-muted-foreground">
             {aside}
           </div>

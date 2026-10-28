@@ -63,7 +63,7 @@ function UnclassifiedFiles({
   const { rules, isSaving, onFile } = data;
   const { openPreview, dialogProps } = useAttachmentPreview();
   const files = useMemo(
-    () => checklist.unclassified.map((entry) => entry.file),
+    () => checklist.unclassified?.map((entry) => entry.file) ?? [],
     [checklist.unclassified],
   );
   const choices = useMemo(
@@ -98,17 +98,17 @@ function UnclassifiedFiles({
           logs. Classify them to tick off the checklist.
         </p>
       </div>
-      {checklist.unclassified.length > 0 ? (
+      {checklist.unclassified?.length > 0 ? (
         <ul className="flex flex-col gap-2">
-          {checklist.unclassified.map((entry, index) => (
+          {checklist.unclassified?.map((entry, index) => (
             <li
-              key={entry.file.id}
+              key={entry.file?.id ?? ""}
               className="flex flex-wrap items-center gap-3 rounded-lg border p-2"
             >
               <button
                 type="button"
                 onClick={() => openPreview(files, index)}
-                aria-label={`Preview ${entry.file.name}`}
+                aria-label={`Preview ${entry.file?.name ?? ""}`}
                 className="flex size-10 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md bg-muted"
               >
                 <AttachmentThumbnail
@@ -119,14 +119,14 @@ function UnclassifiedFiles({
               <span className="flex min-w-40 flex-1 basis-40 flex-col">
                 <span
                   className="truncate text-sm font-medium"
-                  title={entry.file.name}
+                  title={entry.file?.name ?? ""}
                 >
-                  {entry.file.name}
+                  {entry.file?.name}
                 </span>
                 <span className="truncate text-xs text-muted-foreground">
                   {[
-                    entry.file.fileExtension.toUpperCase(),
-                    formatFileSize(entry.file.fileSize),
+                    entry.file?.fileExtension?.toUpperCase() ?? "",
+                    formatFileSize(entry.file?.fileSize ?? 0),
                     entry.origin === "checkpoint"
                       ? "checkpoint log"
                       : undefined,
@@ -163,7 +163,7 @@ function UnclassifiedFiles({
                 >
                   <SelectTrigger
                     className="h-8 w-36"
-                    aria-label={`Classify ${entry.file.name}`}
+                    aria-label={`Classify ${entry.file?.name ?? ""}`}
                   >
                     <SelectValue placeholder="Classify as…" />
                   </SelectTrigger>

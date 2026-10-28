@@ -80,7 +80,7 @@ export function toFieldUpdate(
     versionNo: saved.versionNo,
     dropDownValues: toOptionInputs(
       edited,
-      new Set(saved.dropDownValues.map((option) => option.id)),
+      new Set(saved.dropDownValues?.map((option) => option.id) ?? []),
     ),
     ...toFieldSettings(edited),
   };

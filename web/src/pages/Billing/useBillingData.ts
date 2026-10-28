@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { billingKeys } from "@/services/billing/billing.api";
 import { checkpointKeys } from "@/services/checkpoints/checkpoint.api";
+import { useCurrentUser } from "@/services/user/current.user";
 import {
   useDispatchRecords,
   type DispatchRecordsApi,
@@ -43,6 +44,9 @@ export interface BillingApi extends DispatchRecordsApi {
 export function useBillingData(api: BillingApi) {
   const queryClient = useQueryClient();
   const records = useDispatchRecords(api);
+  // Only the signed-in user is known until the member list comes from Keycloak
+  const me = useCurrentUser();
+  const members = useMemo(() => [me], [me]);
   const overviewQuery = useQuery({
     queryKey: billingKeys.overview(),
     queryFn: api.getBillingOverview,
@@ -135,6 +139,7 @@ export function useBillingData(api: BillingApi) {
   return useMemo(
     () => ({
       ...records,
+      members,
       overview: overviewQuery.data,
       rates: ratesQuery.data,
       billingSettings: settingsQuery.data,
@@ -160,6 +165,7 @@ export function useBillingData(api: BillingApi) {
     }),
     [
       records,
+      members,
       overviewQuery.data,
       overviewQuery.isLoading,
       overviewQuery.error,

@@ -13,6 +13,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import type { DispatchShipment } from "../Dispatch/dispatchBoard.utils";
 import { attempt } from "@/lib/toastHelper";
+import { hasContent } from "@/lib/nodeHelper";
 import { money, rateCardText, totalsOf } from "./billing.utils";
 import type { BillingData } from "./useBillingData";
 
@@ -36,11 +37,13 @@ export function BillingQuote({
   const { overview, isSaving, isPreviewing, onCreate, onPreview } = data;
   const symbol = overview?.currencySymbol;
   const [picked, setPicked] = useState(
-    () => new Set(quote.lines.map((line) => line.key)),
+    () => new Set(quote.lines?.map((line) => line.key) ?? []),
   );
   const [partyId, setPartyId] = useState(quote.billToId);
   const lines = useMemo(
-    () => quote.lines.filter((line) => line.required || picked.has(line.key)),
+    () =>
+      quote.lines?.filter((line) => line.required || picked.has(line.key)) ??
+      [],
     [quote.lines, picked],
   );
   const totals = useMemo(() => totalsOf(lines), [lines]);
@@ -72,7 +75,7 @@ export function BillingQuote({
       }),
     [onCreate, body, onCreated],
   );
-  const blocked = quote.problems.length > 0;
+  const blocked = quote.problems?.length > 0;
 
   return (
     <section className="flex flex-col gap-4 rounded-xl border bg-background p-4">
@@ -90,7 +93,7 @@ export function BillingQuote({
               <SelectValue placeholder="Pick who pays" />
             </SelectTrigger>
             <SelectContent position="popper" align="end">
-              {overview?.parties.map((party) => (
+              {overview?.parties?.map((party) => (
                 <SelectItem key={party.id} value={party.id}>
                   {party.name}
                   {party.id === quote.billToId && " · Bill To"}
@@ -115,7 +118,7 @@ export function BillingQuote({
             It can't be priced yet
           </span>
           <ul className="list-disc pl-6">
-            {quote.problems.map((problem) => (
+            {quote.problems?.map((problem) => (
               <li key={problem}>{problem}</li>
             ))}
           </ul>
@@ -317,7 +320,7 @@ export function BillingTotals({
       <span className="flex justify-between border-t pt-2 text-lg font-semibold">
         Total <span className="tabular-nums">{money(total, symbol)}</span>
       </span>
-      {Boolean(children) && (
+      {hasContent(children) && (
         <span className="mt-2 flex flex-wrap justify-end gap-2">
           {children}
         </span>

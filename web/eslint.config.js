@@ -40,7 +40,8 @@ export default defineConfig([
     files: ['src/**/*.{ts,tsx}'],
     ignores: SHARED_UI_KIT,
     rules: {
-      '@typescript-eslint/no-unnecessary-condition': 'error',
+      // Off: API and saved data are read with `?.` even where the type says the value exists
+      '@typescript-eslint/no-unnecessary-condition': 'off',
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
       '@typescript-eslint/strict-boolean-expressions': [
         'error',

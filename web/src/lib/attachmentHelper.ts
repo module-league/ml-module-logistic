@@ -48,7 +48,7 @@ export function canPreviewAttachment(
 }
 
 export function isImageAttachment(attachment?: Pick<IAttachment, "fileType">) {
-  return attachment?.fileType.startsWith("image/") === true;
+  return attachment?.fileType?.startsWith("image/") === true;
 }
 
 export function bytesToKilobytes(bytes = 0) {

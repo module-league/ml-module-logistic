@@ -129,7 +129,7 @@ function Fix(props: FixProps) {
       );
     case "use_pickup_weight": {
       const fieldId = data.exceptionSettings?.chargeableWeightFieldId;
-      const weight = exception.facts.pickupWeight;
+      const weight = exception.facts?.pickupWeight;
       const sidebarId = data.sources?.shipmentSidebarId ?? "";
       const handleUsePickupWeight = async () => {
         const body = recordUpdate(
@@ -178,7 +178,7 @@ function Fix(props: FixProps) {
         </FixButton>
       );
     case "wait_until_opening": {
-      const opensAt = exception.facts.opensAt;
+      const opensAt = exception.facts?.opensAt;
       const usable =
         opensAt != null && opensAt !== "" && new Date(opensAt) > new Date();
       return (
@@ -264,9 +264,9 @@ function UpdateDueFix({ row, data, action }: FixProps) {
     [data.lookups, sidebarId, data.exceptionSettings?.etaFieldId],
   );
   const viaDispatch =
-    exception.facts.dueSource === "planned_delivery" && !!dispatch;
+    exception.facts?.dueSource === "planned_delivery" && !!dispatch;
   const [due, setDue] = useState<Date | undefined>(() =>
-    parseFieldDate(exception.facts.due),
+    parseFieldDate(exception.facts?.due),
   );
   const save = useCallback(
     async (close: () => void) => {
@@ -343,7 +343,7 @@ function ContactFix({ row, data, action }: FixProps) {
     : data.exceptionSettings?.locationPhoneFieldId;
   const phone = data.lookups[sidebarId ?? ""]?.records.find(
     (record) => record.objId === recordId,
-  )?.values[phoneFieldId ?? ""];
+  )?.values?.[phoneFieldId ?? ""];
   const name = toDriver ? driver?.title : shipment?.destination?.title;
   const step = {
     notify_consignee: "Notified the consignee",

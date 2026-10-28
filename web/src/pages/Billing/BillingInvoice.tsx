@@ -107,8 +107,8 @@ export function BillingInvoice({
         </p>
       )}
       <RateBar
-        card={invoice.pricing.rateCard}
-        weight={invoice.pricing.weight}
+        card={invoice.pricing?.rateCard}
+        weight={invoice.pricing?.weight}
         symbol={symbol}
       />
       <BillingLines lines={invoice.lines} symbol={symbol} />
@@ -228,7 +228,7 @@ function InvoiceActionDialog({
           </DialogTitle>
           <DialogDescription>
             {paying
-              ? `Records a payment of ${overview?.currencySymbol ?? ""} ${invoice.total.toFixed(2)} in full.`
+              ? `Records a payment of ${overview?.currencySymbol ?? ""} ${invoice.total?.toFixed(2) ?? ""} in full.`
               : "Its number stays used. The shipment goes back to Ready to bill."}
           </DialogDescription>
         </DialogHeader>

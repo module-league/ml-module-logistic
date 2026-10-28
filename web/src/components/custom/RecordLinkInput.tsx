@@ -79,7 +79,7 @@ export function RecordLinkInput({
         [
           titleOf(record),
           ...cardFields.map((cardField) =>
-            toRecordText(cardField, record.values[cardField.objId], members),
+            toRecordText(cardField, record.values?.[cardField.objId], members),
           ),
         ]
           .join(" ")

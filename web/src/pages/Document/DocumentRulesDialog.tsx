@@ -139,7 +139,7 @@ function RulesForm({
                 </tr>
               </thead>
               <tbody>
-                {rules?.requirements.map((requirement) => (
+                {rules?.requirements?.map((requirement) => (
                   <tr key={requirement.key} className="border-t align-top">
                     <td className="px-3 py-2 font-medium">
                       {typeTitle(rules, requirement.docType)}

@@ -99,7 +99,7 @@ export function ModuleLookupPreview({
               card.label.toLowerCase().includes(term) ||
               shownFields.some(
                 (sourceField, index) =>
-                  sourceField.name.toLowerCase().includes(term) ||
+                  sourceField.name?.toLowerCase().includes(term) ||
                   card.texts[index]?.toLowerCase().includes(term) === true,
               ),
           )

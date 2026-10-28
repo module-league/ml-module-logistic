@@ -89,7 +89,7 @@ export function resetModuleSettings(storageKey: string) {
 /** theme.css stays the default; only a different choice is set inline on <html>. */
 export function applyModuleTheme(settings: IModuleSettings) {
   const style = document.documentElement.style;
-  if (settings.primary.toLowerCase() === DEFAULT_PRIMARY) {
+  if (settings.primary?.toLowerCase() === DEFAULT_PRIMARY) {
     style.removeProperty("--primary");
     style.removeProperty("--primary-foreground");
   } else {
@@ -106,7 +106,7 @@ export function applyModuleTheme(settings: IModuleSettings) {
 
 export function isDefaultModuleSettings(settings: IModuleSettings) {
   return (
-    settings.primary.toLowerCase() === DEFAULT_PRIMARY &&
+    settings.primary?.toLowerCase() === DEFAULT_PRIMARY &&
     settings.background === DEFAULT_BACKGROUND
   );
 }

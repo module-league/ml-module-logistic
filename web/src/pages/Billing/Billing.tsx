@@ -1,6 +1,5 @@
 import { getFields } from "@/services/fields/field.api";
 import { getRecords } from "@/services/records/record.api";
-import { getMembers } from "@/services/user/user.api";
 import {
   getDispatches,
   getDispatchSettings,
@@ -23,7 +22,6 @@ import { BillingPage } from "./BillingPage";
 const billingApi: BillingApi = {
   getFields,
   getRecords,
-  getMembers,
   getDispatches,
   getDispatchSources,
   getDispatchSettings,

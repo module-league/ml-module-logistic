@@ -41,14 +41,14 @@ export function ModuleViewerTab({
   const tabs = useMemo(
     () =>
       pane.tabs
-        .map((key) => items.find((item) => item.sidebarId === key))
-        .filter((item): item is INavPageConfig => item !== undefined),
+        ?.map((key) => items.find((item) => item.sidebarId === key))
+        .filter((item): item is INavPageConfig => item !== undefined) ?? [],
     [pane.tabs, items],
   );
   const totalTabs = useMemo(
     () =>
       listPanes(workspace.root).reduce(
-        (count, entry) => count + entry.tabs.length,
+        (count, entry) => count + (entry.tabs?.length ?? 0),
         0,
       ),
     [workspace.root],

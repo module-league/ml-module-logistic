@@ -35,9 +35,9 @@ export function AttentionWidget({
     );
     const seen = new Set<string>();
     return rules.flatMap((rule) => {
-      if (rule.filter.conditions.length === 0) return [];
+      if (rule.filter?.conditions?.length === 0) return [];
       const lateField = view.fieldById.get(
-        rule.filter.conditions.find(
+        rule.filter?.conditions?.find(
           (condition) => condition.operator === "before",
         )?.fieldId ?? "",
       );
@@ -69,7 +69,7 @@ export function AttentionWidget({
         `${flagged.length} ${flagged.length === 1 ? "record" : "records"}`
       }
     >
-      {attention?.rules.length == null || attention.rules.length === 0 ? (
+      {attention?.rules?.length == null || attention.rules?.length === 0 ? (
         <DashboardWidgetMessage>
           Add a rule in this widget's settings.
         </DashboardWidgetMessage>

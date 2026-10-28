@@ -5,6 +5,7 @@ import {
   documentKeys,
 } from "@/services/documents/document.api";
 import { recordKeys } from "@/services/records/record.api";
+import { useCurrentUser } from "@/services/user/current.user";
 import { parseAttachments, toAttachmentValue } from "@/lib/attachmentHelper";
 import {
   useDispatchRecords,
@@ -57,6 +58,9 @@ const NO_ACTIVITY: IDocumentActivity[] = [];
 export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
   const queryClient = useQueryClient();
   const records = useDispatchRecords(api);
+  // Only the signed-in user is known until the member list comes from Keycloak
+  const me = useCurrentUser();
+  const members = useMemo(() => [me], [me]);
   const documentsQuery = useQuery({
     queryKey: documentKeys.list(),
     queryFn: api.getDocuments,
@@ -159,7 +163,7 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
       const record = records.lookups[shipmentSidebarId]?.records.find(
         (entry) => entry.objId === shipmentId,
       );
-      const current = parseAttachments(record?.values[fieldId]);
+      const current = parseAttachments(record?.values?.[fieldId]);
       const body = recordUpdate(
         records.lookups,
         shipmentSidebarId,
@@ -208,6 +212,7 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
   return useMemo(
     () => ({
       ...records,
+      members,
       checklists: documentsQuery.data ?? NO_CHECKLISTS,
       rules: rulesQuery.data,
       documentSettings: settings,
@@ -235,6 +240,7 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
     }),
     [
       records,
+      members,
       documentsQuery.data,
       documentsQuery.isLoading,
       documentsQuery.error,

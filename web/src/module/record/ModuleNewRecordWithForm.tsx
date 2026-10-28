@@ -37,7 +37,7 @@ export function ModuleNewRecordWithForm({
   const layout = useMemo(() => {
     const fieldById = new Map(fields.map((field) => [field.objId, field]));
     const items =
-      form?.fields.filter((item) => fieldById.has(item.fieldId)) ?? [];
+      form?.fields?.filter((item) => fieldById.has(item.fieldId)) ?? [];
     return {
       fields: items.flatMap((item) => fieldById.get(item.fieldId) ?? []),
       initialValues: Object.fromEntries(

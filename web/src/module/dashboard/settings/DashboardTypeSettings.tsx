@@ -295,12 +295,12 @@ function BoardData({ widget, fields, onChange }: DashboardTypeSettingsProps) {
       {board.dateFieldId != null &&
         board.dateFieldId !== "" &&
         board.showLate &&
-        groupField?.dropDownValues.length != null &&
-        groupField.dropDownValues.length > 0 && (
+        groupField?.dropDownValues?.length != null &&
+        groupField.dropDownValues?.length > 0 && (
           <SettingsField label="Never late in">
             <div className="flex flex-wrap gap-1">
-              {groupField.dropDownValues.map((option) => {
-                const done = board.doneOptionIds.includes(option.id);
+              {groupField.dropDownValues?.map((option) => {
+                const done = board.doneOptionIds?.includes(option.id) ?? false;
                 return (
                   <button
                     key={option.id}
@@ -309,7 +309,9 @@ function BoardData({ widget, fields, onChange }: DashboardTypeSettingsProps) {
                     onClick={() =>
                       set({
                         doneOptionIds: done
-                          ? board.doneOptionIds.filter((id) => id !== option.id)
+                          ? (board.doneOptionIds?.filter(
+                              (id) => id !== option.id,
+                            ) ?? [])
                           : [...board.doneOptionIds, option.id],
                       })
                     }
@@ -417,7 +419,7 @@ function ListData({ widget, fields, onChange }: DashboardTypeSettingsProps) {
     [list, onChange],
   );
   const ids = useMemo(
-    () => list.columns.map((column) => column.fieldId),
+    () => list.columns?.map((column) => column.fieldId) ?? [],
     [list.columns],
   );
   const nextField = fields.find(
@@ -433,12 +435,12 @@ function ListData({ widget, fields, onChange }: DashboardTypeSettingsProps) {
               set({
                 columns: order.flatMap(
                   (id) =>
-                    list.columns.find((column) => column.fieldId === id) ?? [],
+                    list.columns?.find((column) => column.fieldId === id) ?? [],
                 ),
               })
             }
           >
-            {list.columns.map((column, index) => (
+            {list.columns?.map((column, index) => (
               <ListColumnRow
                 key={column.fieldId}
                 column={column}
@@ -447,13 +449,17 @@ function ListData({ widget, fields, onChange }: DashboardTypeSettingsProps) {
                 takenIds={ids}
                 onChange={(next) =>
                   set({
-                    columns: list.columns.map((entry, at) =>
-                      at === index ? next : entry,
-                    ),
+                    columns:
+                      list.columns?.map((entry, at) =>
+                        at === index ? next : entry,
+                      ) ?? [],
                   })
                 }
                 onRemove={() =>
-                  set({ columns: list.columns.filter((_, at) => at !== index) })
+                  set({
+                    columns:
+                      list.columns?.filter((_, at) => at !== index) ?? [],
+                  })
                 }
               />
             ))}
@@ -463,7 +469,7 @@ function ListData({ widget, fields, onChange }: DashboardTypeSettingsProps) {
             size="xs"
             className="w-fit text-primary"
             startIcon={<Plus size={13} />}
-            disabled={!nextField || list.columns.length >= MAX_LIST_COLUMNS}
+            disabled={!nextField || list.columns?.length >= MAX_LIST_COLUMNS}
             onClick={() =>
               nextField &&
               set({ columns: [...list.columns, { fieldId: nextField.objId }] })
@@ -706,9 +712,10 @@ function AttentionData({
     onChange({ attention: { ...attention, ...patch } });
   const setRule = (index: number, patch: Partial<IDashboardAttentionRule>) =>
     set({
-      rules: attention.rules.map((rule, at) =>
-        at === index ? { ...rule, ...patch } : rule,
-      ),
+      rules:
+        attention.rules?.map((rule, at) =>
+          at === index ? { ...rule, ...patch } : rule,
+        ) ?? [],
     });
   return (
     <>
@@ -721,7 +728,7 @@ function AttentionData({
           placeholder="Primary field"
         />
       </SettingsField>
-      {attention.rules.map((rule, index) => (
+      {attention.rules?.map((rule, index) => (
         <div
           key={rule.id}
           className="flex flex-col gap-2 rounded-lg border p-3"
@@ -750,7 +757,9 @@ function AttentionData({
               className="text-muted-foreground hover:text-foreground"
               startIcon={<X size={14} />}
               onClick={() =>
-                set({ rules: attention.rules.filter((_, at) => at !== index) })
+                set({
+                  rules: attention.rules?.filter((_, at) => at !== index) ?? [],
+                })
               }
             />
           </div>

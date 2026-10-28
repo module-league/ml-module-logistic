@@ -62,7 +62,7 @@ export function BillingPage({
         value: entry.value,
         label: `${entry.label} · ${
           entry.value === "ready"
-            ? (overview?.ready.length ?? 0)
+            ? (overview?.ready?.length ?? 0)
             : (overview?.invoices ?? []).filter(
                 (invoice) => tabOf(invoice.status) === entry.value,
               ).length
@@ -73,8 +73,8 @@ export function BillingPage({
   const quote = useMemo(
     () =>
       tab === "ready"
-        ? (overview?.ready.find((entry) => entry.shipmentId === selectedId) ??
-          overview?.ready[0])
+        ? (overview?.ready?.find((entry) => entry.shipmentId === selectedId) ??
+          overview?.ready?.[0])
         : undefined,
     [tab, overview?.ready, selectedId],
   );

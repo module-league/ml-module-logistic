@@ -23,7 +23,7 @@ export function selectedOptions(
   value?: string | null,
 ) {
   const byId = new Map(
-    field?.dropDownValues.map((option) => [option.id, option]),
+    field?.dropDownValues?.map((option) => [option.id, option]),
   );
   return parseOptionIds(value).flatMap((id) => {
     const option = byId.get(id);

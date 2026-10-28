@@ -77,9 +77,10 @@ export function DashboardCustomize({
     (id: string, patch: Partial<IDashboardWidget>) =>
       onLayoutChange((current) => ({
         ...current,
-        widgets: current.widgets.map((widget) =>
-          widget.id === id ? { ...widget, ...patch } : widget,
-        ),
+        widgets:
+          current.widgets?.map((widget) =>
+            widget.id === id ? { ...widget, ...patch } : widget,
+          ) ?? [],
       })),
     [onLayoutChange],
   );
@@ -88,7 +89,7 @@ export function DashboardCustomize({
       const widget = newWidget(
         type,
         sources,
-        layout.rangeSidebarId ?? layout.widgets[0]?.sidebarId,
+        layout.rangeSidebarId ?? layout.widgets?.[0]?.sidebarId,
       );
       onLayoutChange((current) => ({
         ...current,
@@ -363,18 +364,18 @@ export function DashboardCustomize({
 
           <SortableList
             grid
-            ids={layout.widgets.map((widget) => widget.id)}
+            ids={layout.widgets?.map((widget) => widget.id) ?? []}
             onReorder={(ids) =>
               set({
                 widgets: ids.flatMap(
                   (id) =>
-                    layout.widgets.find((widget) => widget.id === id) ?? [],
+                    layout.widgets?.find((widget) => widget.id === id) ?? [],
                 ),
               })
             }
           >
             <div className="grid grid-cols-12 gap-3">
-              {layout.widgets.map((widget) => (
+              {layout.widgets?.map((widget) => (
                 <WidgetPlaceholder
                   key={widget.id}
                   widget={widget}
@@ -386,9 +387,10 @@ export function DashboardCustomize({
                   onOpenSettings={() => onSelect(widget.id)}
                   onRemove={() =>
                     set({
-                      widgets: layout.widgets.filter(
-                        (entry) => entry.id !== widget.id,
-                      ),
+                      widgets:
+                        layout.widgets?.filter(
+                          (entry) => entry.id !== widget.id,
+                        ) ?? [],
                     })
                   }
                   onWidth={(width) => setWidget(widget.id, { width })}
