@@ -52,7 +52,7 @@ export function useDispatchDetail(api: DispatchDetailApi, initialId?: string) {
   const checkpointsQuery = useQuery({
     queryKey: checkpointKeys.list(id),
     queryFn: () => api.getCheckpoints(id),
-    enabled: !!dispatchId,
+    enabled: dispatchId != null && dispatchId !== "",
   });
 
   const { mutateAsync: addCheckpoint, isPending: isPosting } = useMutation({
@@ -126,7 +126,7 @@ export function useDispatchDetail(api: DispatchDetailApi, initialId?: string) {
   const onClose = useCallback(() => setDispatchId(undefined), []);
   const refetch = checkpointsQuery.refetch;
   const onRetry = useCallback(() => {
-    refetch();
+    void refetch();
   }, [refetch]);
 
   return useMemo(

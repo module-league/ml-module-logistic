@@ -39,7 +39,7 @@ export function BillingList({
   if (tab !== "ready") {
     return (
       <section className="flex flex-col gap-2 rounded-xl border bg-background p-2">
-        {invoices.length ? (
+        {invoices.length > 0 ? (
           invoices.map((invoice) => (
             <button
               key={invoice.objId}
@@ -67,7 +67,7 @@ export function BillingList({
                 <span>
                   {invoice.status === "paid"
                     ? `Paid ${day(invoice.paidAt)}`
-                    : invoice.dueDate
+                    : invoice.dueDate != null && invoice.dueDate !== ""
                       ? `Due ${day(invoice.dueDate)}`
                       : `Created ${day(invoice.createdAt)}`}
                 </span>
@@ -95,7 +95,7 @@ export function BillingList({
     <div className="flex flex-col gap-4">
       <section className="flex flex-col gap-2 rounded-xl border bg-background p-3">
         <h2 className="text-sm font-semibold">Ready to bill</h2>
-        {overview?.ready?.length ? (
+        {overview?.ready.length != null && overview.ready.length > 0 ? (
           overview.ready.map((quote) => {
             const blocked = quote.problems.length > 0;
             return (
@@ -122,7 +122,7 @@ export function BillingList({
                   {routeText(shipments.get(quote.shipmentId))}
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  {quote.mode && (
+                  {quote.mode != null && quote.mode !== "" && (
                     <span className="rounded bg-foreground px-1.5 text-[11px] font-medium text-background">
                       {quote.mode}
                     </span>
@@ -130,7 +130,8 @@ export function BillingList({
                   <span className="truncate">
                     {[
                       quote.weight != null && `${quote.weight} kg`,
-                      quote.deliveredAt &&
+                      quote.deliveredAt != null &&
+                        quote.deliveredAt !== "" &&
                         `Delivered ${day(quote.deliveredAt)}`,
                     ]
                       .filter(Boolean)
@@ -155,7 +156,7 @@ export function BillingList({
           </p>
         )}
       </section>
-      {!!overview?.waiting?.length && (
+      {overview?.waiting.length != null && overview.waiting.length > 0 && (
         <section className="flex flex-col gap-2 rounded-xl border bg-background p-3">
           <h2 className="text-sm font-semibold">Held back</h2>
           {overview.waiting.map((entry) => (
@@ -176,7 +177,7 @@ export function BillingList({
                   key={reason}
                   type="button"
                   onClick={() =>
-                    navigate(
+                    void navigate(
                       reason.startsWith("Weight")
                         ? "/exeptions"
                         : `/documents?shipment=${entry.shipmentId}`,

@@ -20,7 +20,7 @@ import {
   verifyDocument,
 } from "@/services/documents/document.api";
 import { useDocumentData, type DocumentApi } from "./useDocumentData";
-import DocumentPage from "./DocumentPage";
+import { DocumentPage } from "./DocumentPage";
 
 const documentApi: DocumentApi = {
   getFields,

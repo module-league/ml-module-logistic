@@ -8,7 +8,7 @@ import { queryClient } from "@/lib/queryClient";
 // Built once at startup; throws early if src/config/config.ts has a mistake
 const router = createModuleRouter(moduleConfig);
 
-function App() {
+export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -18,5 +18,3 @@ function App() {
     </QueryClientProvider>
   );
 }
-
-export default App;

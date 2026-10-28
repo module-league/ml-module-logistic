@@ -35,7 +35,7 @@ export function ModuleLayout({ config }: { config: IModuleConfig }) {
       }}
       className={BACKDROP_CLASS}
       style={
-        sidebarWidth
+        sidebarWidth != null && sidebarWidth !== 0
           ? ({ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties)
           : undefined
       }
@@ -79,8 +79,6 @@ export function ModuleLayout({ config }: { config: IModuleConfig }) {
 }
 
 function ModuleMain({ config }: { config: IModuleConfig }) {
-  // const { isMobile: showTrigger } = useSidebar();
-
   return (
     <div className="flex h-svh w-full flex-col">
       <TopBarActions />

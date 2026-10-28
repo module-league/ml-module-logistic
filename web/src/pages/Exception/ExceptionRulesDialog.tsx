@@ -72,8 +72,8 @@ function RulesForm({
   const [saving, setSaving] = useState(false);
   const fieldsOf = useCallback(
     (sidebarId?: string) =>
-      tableFields(lookups?.[sidebarId ?? ""]).filter(
-        (field) => !field?.isSystemField,
+      tableFields(lookups[sidebarId ?? ""]).filter(
+        (field) => !field.isSystemField,
       ),
     [lookups],
   );
@@ -127,7 +127,7 @@ function RulesForm({
       });
       toast.success("Rule fields saved");
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Couldn't save the rule fields", {
         description: errorParser(error)?.message,
       });
@@ -289,7 +289,7 @@ function RulesForm({
                       <td className="px-3 py-2">{count?.autoClosed ?? 0}</td>
                       <td className="px-3 py-2">
                         {count?.falseAlarms ?? 0}
-                        {count?.noisy && (
+                        {count?.noisy === true && (
                           <div className="font-medium text-amber-700 dark:text-amber-400">
                             Needs a longer grace period?
                           </div>
@@ -312,7 +312,7 @@ function RulesForm({
         >
           Cancel
         </Button>
-        <Button size="sm" isLoading={saving} onClick={save}>
+        <Button size="sm" isLoading={saving} onClick={() => void save()}>
           Save fields
         </Button>
       </DialogFooter>

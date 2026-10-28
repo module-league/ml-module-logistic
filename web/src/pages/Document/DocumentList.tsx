@@ -17,9 +17,10 @@ export function DocumentList({
         const selected = shipment.id === selectedId;
         const done =
           checklist.required > 0 && checklist.verified === checklist.required;
-        const percent = checklist.required
-          ? (checklist.verified / checklist.required) * 100
-          : 100;
+        const percent =
+          checklist.required !== 0
+            ? (checklist.verified / checklist.required) * 100
+            : 100;
         return (
           <li key={shipment.id}>
             <button

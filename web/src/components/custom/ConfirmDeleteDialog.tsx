@@ -50,7 +50,7 @@ export function ConfirmDeleteDialog({
         await onConfirm();
         onOpenChange(false);
         toast.success(successMessage);
-      } catch (error) {
+      } catch (error: unknown) {
         toast.error("Couldn't delete", {
           description: errorParser(error)?.message,
         });
@@ -81,7 +81,7 @@ export function ConfirmDeleteDialog({
             variant="destructive"
             size="xs"
             disabled={deleting}
-            onClick={confirm}
+            onClick={(event) => void confirm(event)}
           >
             {deleting ? "Deleting…" : confirmLabel}
           </Button>

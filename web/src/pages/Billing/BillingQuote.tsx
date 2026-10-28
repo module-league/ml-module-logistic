@@ -90,7 +90,7 @@ export function BillingQuote({
               <SelectValue placeholder="Pick who pays" />
             </SelectTrigger>
             <SelectContent position="popper" align="end">
-              {overview?.parties?.map((party) => (
+              {overview?.parties.map((party) => (
                 <SelectItem key={party.id} value={party.id}>
                   {party.name}
                   {party.id === quote.billToId && " · Bill To"}
@@ -99,10 +99,11 @@ export function BillingQuote({
             </SelectContent>
           </Select>
           <span className="text-xs text-muted-foreground">
-            {quote.payerHint
+            {quote.payerHint != null && quote.payerHint !== ""
               ? `Suggested: ${quote.payerHint}`
               : "Pick the Incoterm field for a suggestion"}
-            {!quote.billToId && " · the shipment has no Bill To"}
+            {(quote.billToId == null || quote.billToId === "") &&
+              " · the shipment has no Bill To"}
           </span>
         </div>
       </header>
@@ -151,14 +152,20 @@ export function BillingQuote({
               variant="outline"
               startIcon={<FileText size={14} />}
               isLoading={isPreviewing}
-              disabled={!partyId}
+              disabled={partyId == null || partyId === ""}
               onClick={() =>
-                attempt("Couldn't preview the invoice", () => onPreview(body))
+                void attempt("Couldn't preview the invoice", () =>
+                  onPreview(body),
+                )
               }
             >
               Preview PDF
             </Button>
-            <Button isLoading={isSaving} disabled={!partyId} onClick={create}>
+            <Button
+              isLoading={isSaving}
+              disabled={partyId == null || partyId === ""}
+              onClick={() => void create()}
+            >
               Create invoice
             </Button>
           </BillingTotals>
@@ -234,7 +241,7 @@ export function BillingLines({
         </thead>
         <tbody>
           {lines.map((line) => {
-            const on = !pickable || line.required || !!picked?.has(line.key);
+            const on = !pickable || line.required || !!picked.has(line.key);
             return (
               <tr
                 key={line.key}
@@ -255,11 +262,12 @@ export function BillingLines({
                 )}
                 <td className="py-2.5 font-medium">
                   {line.description}
-                  {line.sourceExceptionNo && (
-                    <span className="ml-2 rounded border border-blue-200 bg-blue-50 px-1 text-[11px] font-normal text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
-                      Suggested
-                    </span>
-                  )}
+                  {line.sourceExceptionNo != null &&
+                    line.sourceExceptionNo !== "" && (
+                      <span className="ml-2 rounded border border-blue-200 bg-blue-50 px-1 text-[11px] font-normal text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
+                        Suggested
+                      </span>
+                    )}
                 </td>
                 <td className="py-2.5 text-xs text-muted-foreground">
                   {line.basis}
@@ -309,7 +317,7 @@ export function BillingTotals({
       <span className="flex justify-between border-t pt-2 text-lg font-semibold">
         Total <span className="tabular-nums">{money(total, symbol)}</span>
       </span>
-      {children && (
+      {Boolean(children) && (
         <span className="mt-2 flex flex-wrap justify-end gap-2">
           {children}
         </span>

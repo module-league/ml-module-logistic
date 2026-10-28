@@ -34,6 +34,7 @@ import {
   DashboardWidgetFrame,
   DashboardWidgetMessage,
 } from "./DashboardWidgetFrame";
+import { nonEmpty } from "@/lib/stringHelper";
 
 /** The droppable id of the column for records without a value; dnd-kit ids can't be empty. */
 const NO_VALUE = "__none";
@@ -63,12 +64,12 @@ export function BoardWidget({
 }: DashboardWidgetBodyProps) {
   const { members, lookups, now, onOpenRecord, onMoveRecord, onOpenTable } =
     useDashboard();
-  const board = widget?.board;
+  const board = widget.board;
   const groupField = view.fieldById.get(board?.groupFieldId ?? "");
   const titleField = titleFieldOf(view.fields, board?.titleFieldId);
   const subtitleFields = useMemo(
     () =>
-      board?.subtitleFieldIds?.flatMap((id) => view.fieldById.get(id) ?? []) ??
+      board?.subtitleFieldIds.flatMap((id) => view.fieldById.get(id) ?? []) ??
       [],
     [board?.subtitleFieldIds, view.fieldById],
   );
@@ -80,7 +81,9 @@ export function BoardWidget({
   );
   const [draggingId, setDraggingId] = useState<string>();
   const canDrag =
-    !!board?.draggable && !preview && groupField?.type === "single_select";
+    board?.draggable === true &&
+    preview !== true &&
+    groupField?.type === "single_select";
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, KEYBOARD_DRAG),
@@ -105,18 +108,19 @@ export function BoardWidget({
           )
           .filter(Boolean)
           .join(" → "),
-        badge: badgeField?.dropDownValues?.find(
-          (option) => option?.id === record?.values?.[badgeField.objId],
+        badge: badgeField?.dropDownValues.find(
+          (option) => option.id === record.values[badgeField.objId],
         ),
         dateText:
           date && dateField
             ? `${dateField.name} ${format(date, "d MMM")}`
             : undefined,
-        lateDays: board?.showLate && !done ? daysLate(date, now) : 0,
+        lateDays: board?.showLate === true && !done ? daysLate(date, now) : 0,
         draggable: canDrag,
-        onOpen: preview
-          ? undefined
-          : () => onOpenRecord(widget.sidebarId, record.objId),
+        onOpen:
+          preview === true
+            ? undefined
+            : () => onOpenRecord(widget.sidebarId, record.objId),
       };
     },
     [
@@ -145,7 +149,7 @@ export function BoardWidget({
       const record = view.records.find((entry) => entry.objId === active.id);
       if (!record || !over || !groupField) return;
       const to = over.id === NO_VALUE ? "" : String(over.id);
-      if ((record.values?.[groupField.objId] ?? "") !== to) {
+      if ((record.values[groupField.objId] ?? "") !== to) {
         onMoveRecord(widget.sidebarId, record, groupField.objId, to);
       }
     },
@@ -155,9 +159,9 @@ export function BoardWidget({
 
   return (
     <DashboardWidgetFrame
-      title={widget?.label}
+      title={widget.label}
       aside={
-        !preview &&
+        preview !== true &&
         view.source && (
           <button
             type="button"
@@ -183,10 +187,10 @@ export function BoardWidget({
         >
           <div className="flex min-w-0 gap-3 overflow-x-auto pb-1">
             {groups.map((group, index) => {
-              const done = board?.doneOptionIds?.includes(group.key) ?? false;
+              const done = board?.doneOptionIds.includes(group.key) ?? false;
               return (
                 <BoardColumn
-                  key={group.key || NO_VALUE}
+                  key={nonEmpty(group.key) ?? NO_VALUE}
                   group={group}
                   color={group.color ?? groupColor(index, group.key)}
                   droppable={canDrag}
@@ -206,8 +210,8 @@ export function BoardWidget({
                 <BoardCard
                   {...cardOf(
                     dragging,
-                    board?.doneOptionIds?.includes(
-                      dragging.values?.[groupField.objId] ?? "",
+                    board?.doneOptionIds.includes(
+                      dragging.values[groupField.objId] ?? "",
                     ) ?? false,
                   )}
                   draggable={false}
@@ -238,7 +242,7 @@ function BoardColumn({
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({
-    id: group.key || NO_VALUE,
+    id: nonEmpty(group.key) ?? NO_VALUE,
     disabled: !droppable,
   });
   const count = group.records.length;
@@ -326,12 +330,14 @@ function BoardCard({
       )}
     >
       <span className="truncate text-sm font-medium">{title}</span>
-      {subtitle && (
+      {subtitle !== "" && (
         <span className="truncate text-xs text-muted-foreground">
           {subtitle}
         </span>
       )}
-      {(badge || dateText || lateDays > 0) && (
+      {(badge !== undefined ||
+        (dateText != null && dateText !== "") ||
+        lateDays > 0) && (
         <span className="mt-1 flex min-w-0 items-center justify-between gap-2 text-xs">
           {badge ? (
             <SelectionNode dropDownValue={badge} className="truncate">
@@ -345,7 +351,8 @@ function BoardCard({
               {lateDays} {lateDays === 1 ? "day" : "days"} late
             </span>
           ) : (
-            dateText && (
+            dateText != null &&
+            dateText !== "" && (
               <span className="shrink-0 text-muted-foreground">{dateText}</span>
             )
           )}

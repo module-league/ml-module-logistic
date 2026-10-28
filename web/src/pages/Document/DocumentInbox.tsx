@@ -32,7 +32,7 @@ export function DocumentInbox({
   const { lookups, sources, documentSettings } = data;
   const fieldName = useMemo(
     () =>
-      tableFields(lookups?.[sources?.shipmentSidebarId ?? ""]).find(
+      tableFields(lookups[sources?.shipmentSidebarId ?? ""]).find(
         (field) => field.objId === documentSettings?.attachmentFieldId,
       )?.name,
     [lookups, sources?.shipmentSidebarId, documentSettings?.attachmentFieldId],
@@ -98,7 +98,7 @@ function UnclassifiedFiles({
           logs. Classify them to tick off the checklist.
         </p>
       </div>
-      {checklist.unclassified.length ? (
+      {checklist.unclassified.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {checklist.unclassified.map((entry, index) => (
             <li
@@ -125,36 +125,41 @@ function UnclassifiedFiles({
                 </span>
                 <span className="truncate text-xs text-muted-foreground">
                   {[
-                    entry.file.fileExtension?.toUpperCase(),
+                    entry.file.fileExtension.toUpperCase(),
                     formatFileSize(entry.file.fileSize),
                     entry.origin === "checkpoint"
                       ? "checkpoint log"
                       : undefined,
-                    entry.label && `labelled ${entry.label}`,
+                    entry.label != null &&
+                      entry.label !== "" &&
+                      `labelled ${entry.label}`,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
                 </span>
               </span>
               <span className="ml-auto flex shrink-0 items-center gap-1.5">
-                {entry.suggestedDocType && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    startIcon={<Sparkles size={14} />}
-                    disabled={isSaving}
-                    title="Suggested from its name or label"
-                    onClick={() =>
-                      classify(entry.file, entry.suggestedDocType ?? "")
-                    }
-                  >
-                    {typeTitle(rules, entry.suggestedDocType)}
-                  </Button>
-                )}
+                {entry.suggestedDocType != null &&
+                  entry.suggestedDocType !== "" && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      startIcon={<Sparkles size={14} />}
+                      disabled={isSaving}
+                      title="Suggested from its name or label"
+                      onClick={() =>
+                        void classify(entry.file, entry.suggestedDocType ?? "")
+                      }
+                    >
+                      {typeTitle(rules, entry.suggestedDocType)}
+                    </Button>
+                  )}
                 <Select
                   value=""
                   disabled={isSaving}
-                  onValueChange={(docType) => classify(entry.file, docType)}
+                  onValueChange={(docType) =>
+                    void classify(entry.file, docType)
+                  }
                 >
                   <SelectTrigger
                     className="h-8 w-36"
@@ -199,16 +204,16 @@ function DropZone({
   const { shipment } = row;
   const { onDrop, isSaving } = data;
   const [dragging, setDragging] = useState(false);
-  const ready = !!fieldName;
+  const ready = fieldName != null && fieldName !== "";
   const add = useCallback(
     (list?: FileList | null) => {
       const files = [...(list ?? [])].filter(checkSize);
-      if (!files.length) return;
-      attempt("Couldn't add the files", async () => {
+      const [first, ...others] = files;
+      if (!first) return;
+      void attempt("Couldn't add the files", async () => {
         await onDrop(shipment.id, files);
-        toast.success(
-          `${files.length === 1 ? files[0].name : `${files.length} files`} added to ${shipment.title}`,
-        );
+        const what = others.length > 0 ? `${files.length} files` : first.name;
+        toast.success(`${what} added to ${shipment.title}`);
       });
     },
     [onDrop, shipment.id, shipment.title],
@@ -242,7 +247,7 @@ function DropZone({
       onDrop={(event) => {
         event.preventDefault();
         setDragging(false);
-        add(event.dataTransfer?.files);
+        add(event.dataTransfer.files);
       }}
       className={cn(
         "flex min-h-44 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary-10/40 p-6 text-center transition-colors hover:border-primary/60 focus-within:ring-2 focus-within:ring-ring",

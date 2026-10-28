@@ -90,7 +90,7 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
     mutationFn: (run: () => Promise<IShipmentChecklist>) => run(),
     onSuccess: (checklist) => {
       putChecklist(checklist);
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: [...documentKeys.all, "activity"],
       });
     },
@@ -156,10 +156,10 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
       const uploaded = await Promise.all(
         files.map((file) => uploadAttachment(shipmentSidebarId, file)),
       );
-      const record = records.lookups?.[shipmentSidebarId]?.records?.find(
-        (entry) => entry?.objId === shipmentId,
+      const record = records.lookups[shipmentSidebarId]?.records.find(
+        (entry) => entry.objId === shipmentId,
       );
-      const current = parseAttachments(record?.values?.[fieldId]);
+      const current = parseAttachments(record?.values[fieldId]);
       const body = recordUpdate(
         records.lookups,
         shipmentSidebarId,
@@ -200,9 +200,9 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
   const refetchSettings = settingsQuery.refetch;
   const onRetry = useCallback(() => {
     recordsRetry();
-    refetchDocuments();
-    refetchRules();
-    refetchSettings();
+    void refetchDocuments();
+    void refetchRules();
+    void refetchSettings();
   }, [recordsRetry, refetchDocuments, refetchRules, refetchSettings]);
 
   return useMemo(
@@ -273,11 +273,11 @@ export function useDocumentActivity(
   const query = useQuery({
     queryKey: documentKeys.activity(documentId ?? ""),
     queryFn: () => getActivity(documentId ?? ""),
-    enabled: !!documentId,
+    enabled: documentId != null && documentId !== "",
   });
   const refetch = query.refetch;
   const onRetry = useCallback(() => {
-    refetch();
+    void refetch();
   }, [refetch]);
   return useMemo(
     () => ({

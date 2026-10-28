@@ -8,6 +8,7 @@ import {
   PopoverTrigger,
   TimePicker,
 } from "@/ui-kit";
+import { nonEmpty } from "@/lib/stringHelper";
 import {
   formatFieldTime,
   parseFieldTime,
@@ -63,21 +64,21 @@ export function RecordTimeInput({
           <span
             className={cn(
               "flex-1 truncate tabular-nums",
-              !text && "text-muted-foreground",
+              text === "" && "text-muted-foreground",
             )}
           >
-            {text || placeholder || "Pick a time"}
+            {nonEmpty(text) ?? nonEmpty(placeholder) ?? "Pick a time"}
           </span>
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="flex w-auto flex-col gap-2 p-3">
         <TimePicker
           date={date}
-          hourCycle={field?.timeFormat === "HH:mm" ? 24 : 12}
+          hourCycle={field.timeFormat === "HH:mm" ? 24 : 12}
           granularity="minute"
           onChange={(next) => onChange?.(toFieldTimeValue(next))}
         />
-        {!!value && (
+        {value != null && value !== "" && (
           <Button
             variant="ghost"
             size="xs"

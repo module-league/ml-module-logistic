@@ -43,8 +43,8 @@ export function RecordGridRowContextMenu({
         )}
         {onSelectToggle && (
           <ContextMenuItem onSelect={() => onSelectToggle(rowKey)}>
-            {selected ? <Square /> : <SquareCheck />}
-            {selected ? "Deselect" : "Select"}
+            {selected === true ? <Square /> : <SquareCheck />}
+            {selected === true ? "Deselect" : "Select"}
           </ContextMenuItem>
         )}
         {onRowDelete && (
@@ -84,9 +84,10 @@ export function RecordGridHeaderContextMenu({
             Edit field
           </ContextMenuItem>
         )}
-        {onColumnEdit && (onColumnHide || onColumnDelete) && (
-          <ContextMenuSeparator />
-        )}
+        {onColumnEdit !== undefined &&
+          (onColumnHide !== undefined || onColumnDelete !== undefined) && (
+            <ContextMenuSeparator />
+          )}
         {onColumnHide && (
           <ContextMenuItem onSelect={() => onColumnHide(columnKey)}>
             <EyeOff />

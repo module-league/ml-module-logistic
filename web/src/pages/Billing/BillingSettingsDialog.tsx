@@ -77,7 +77,7 @@ function SettingsForm({
   const partyQuery = useQuery({
     queryKey: fieldKeys.list(partySidebarId),
     queryFn: () => getFields(partySidebarId),
-    enabled: !!partySidebarId,
+    enabled: partySidebarId !== "",
   });
   const [draft, setDraft] = useState<Partial<IBillingSettingsInput>>(() => ({
     billToFieldId: billingSettings?.billToFieldId,
@@ -92,13 +92,13 @@ function SettingsForm({
   const [saving, setSaving] = useState(false);
   const fields = useMemo(() => {
     const own = (sidebarId?: string) =>
-      tableFields(lookups?.[sidebarId ?? ""]).filter(
-        (field) => !field?.isSystemField,
+      tableFields(lookups[sidebarId ?? ""]).filter(
+        (field) => !field.isSystemField,
       );
     return {
       shipment: own(sources?.shipmentSidebarId),
       location: own(sources?.locationSidebarId),
-      party: (partyQuery.data ?? []).filter((field) => !field?.isSystemField),
+      party: (partyQuery.data ?? []).filter((field) => !field.isSystemField),
     };
   }, [lookups, sources, partyQuery.data]);
   const nameOf = useCallback(
@@ -115,7 +115,7 @@ function SettingsForm({
       });
       toast.success("Billing fields saved");
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Couldn't save the billing fields", {
         description: errorParser(error)?.message,
       });
@@ -265,7 +265,7 @@ function SettingsForm({
                 </tr>
               </thead>
               <tbody>
-                {rates?.rateCards?.map((card) => (
+                {rates?.rateCards.map((card) => (
                   <tr key={card.name} className="border-t">
                     <td className="px-3 py-2 font-medium">{card.name}</td>
                     <td className="px-3 py-2">{card.mode}</td>
@@ -315,11 +315,11 @@ function SettingsForm({
                   <td className="px-3 py-2">Per kg</td>
                   <td className="px-3 py-2">From the rate card</td>
                   <td className="px-3 py-2">
-                    {rates?.freightTaxable ? "Yes" : "No"}
+                    {rates?.freightTaxable === true ? "Yes" : "No"}
                   </td>
                   <td className="px-3 py-2">Always</td>
                 </tr>
-                {rates?.chargeTypes?.map((charge) => (
+                {rates?.chargeTypes.map((charge) => (
                   <tr key={charge.key} className="border-t">
                     <td className="px-3 py-2 font-medium">{charge.title}</td>
                     <td className="px-3 py-2">{BASIS_LABEL[charge.basis]}</td>
@@ -334,9 +334,9 @@ function SettingsForm({
                     <td className="px-3 py-2">
                       {charge.automatic
                         ? "Every invoice"
-                        : charge.fromRule
+                        : charge.fromRule != null && charge.fromRule !== ""
                           ? `Suggested by a resolved ${charge.fromRule.replaceAll("_", " ")}${
-                              charge.fromReasons.length
+                              charge.fromReasons.length > 0
                                 ? ` (${charge.fromReasons.join(", ")})`
                                 : ""
                             }`
@@ -363,7 +363,7 @@ function SettingsForm({
         >
           Cancel
         </Button>
-        <Button size="sm" isLoading={saving} onClick={save}>
+        <Button size="sm" isLoading={saving} onClick={() => void save()}>
           Save fields
         </Button>
       </DialogFooter>

@@ -18,6 +18,7 @@ import {
   sumDependencies,
   unaryMinusDependencies,
   unaryPlusDependencies,
+  type FactoryFunctionMap,
 } from "mathjs";
 
 /** The functions a formula can call, as the editor suggests them; math.js knows no others here. */
@@ -61,8 +62,22 @@ export const FORMULA_FUNCTIONS = [
   { name: "sqrt", signature: "sqrt(value)", description: "The square root." },
 ];
 
+/**
+ * mathjs declares its `*Dependencies` exports as entries of a Record, so each reads as possibly undefined;
+ * this checks they really exist instead of casting the types away.
+ */
+function definedDependencies(
+  dependencies: Record<string, FactoryFunctionMap | undefined>,
+): FactoryFunctionMap {
+  const entries = Object.entries(dependencies).map(([name, dependency]) => {
+    if (!dependency) throw new Error(`mathjs has no ${name}`);
+    return [name, dependency] as const;
+  });
+  return Object.fromEntries(entries);
+}
+
 const math = create(
-  {
+  definedDependencies({
     parseDependencies,
     addDependencies,
     subtractDependencies,
@@ -81,7 +96,7 @@ const math = create(
     floorDependencies,
     ceilDependencies,
     sqrtDependencies,
-  },
+  }),
   { number: "number" },
 );
 const parse = math.parse;
@@ -101,6 +116,12 @@ math.import(
 /** A field in a formula: {fieldObjId} as saved, {Field name} in the editor. */
 const REFERENCE = /\{([^{}]*)\}/g;
 const scopeName = (index: number) => `__f${index}`;
+
+/** A field value as a formula reads it: blank or non-numeric text counts as 0. */
+function toFormulaNumber(value: string | null | undefined): number {
+  const number = Number(value);
+  return Number.isNaN(number) ? 0 : number;
+}
 
 type CompiledFormula =
   | { ids: string[]; evaluate: (scope: Record<string, number>) => unknown }
@@ -123,9 +144,9 @@ function compileFormula(expression: string): CompiledFormula {
   let result: CompiledFormula;
   try {
     const code = parse(text).compile();
-    result = { ids, evaluate: (scope) => code.evaluate(scope) };
-  } catch (error) {
-    result = { error: (error as Error).message };
+    result = { ids, evaluate: (scope): unknown => code.evaluate(scope) };
+  } catch (error: unknown) {
+    result = { error: error instanceof Error ? error.message : String(error) };
   }
   compiled.set(expression, result);
   return result;
@@ -136,7 +157,7 @@ export function evaluateFormula(
   expression: string | undefined,
   values?: Record<string, string | null | undefined>,
 ) {
-  if (!expression?.trim()) return undefined;
+  if (expression == null || expression.trim() === "") return undefined;
   const formula = compileFormula(expression);
   if ("error" in formula) return undefined;
   try {
@@ -144,7 +165,7 @@ export function evaluateFormula(
       Object.fromEntries(
         formula.ids.map((id, index) => [
           scopeName(index),
-          Number(values?.[id]) || 0,
+          toFormulaNumber(values?.[id]),
         ]),
       ),
     );
@@ -162,15 +183,12 @@ export function formulaValue(
   field: Pick<IField, "formulaSettings">,
   values?: Record<string, string | null | undefined>,
 ) {
-  return evaluateFormula(
-    field?.formulaSettings?.expression,
-    values,
-  )?.toString();
+  return evaluateFormula(field.formulaSettings?.expression, values)?.toString();
 }
 
 /** Why a saved expression can't be worked out, or undefined when it can. */
 export function formulaError(expression: string) {
-  if (!expression.trim()) return "Write the formula.";
+  if (expression.trim() === "") return "Write the formula.";
   const formula = compileFormula(expression);
   if ("error" in formula) return formula.error;
   try {
@@ -179,7 +197,7 @@ export function formulaError(expression: string) {
     );
     if (typeof sample !== "number")
       return "The formula must work out to one number.";
-  } catch (error) {
+  } catch (error: unknown) {
     return (error as Error).message.replace(/__f\d+/g, "a field");
   }
   return undefined;

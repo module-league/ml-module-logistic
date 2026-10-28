@@ -12,6 +12,7 @@ import {
 } from "@/lib/lookupHelper";
 import { toRecordText } from "@/lib/recordTextHelper";
 import type { KanbanColumn } from "@/components/custom/KanbanBoard";
+import { nonEmpty } from "@/lib/stringHelper";
 
 export type DispatchStage =
   "unassigned" | "assigned" | "en_route" | "completed";
@@ -41,7 +42,7 @@ export const DISPATCH_STEPS = [
   "Arrived",
   "Delivered",
   "Billed",
-];
+] as const;
 
 const STAGE_OF_STATUS: Record<IDispatchStatus, DispatchStage> = {
   planned: "assigned",
@@ -53,7 +54,7 @@ const STAGE_OF_STATUS: Record<IDispatchStatus, DispatchStage> = {
 };
 
 /** Which of DISPATCH_STEPS each status reaches; a cancelled dispatch is back to booked. */
-const STEP_OF_STATUS: Record<IDispatchStatus, number> = {
+const STEP_OF_STATUS: Record<IDispatchStatus, 0 | 1 | 2 | 3 | 4 | 5> = {
   planned: 1,
   picked_up: 2,
   in_transit: 3,
@@ -113,40 +114,40 @@ export interface DispatchCardFields {
 export type DispatchCardPicks = Omit<IDispatchSettingsInput, "versionNo">;
 
 const fieldsOf = (lookups: RecordLookups, sidebarId?: string) =>
-  tableFields(lookups?.[sidebarId ?? ""]).filter(
-    (field) => !field?.isSystemField,
-  );
+  tableFields(lookups[sidebarId ?? ""]).filter((field) => !field.isSystemField);
 
 /** Link fields of the shipment table a card can read its origin and destination from. */
 export const locationLinks = (fields: ISidebarField[], sidebarId?: string) =>
   fields.filter(
     (field) =>
-      field?.type === "link_table" &&
-      field?.lookupSettings?.categoryId === sidebarId,
+      field.type === "link_table" &&
+      field.lookupSettings?.categoryId === sidebarId,
   );
 
 const initialsOf = (title: string) =>
-  title
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase() || "?";
+  nonEmpty(
+    title
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase(),
+  ) ?? "?";
 
 /** The shipment fields the board reads, as picked in the card settings; until they are saved, only the primary field as the title. */
 export function cardFieldsOf(
   fields: ISidebarField[],
   picks?: DispatchCardPicks,
 ): DispatchCardFields {
-  const byId = (id?: string) => fields.find((field) => field?.objId === id);
+  const byId = (id?: string) => fields.find((field) => field.objId === id);
   return {
     title: titleFieldOf(fields, picks?.titleFieldId),
     origin: byId(picks?.originFieldId),
     destination: byId(picks?.destinationFieldId),
     badge: byId(picks?.badgeFieldId),
     weight: byId(picks?.weightFieldId),
-    details: picks?.detailFieldIds?.flatMap((id) => byId(id) ?? []) ?? [],
+    details: picks?.detailFieldIds.flatMap((id) => byId(id) ?? []) ?? [],
   };
 }
 
@@ -162,14 +163,14 @@ export const toCardPicks = (saved?: DispatchCardPicks): DispatchCardPicks => ({
 
 /** "3:00 PM" today, "22 Oct 3:00 PM" on another day. */
 export function shortTime(value: string | undefined, now: Date) {
-  if (!value) return "";
+  if (value == null || value === "") return "";
   const date = new Date(value);
   return format(date, isSameDay(date, now) ? "h:mm a" : "d MMM h:mm a");
 }
 
 /** "JOB-0042" from the dispatch's running number. */
 export const jobNumber = (dispatch: IDispatch) =>
-  `JOB-${String(dispatch?.docId ?? 0).padStart(4, "0")}`;
+  `JOB-${String(dispatch.docId).padStart(4, "0")}`;
 
 /** How many DISPATCH_STEPS are done; a shipment on the board is always booked. */
 export const stepsDone = (dispatch?: IDispatch) =>
@@ -186,7 +187,8 @@ export const statusLabel = (status: ICheckpointStatus) =>
 /** The statuses an open dispatch can move to, nearest first; none once delivered or cancelled. */
 export function nextStatuses(dispatch?: IDispatch) {
   const status = dispatch?.status;
-  if (!status || status === "delivered" || status === "cancelled") return [];
+  if (status === undefined || status === "delivered" || status === "cancelled")
+    return [];
   return DISPATCH_MOVES.slice(
     DISPATCH_MOVES.findIndex((move) => move === status) + 1,
   );
@@ -198,11 +200,12 @@ export function cardTime(dispatch: IDispatch | undefined, now: Date) {
     return `Pickup ${shortTime(dispatch.plannedPickupAt, now)}`;
   }
   if (dispatch?.status === "delivered") {
-    return dispatch.actualDeliveryAt
+    return dispatch.actualDeliveryAt != null && dispatch.actualDeliveryAt !== ""
       ? `Done ${shortTime(dispatch.actualDeliveryAt, now)}`
       : "";
   }
-  return dispatch?.plannedDeliveryAt
+  return dispatch?.plannedDeliveryAt != null &&
+    dispatch.plannedDeliveryAt !== ""
     ? `ETA ${shortTime(dispatch.plannedDeliveryAt, now)}`
     : "";
 }
@@ -212,10 +215,10 @@ export function lateText(dispatch: IDispatch | undefined, now: Date) {
   const due =
     dispatch?.status === "planned"
       ? dispatch.plannedPickupAt
-      : nextStatuses(dispatch).length
+      : nextStatuses(dispatch).length > 0
         ? dispatch?.plannedDeliveryAt
         : undefined;
-  if (!due || new Date(due) >= now) return "";
+  if (due == null || due === "" || new Date(due) >= now) return "";
   const late = formatDistanceStrict(new Date(due), now);
   return dispatch?.status === "planned"
     ? `Pickup late ${late}`
@@ -246,7 +249,7 @@ export function buildDispatchBoard(
       : card.details;
   const detailText = (field: ISidebarField, record: ISidebarRecord) => {
     const text = textOf(field, record);
-    if (!text) return "";
+    if (text === "") return "";
     if (field.objId === card.weight?.objId) return `${text} kg`;
     return field.isDateField || field.type === "time"
       ? `${field.name} ${text}`
@@ -257,7 +260,7 @@ export function buildDispatchBoard(
     ? lookupDisplayField(card.origin, lookups)
     : titleFieldOf(fieldsOf(lookups, sources?.locationSidebarId));
   const places = new Map(
-    (lookups?.[sources?.locationSidebarId ?? ""]?.records ?? []).map(
+    (lookups[sources?.locationSidebarId ?? ""]?.records ?? []).map(
       (record): [string, DispatchPlace] => [
         record.objId,
         {
@@ -270,13 +273,12 @@ export function buildDispatchBoard(
   const linkedPlace = (
     field: ISidebarField | undefined,
     record: ISidebarRecord,
-  ) =>
-    places.get(parseRecordIds(record?.values?.[field?.objId ?? ""])?.[0] ?? "");
+  ) => places.get(parseRecordIds(record.values[field?.objId ?? ""])[0] ?? "");
 
   const resourcesOf = (sidebarId?: string) => {
     const titleField = titleFieldOf(fieldsOf(lookups, sidebarId));
     return new Map(
-      (lookups?.[sidebarId ?? ""]?.records ?? []).map(
+      (lookups[sidebarId ?? ""]?.records ?? []).map(
         (record): [string, DispatchResource] => {
           const title = recordTitle(record, titleField, members, lookups);
           return [
@@ -292,15 +294,15 @@ export function buildDispatchBoard(
 
   const latest = new Map<string, IDispatch>();
   dispatches.forEach((dispatch) => {
-    if (dispatch?.status !== "cancelled" && !latest.has(dispatch?.shipmentId)) {
+    if (dispatch.status !== "cancelled" && !latest.has(dispatch.shipmentId)) {
       latest.set(dispatch.shipmentId, dispatch);
     }
   });
 
   const shipments = [
-    ...(lookups?.[sources?.shipmentSidebarId ?? ""]?.records ?? []),
+    ...(lookups[sources?.shipmentSidebarId ?? ""]?.records ?? []),
   ]
-    .sort((a, b) => (a?.docId ?? 0) - (b?.docId ?? 0))
+    .sort((a, b) => a.docId - b.docId)
     .map((record): DispatchShipment => {
       const dispatch = latest.get(record.objId);
       return {
@@ -312,7 +314,7 @@ export function buildDispatchBoard(
         destination: dispatch
           ? places.get(dispatch.destinationId)
           : linkedPlace(card.destination, record),
-        badge: textOf(card.badge, record) || undefined,
+        badge: nonEmpty(textOf(card.badge, record)),
         details: detailFields
           .map((field) => detailText(field, record))
           .filter(Boolean),
@@ -336,9 +338,10 @@ export function boardColumns(
     ...stage,
     items: shipments.filter(
       (shipment) =>
-        shipment?.stage === stage.value &&
+        shipment.stage === stage.value &&
         (stage.value !== "completed" ||
-          (!!shipment?.dispatch?.actualDeliveryAt &&
+          (shipment.dispatch?.actualDeliveryAt != null &&
+            shipment.dispatch.actualDeliveryAt !== "" &&
             isSameDay(new Date(shipment.dispatch.actualDeliveryAt), now))),
     ),
   }));

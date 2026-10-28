@@ -167,7 +167,7 @@ export function DashboardWidgetSettings({
                       <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
                         Follow the page date range
                         <Switch
-                          checked={!!widget.followsRange}
+                          checked={widget.followsRange === true}
                           onCheckedChange={(followsRange) =>
                             patch({ followsRange })
                           }
@@ -176,7 +176,10 @@ export function DashboardWidgetSettings({
                     )}
                     <DashboardFilterEditor
                       fields={fields}
-                      filter={widget.filter ?? { match: "all", conditions: [] }}
+                      filter={
+                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- widgets saved before filters existed have none
+                        widget.filter ?? { match: "all", conditions: [] }
+                      }
                       members={members}
                       onChange={(filter) => patch({ filter })}
                     />

@@ -33,7 +33,7 @@ import {
   toast,
 } from "@moduleleague/ui";
 import { attachmentUrl } from "@/services/attachments/attachment.api";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { ConfirmDeleteDialog } from "@/components/custom/ConfirmDeleteDialog";
 import { SortableHandle, SortableList } from "@/components/custom/SortableList";
 import { useSortableRow } from "@/hooks/useSortableRow";
@@ -46,6 +46,7 @@ import type {
   ModuleFormEditorProps,
 } from "./moduleForm.types";
 import { FieldTypeIcon } from "@/components/custom/fieldTypeIcon";
+import { nonEmpty } from "@/lib/stringHelper";
 /**
  * The forms of a sidebar: the list on the left, the picked form's title, flags and fields on the right.
  * @example
@@ -71,23 +72,23 @@ export function ModuleFormDialog({
   const [creating, setCreating] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const selected = useMemo(
-    () => forms?.find((form) => form?.objId === selectedId) ?? forms?.[0],
+    () => forms.find((form) => form.objId === selectedId) ?? forms[0],
     [forms, selectedId],
   );
-  const formIds = useMemo(() => forms?.map((form) => form?.objId), [forms]);
+  const formIds = useMemo(() => forms.map((form) => form.objId), [forms]);
   const fillableFields = useMemo(
     () =>
-      fields?.filter(
+      fields.filter(
         (field) =>
-          !field?.isSystemField &&
-          field?.type !== "lookup" &&
-          field?.type !== "formula",
-      ) ?? [],
+          !field.isSystemField &&
+          field.type !== "lookup" &&
+          field.type !== "formula",
+      ),
     [fields],
   );
 
   const startForm = useCallback(async () => {
-    const taken = new Set(forms?.map((form) => form?.formTitle));
+    const taken = new Set(forms.map((form) => form.formTitle));
     let formTitle = `${title} form`;
     for (let n = 2; taken.has(formTitle); n++) formTitle = `${title} form ${n}`;
     setCreating(true);
@@ -98,8 +99,8 @@ export function ModuleFormDialog({
         isDefault: false,
         fields: [],
       });
-      setSelectedId(created?.objId);
-    } catch (err) {
+      setSelectedId(created.objId);
+    } catch (err: unknown) {
       toast.error("Couldn't start a form", {
         description: errorParser(err)?.message,
       });
@@ -109,7 +110,7 @@ export function ModuleFormDialog({
   }, [forms, title, onAddForm]);
   const reorder = useCallback(
     (ids: string[]) =>
-      onReorderForms(ids).catch((err) =>
+      onReorderForms(ids).catch((err: unknown) =>
         toast.error("Couldn't reorder forms", {
           description: errorParser(err)?.message,
         }),
@@ -143,7 +144,7 @@ export function ModuleFormDialog({
                 size="xs"
                 disabled={creating}
                 startIcon={<Plus size={13} />}
-                onClick={startForm}
+                onClick={() => void startForm()}
               >
                 {creating ? "Starting…" : "New form"}
               </Button>
@@ -151,8 +152,11 @@ export function ModuleFormDialog({
                 aria-label="Forms"
                 className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto"
               >
-                <SortableList ids={formIds} onReorder={reorder}>
-                  {forms?.map((form) => (
+                <SortableList
+                  ids={formIds}
+                  onReorder={(ids) => void reorder(ids)}
+                >
+                  {forms.map((form) => (
                     <FormListItem
                       key={form.objId}
                       form={form}
@@ -187,7 +191,7 @@ export function ModuleFormDialog({
                     size="xs"
                     disabled={creating}
                     startIcon={<Plus size={13} />}
-                    onClick={startForm}
+                    onClick={() => void startForm()}
                   >
                     Start a form
                   </Button>
@@ -220,7 +224,7 @@ function FormListItem({
   selected: boolean;
   onSelect: (objId: string) => void;
 }) {
-  const { ref, style, isDragging, handle } = useSortableRow(form?.objId);
+  const { ref, style, isDragging, handle } = useSortableRow(form.objId);
 
   return (
     <div
@@ -234,24 +238,24 @@ function FormListItem({
     >
       <SortableHandle
         handle={handle}
-        label={form?.formTitle}
+        label={form.formTitle}
         className="opacity-0 group-hover/form:opacity-100 focus-visible:opacity-100"
       />
       <button
         type="button"
         aria-current={selected || undefined}
-        onClick={() => onSelect(form?.objId)}
+        onClick={() => onSelect(form.objId)}
         className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 py-1.5 text-left"
       >
         <FileText className="size-3.5 shrink-0" />
-        <span className="truncate">{form?.formTitle}</span>
+        <span className="truncate">{form.formTitle}</span>
       </button>
-      {form?.isDefault && (
+      {form.isDefault && (
         <span className="shrink-0 rounded bg-primary px-1.5 py-0.5 text-[0.65rem] font-medium text-primary-foreground">
           Default
         </span>
       )}
-      {form?.isHidden && (
+      {form.isHidden && (
         <EyeOff
           aria-label="Hidden"
           className="size-3.5 shrink-0 text-muted-foreground"
@@ -305,7 +309,7 @@ function formSchema(fieldById: Map<string, ISidebarField>) {
             fieldById.get(fieldId),
             defaultValue ?? "",
           );
-          if (message)
+          if (message != null && message !== "")
             ctx.addIssue({ code: "custom", path: ["defaultValue"], message });
         }),
     ),
@@ -329,15 +333,15 @@ function FormEditor({
     [draft, saved],
   );
   const fieldById = useMemo(
-    () => new Map(fillableFields?.map((field) => [field?.objId, field])),
+    () => new Map(fillableFields.map((field) => [field.objId, field])),
     [fillableFields],
   );
   const shownFields = useMemo(
-    () => draft.fields.filter((item) => fieldById.has(item?.fieldId)),
+    () => draft.fields.filter((item) => fieldById.has(item.fieldId)),
     [draft.fields, fieldById],
   );
   const shownIds = useMemo(
-    () => shownFields.map((item) => item?.fieldId),
+    () => shownFields.map((item) => item.fieldId),
     [shownFields],
   );
   const errors = useMemo(
@@ -345,7 +349,7 @@ function FormEditor({
     [draft, shownFields, fieldById],
   );
   const availableFields = useMemo(
-    () => fillableFields?.filter((field) => !shownIds.includes(field?.objId)),
+    () => fillableFields.filter((field) => !shownIds.includes(field.objId)),
     [fillableFields, shownIds],
   );
 
@@ -370,9 +374,7 @@ function FormEditor({
   );
   const reorderFields = useCallback(
     (ids: string[]) => {
-      const itemById = new Map(
-        shownFields.map((item) => [item?.fieldId, item]),
-      );
+      const itemById = new Map(shownFields.map((item) => [item.fieldId, item]));
       change({ fields: ids.flatMap((id) => itemById.get(id) ?? []) });
     },
     [shownFields, change],
@@ -382,14 +384,14 @@ function FormEditor({
       setDraft((current) => ({
         ...current,
         fields: current.fields.map((item) =>
-          item?.fieldId === fieldId ? { ...item, ...patch } : item,
+          item.fieldId === fieldId ? { ...item, ...patch } : item,
         ),
       })),
     [],
   );
   const removeField = useCallback(
     (id: string) =>
-      change({ fields: shownFields.filter((item) => item?.fieldId !== id) }),
+      change({ fields: shownFields.filter((item) => item.fieldId !== id) }),
     [shownFields, change],
   );
   const save = useCallback(async () => {
@@ -401,7 +403,7 @@ function FormEditor({
       });
       setDraft(toFormInput(updated));
       toast.success("Form saved");
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error("Couldn't save form", {
         description: errorParser(err)?.message,
       });
@@ -467,11 +469,14 @@ function FormEditor({
               maxLength={80}
               placeholder="Form title"
               value={draft.formTitle}
-              aria-invalid={!!errors?.formTitle || undefined}
+              aria-invalid={
+                (errors.formTitle != null && errors.formTitle !== "") ||
+                undefined
+              }
               onChange={(event) => change({ formTitle: event.target.value })}
               className="w-full rounded-md bg-transparent text-2xl font-semibold outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/20"
             />
-            <FieldError className="text-xs">{errors?.formTitle}</FieldError>
+            <FieldError className="text-xs">{errors.formTitle}</FieldError>
             <textarea
               aria-label="Form description"
               maxLength={500}
@@ -485,7 +490,7 @@ function FormEditor({
             />
             <Separator className="border-b" />
             <div className="mt-6 flex flex-col gap-3">
-              {shownIds.length ? (
+              {shownIds.length > 0 ? (
                 <SortableList ids={shownIds} onReorder={reorderFields}>
                   {shownFields.map((item, index) => (
                     <FormFieldRow
@@ -494,8 +499,8 @@ function FormEditor({
                       item={item}
                       members={members}
                       error={
-                        errors?.[`fields.${index}.defaultValue`] ??
-                        errors?.[`fields.${index}.placeholder`]
+                        errors[`fields.${index}.defaultValue`] ??
+                        errors[`fields.${index}.placeholder`]
                       }
                       onChange={updateField}
                       onRemove={removeField}
@@ -514,11 +519,11 @@ function FormEditor({
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={!availableFields?.length}
+                  disabled={availableFields.length === 0}
                   startIcon={<Plus size={14} />}
                   className="mt-3 w-full border-dashed"
                 >
-                  {availableFields?.length
+                  {availableFields.length > 0
                     ? "Add field"
                     : "Every field is on the form"}
                 </Button>
@@ -528,7 +533,7 @@ function FormEditor({
                 className="max-h-72 w-(--radix-dropdown-menu-trigger-width)"
               >
                 <DropdownMenuLabel>Add a field</DropdownMenuLabel>
-                {availableFields?.map((field) => (
+                {availableFields.map((field) => (
                   <DropdownMenuItem
                     key={field.objId}
                     onSelect={() => addFields([field.objId])}
@@ -540,9 +545,7 @@ function FormEditor({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() =>
-                    addFields(
-                      availableFields?.map((field) => field?.objId) ?? [],
-                    )
+                    addFields(availableFields.map((field) => field.objId))
                   }
                 >
                   <ListPlus />
@@ -593,8 +596,8 @@ function FormEditor({
           </Button>
           <Button
             size="xs"
-            disabled={!dirty || saving || !!Object.keys(errors).length}
-            onClick={save}
+            disabled={!dirty || saving || Object.keys(errors).length > 0}
+            onClick={() => void save()}
           >
             {saving ? "Saving…" : "Save form"}
           </Button>
@@ -628,8 +631,8 @@ function FormImage({
       }
       setUploading(true);
       try {
-        onChange((await onUpload(file))?.id);
-      } catch (err) {
+        onChange((await onUpload(file)).id);
+      } catch (err: unknown) {
         toast.error(`Couldn't upload the ${name}`, {
           description: errorParser(err)?.message,
         });
@@ -675,11 +678,11 @@ function FormImage({
         accept="image/*"
         hidden
         onChange={(event) => {
-          upload(event.target.files?.[0]);
+          void upload(event.target.files?.[0]);
           event.target.value = "";
         }}
       />
-      {imageId ? (
+      {imageId != null && imageId !== "" ? (
         <>
           <img
             src={attachmentUrl(imageId)}
@@ -724,13 +727,13 @@ function toFormInput(form?: ISidebarForm): ISidebarFormInput {
   return {
     formTitle: form?.formTitle ?? "",
     formDescription: form?.formDescription ?? "",
-    isHidden: !!form?.isHidden,
-    isDefault: !!form?.isDefault,
+    isHidden: form?.isHidden === true,
+    isDefault: form?.isDefault === true,
     fields:
-      form?.fields?.map((item) => ({
-        fieldId: item?.fieldId,
-        placeholder: item?.placeholder ?? "",
-        defaultValue: item?.defaultValue ?? "",
+      form?.fields.map((item) => ({
+        fieldId: item.fieldId,
+        placeholder: item.placeholder ?? "",
+        defaultValue: item.defaultValue ?? "",
       })) ?? [],
     coverImageId: form?.coverImageId ?? undefined,
     logoId: form?.logoId ?? undefined,
@@ -765,7 +768,7 @@ function ButtonLabelInput({
         aria-label={ariaLabel}
         maxLength={40}
         placeholder={placeholder}
-        size={Math.max(value?.length, placeholder?.length, 1)}
+        size={Math.max(value.length, placeholder.length, 1)}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="field-sizing-content min-w-4 bg-transparent outline-none placeholder:text-current placeholder:opacity-60"
@@ -795,8 +798,8 @@ function FormFieldRow({
   const { ref, style, isDragging, handle } = useSortableRow(field?.objId ?? "");
   const [open, setOpen] = useState(false);
   const defaultText = useMemo(
-    () => (field ? toRecordText(field, item?.defaultValue, members) : ""),
-    [field, item?.defaultValue, members],
+    () => (field ? toRecordText(field, item.defaultValue, members) : ""),
+    [field, item.defaultValue, members],
   );
   if (!field) return null;
 
@@ -851,19 +854,19 @@ function FormFieldRow({
           <span
             className={cn(
               "size-4 rounded border",
-              item?.defaultValue === "true" && "border-primary bg-primary",
+              item.defaultValue === "true" && "border-primary bg-primary",
             )}
           />
-          {item?.defaultValue === "true"
+          {item.defaultValue === "true"
             ? "Ticked to start with"
             : "Tick if yes"}
         </div>
       ) : (
         <div className="mt-2 ml-6 flex h-9 items-center truncate rounded-md border bg-muted/30 px-3 text-xs text-muted-foreground">
-          {defaultText ? (
+          {defaultText !== "" ? (
             <span className="truncate text-foreground">{defaultText}</span>
           ) : (
-            item?.placeholder || hint
+            (nonEmpty(item.placeholder) ?? hint)
           )}
         </div>
       )}
@@ -881,7 +884,7 @@ function FormFieldRow({
                 id={`${field.objId}-placeholder`}
                 maxLength={100}
                 placeholder={hint}
-                value={item?.placeholder ?? ""}
+                value={item.placeholder ?? ""}
                 onChange={(event) =>
                   onChange(field.objId, { placeholder: event.target.value })
                 }
@@ -893,7 +896,7 @@ function FormFieldRow({
             <RecordInputControl
               field={field}
               members={members}
-              value={item?.defaultValue ?? ""}
+              value={item.defaultValue ?? ""}
               placeholder="No default"
               onChange={(defaultValue) =>
                 onChange(field.objId, { defaultValue })

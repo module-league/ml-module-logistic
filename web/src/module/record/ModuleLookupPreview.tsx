@@ -1,12 +1,6 @@
 import { useMemo, useState } from "react";
+import { ChevronDown, TextSearchIcon } from "lucide-react";
 import {
-  ChevronDown,
-  ChevronLeftIcon,
-  Link2,
-  TextSearchIcon,
-} from "lucide-react";
-import {
-  Button,
   cn,
   Collapsible,
   CollapsibleContent,
@@ -36,15 +30,14 @@ export function ModuleLookupPreview({
   field,
   value,
   members,
-  onClose,
 }: ModuleLookupPreviewProps) {
-  const { lookups, sources, linkFields } = useRecordLookups();
-  const categoryId = field?.lookupSettings?.categoryId ?? "";
+  const { lookups, linkFields } = useRecordLookups();
+  const categoryId = field.lookupSettings?.categoryId ?? "";
   // Cards are titled like the link field's chips, by the linked record's primary field, not by what the lookup shows
   const linkField = useMemo(
     () =>
-      linkFields?.find(
-        (entry) => entry?.objId === field?.lookupSettings?.linkFieldId,
+      linkFields.find(
+        (entry) => entry.objId === field.lookupSettings?.linkFieldId,
       ) ?? field,
     [linkFields, field],
   );
@@ -57,21 +50,21 @@ export function ModuleLookupPreview({
     () =>
       new Map(
         lookupRecordsOf(field, lookups)?.map((record) => [
-          record?.objId,
+          record.objId,
           record,
         ]),
       ),
     [field, lookups],
   );
-  const previewFieldIds = field?.lookupSettings?.previewFieldIds;
+  const previewFieldIds = field.lookupSettings?.previewFieldIds;
   const shownFields = useMemo(
     () =>
       [
-        ...previewableLookupFields(lookups?.[categoryId]?.fields),
+        ...previewableLookupFields(lookups[categoryId]?.fields),
         ...SYSTEM_FIELDS,
       ].filter(
         (sourceField) =>
-          !previewFieldIds || previewFieldIds.includes(sourceField?.objId),
+          !previewFieldIds || previewFieldIds.includes(sourceField.objId),
       ),
     [lookups, categoryId, previewFieldIds],
   );
@@ -100,14 +93,14 @@ export function ModuleLookupPreview({
   );
   const shownCards = useMemo(
     () =>
-      term
+      term !== ""
         ? cards.filter(
             (card) =>
               card.label.toLowerCase().includes(term) ||
               shownFields.some(
                 (sourceField, index) =>
-                  sourceField?.name?.toLowerCase().includes(term) ||
-                  card.texts[index]?.toLowerCase().includes(term),
+                  sourceField.name.toLowerCase().includes(term) ||
+                  card.texts[index]?.toLowerCase().includes(term) === true,
               ),
           )
         : cards,
@@ -116,25 +109,15 @@ export function ModuleLookupPreview({
 
   return (
     <aside
-      aria-label={`Linked records of ${field?.name}`}
+      aria-label={`Linked records of ${field.name}`}
       className="flex min-h-0 w-[42%] shrink-0 flex-col border-l bg-muted/30"
     >
       <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
-        {/* <Button
-          variant="outline"
-          size="icon-sm"
-          aria-label="Close preview"
-          title="Close preview"
-          className="text-black"
-          startIcon={<ChevronLeftIcon size={14} />}
-          onClick={onClose}
-        /> */}
-
         <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary-10 text-primary">
           <TextSearchIcon className="size-4" />
         </span>
         <div className="min-w-0 flex-1 flex flex-row items-center">
-          <p className="truncate text-sm font-medium">{field?.name}</p>
+          <p className="truncate text-sm font-medium">{field.name}</p>
           <Separator orientation="vertical" className="mx-2 h-3.5 w-px" />
           <p className="truncate text-xs text-muted-foreground flex-1">
             {linked.length} linked.
@@ -150,7 +133,7 @@ export function ModuleLookupPreview({
         </div>
       </div>
 
-      {!linked.length ? (
+      {linked.length === 0 ? (
         <p className="m-auto max-w-56 px-4 text-center text-sm text-muted-foreground">
           Nothing linked yet. Pick records in the link field to preview them
           here.
@@ -169,7 +152,7 @@ export function ModuleLookupPreview({
               defaultOpen={index === 0}
             />
           ))}
-          {!shownCards.length && (
+          {shownCards.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">
               No linked record matches “{search.trim()}”.
             </p>
@@ -205,7 +188,7 @@ function LinkedRecordCard({
 
   return (
     <Collapsible
-      open={!!term || open}
+      open={term !== "" || open}
       onOpenChange={setOpen}
       className="group/card shrink-0 overflow-hidden rounded-lg border bg-background shadow-xs"
     >
@@ -222,16 +205,17 @@ function LinkedRecordCard({
         {record ? (
           <dl className="grid grid-cols-[minmax(0,9rem)_1fr] gap-x-3 gap-y-3 text-sm">
             {fields.map((sourceField, index) => {
-              const text = texts?.[index] ?? "";
-              const valueMatch = !!term && text.toLowerCase().includes(term);
+              const text = texts[index] ?? "";
+              const valueMatch =
+                term !== "" && text.toLowerCase().includes(term);
               const asText =
-                TEXT_VALUE_TYPES.includes(sourceField?.type) && !!text;
+                TEXT_VALUE_TYPES.includes(sourceField.type) && text !== "";
               return (
                 <div key={sourceField.objId} className="contents">
                   <dt className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
-                    <FieldTypeIcon type={sourceField?.type} />
+                    <FieldTypeIcon type={sourceField.type} />
                     <HighlightText
-                      text={sourceField?.name}
+                      text={sourceField.name}
                       term={term}
                       className="truncate"
                     />
@@ -249,7 +233,8 @@ function LinkedRecordCard({
                         text={text}
                         term={term}
                         className={
-                          sourceField?.isNumeric || sourceField?.isDateField
+                          sourceField.isNumeric === true ||
+                          sourceField.isDateField
                             ? "tabular-nums"
                             : undefined
                         }

@@ -13,4 +13,3 @@ declare global {
     userRole?: string;
   };
 }
-

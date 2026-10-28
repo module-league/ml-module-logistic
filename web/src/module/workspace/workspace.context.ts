@@ -1,5 +1,8 @@
 import { createContext, useContext } from "react";
-import type { IModuleConfig, INavPageConfig } from "@/module/shell/module.types";
+import type {
+  IModuleConfig,
+  INavPageConfig,
+} from "@/module/shell/module.types";
 import type { IWorkspace } from "./workspace.types";
 
 /** The tab being dragged and the pane it came from. */
@@ -21,10 +24,13 @@ export interface WorkspaceContextValue {
   goTo: (key: string | null) => void;
 }
 
-export const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
+export const WorkspaceContext = createContext<WorkspaceContextValue | null>(
+  null,
+);
 
 export function useWorkspaceContext(): WorkspaceContextValue {
   const value = useContext(WorkspaceContext);
-  if (!value) throw new Error("useWorkspaceContext must be used inside WorkspaceView.");
+  if (!value)
+    throw new Error("useWorkspaceContext must be used inside WorkspaceView.");
   return value;
 }

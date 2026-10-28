@@ -40,8 +40,8 @@ export function RecordLinkInput({
   const { lookups, sources, onNewLinkedRecord } = useRecordLookups();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const multiple = field?.lookupSettings?.multiple ?? true;
-  const sourceId = field?.lookupSettings?.categoryId;
+  const multiple = field.lookupSettings?.multiple ?? true;
+  const sourceId = field.lookupSettings?.categoryId;
   const records = useMemo(
     () => lookupRecordsOf(field, lookups),
     [field, lookups],
@@ -56,12 +56,12 @@ export function RecordLinkInput({
   );
   const selectedIds = useMemo(() => parseRecordIds(value), [value]);
   const recordById = useMemo(
-    () => new Map(records?.map((record) => [record?.objId, record])),
+    () => new Map(records?.map((record) => [record.objId, record])),
     [records],
   );
   const sourceText = useMemo(
     () =>
-      sources?.find((source) => source?.sidebarId === sourceId)?.sidebarText ??
+      sources.find((source) => source.sidebarId === sourceId)?.sidebarText ??
       "the linked table",
     [sources, sourceId],
   );
@@ -73,13 +73,13 @@ export function RecordLinkInput({
   // Matches the title and every card field, as they read on the card
   const shownRecords = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return records ?? [];
+    if (term === "") return records ?? [];
     return (
       records?.filter((record) =>
         [
           titleOf(record),
           ...cardFields.map((cardField) =>
-            toRecordText(cardField, record?.values?.[cardField.objId], members),
+            toRecordText(cardField, record.values[cardField.objId], members),
           ),
         ]
           .join(" ")
@@ -119,14 +119,14 @@ export function RecordLinkInput({
     [onBlur],
   );
   const addNew = useCallback(() => {
-    if (!sourceId) return;
+    if (sourceId == null || sourceId === "") return;
     changeOpen(false);
     onNewLinkedRecord?.(sourceId, (added) =>
       onChange?.(
         toRecordIdsValue(
           multiple
-            ? [...selectedIds.filter((id) => id !== added?.objId), added?.objId]
-            : [added?.objId],
+            ? [...selectedIds.filter((id) => id !== added.objId), added.objId]
+            : [added.objId],
         ),
       ),
     );
@@ -144,7 +144,7 @@ export function RecordLinkInput({
       className={cn("flex w-full min-w-0 flex-col gap-2", className)}
       style={style}
     >
-      {!!selectedIds.length && (
+      {selectedIds.length > 0 && (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-2">
           {selectedIds.map((recordId) => {
             const record = recordById.get(recordId);
@@ -157,7 +157,7 @@ export function RecordLinkInput({
                 fields={cardFields}
                 members={members}
                 action={
-                  !disabled && (
+                  disabled !== true && (
                     <Button
                       variant="ghost"
                       size="icon-xs"
@@ -184,8 +184,8 @@ export function RecordLinkInput({
             <Plus className="size-4 shrink-0" />
             {placeholder ??
               (multiple
-                ? `Link ${selectedIds.length ? "another" : "a"} ${sourceText} record`
-                : selectedIds.length
+                ? `Link ${selectedIds.length > 0 ? "another" : "a"} ${sourceText} record`
+                : selectedIds.length > 0
                   ? `Change the ${sourceText} record`
                   : `Link a ${sourceText} record`)}
           </Button>
@@ -206,7 +206,7 @@ export function RecordLinkInput({
                 className="h-8 pl-8 text-sm"
               />
             </div>
-            {onNewLinkedRecord && sourceId && (
+            {onNewLinkedRecord && sourceId != null && sourceId !== "" && (
               <Button
                 variant="outline"
                 size="sm"
@@ -225,7 +225,7 @@ export function RecordLinkInput({
               <Spinner className="size-3.5" />
               Loading {sourceText}…
             </p>
-          ) : shownRecords.length ? (
+          ) : shownRecords.length > 0 ? (
             <RecordLinkCardList
               label={`${sourceText} records`}
               records={shownRecords}
@@ -238,7 +238,7 @@ export function RecordLinkInput({
             />
           ) : (
             <p className="py-6 text-center text-xs text-muted-foreground">
-              {records.length
+              {records.length > 0
                 ? `No ${sourceText} record matches “${search.trim()}”.`
                 : `No records in ${sourceText} yet.`}
             </p>
@@ -285,6 +285,7 @@ function RecordLinkCardList({
       >
         {virtualizer.getVirtualItems().map((item) => {
           const record = records[item.index];
+          if (!record) return null;
           return (
             <div
               key={item.key}
@@ -299,8 +300,8 @@ function RecordLinkCardList({
                 record={record}
                 fields={fields}
                 members={members}
-                selected={selectedIds.includes(record?.objId)}
-                onSelect={() => onSelect(record?.objId)}
+                selected={selectedIds.includes(record.objId)}
+                onSelect={() => onSelect(record.objId)}
               />
             </div>
           );

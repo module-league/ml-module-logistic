@@ -8,7 +8,10 @@ interface ResizeSeparatorProps {
   className?: string;
 }
 
-export function ResizeSeparator({ orientation, className }: ResizeSeparatorProps) {
+export function ResizeSeparator({
+  orientation,
+  className,
+}: ResizeSeparatorProps) {
   const vertical = orientation === "horizontal";
   const Grip = vertical ? GripVertical : GripHorizontal;
 

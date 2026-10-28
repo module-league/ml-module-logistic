@@ -12,6 +12,7 @@ import {
   DashboardWidgetFrame,
   DashboardWidgetMessage,
 } from "./DashboardWidgetFrame";
+import { nonEmpty } from "@/lib/stringHelper";
 
 /**
  * How the records split by a field. Bars rank the biggest groups against the largest;
@@ -19,7 +20,7 @@ import {
  */
 export function BreakdownWidget({ widget, view }: DashboardWidgetBodyProps) {
   const { members, lookups } = useDashboard();
-  const breakdown = widget?.breakdown;
+  const breakdown = widget.breakdown;
   const groupField = view.fieldById.get(breakdown?.groupFieldId ?? "");
   const valueField = view.fieldById.get(breakdown?.fieldId ?? "");
   const groups = useMemo(
@@ -45,9 +46,9 @@ export function BreakdownWidget({ widget, view }: DashboardWidgetBodyProps) {
 
   return (
     <DashboardWidgetFrame
-      title={widget?.label}
+      title={widget.label}
       aside={
-        widget?.caption ||
+        nonEmpty(widget.caption) ??
         describeMeasure(
           breakdown,
           valueField,
@@ -59,7 +60,7 @@ export function BreakdownWidget({ widget, view }: DashboardWidgetBodyProps) {
         <DashboardWidgetMessage>
           Pick a field to split by in this widget's settings.
         </DashboardWidgetMessage>
-      ) : !groups.length ? (
+      ) : groups.length === 0 ? (
         <DashboardWidgetMessage>
           No records to break down.
         </DashboardWidgetMessage>
@@ -110,7 +111,7 @@ export function BreakdownWidget({ widget, view }: DashboardWidgetBodyProps) {
                   <span className="block truncate font-medium">
                     {group.label}
                   </span>
-                  {group.caption && (
+                  {group.caption != null && group.caption !== "" && (
                     <span className="block truncate text-xs text-muted-foreground">
                       {group.caption}
                     </span>
@@ -124,7 +125,7 @@ export function BreakdownWidget({ widget, view }: DashboardWidgetBodyProps) {
                 <div
                   className="h-full rounded-full bg-primary"
                   style={{
-                    width: `${largest ? (group.value / largest) * 100 : 0}%`,
+                    width: `${largest !== 0 ? (group.value / largest) * 100 : 0}%`,
                   }}
                 />
               </div>

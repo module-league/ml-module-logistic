@@ -45,8 +45,8 @@ export function AttachmentPreviewDialog({
   onIndexChange,
 }: AttachmentPreviewDialogProps) {
   const [failedId, setFailedId] = useState<string>();
-  const count = attachments?.length ?? 0;
-  const attachment = attachments?.[index];
+  const count = attachments.length;
+  const attachment = attachments[index];
   const step = useCallback(
     (by: number) => onIndexChange((index + by + count) % count),
     [index, count, onIndexChange],
@@ -64,7 +64,7 @@ export function AttachmentPreviewDialog({
   const previewable =
     canPreviewAttachment(attachment) && failedId !== attachment.id;
   const details = [
-    attachment.fileExtension?.toUpperCase(),
+    attachment.fileExtension.toUpperCase(),
     formatFileSize(attachment.fileSize),
     count > 1 && `${index + 1} of ${count}`,
   ]

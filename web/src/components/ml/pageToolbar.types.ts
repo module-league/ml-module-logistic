@@ -29,9 +29,6 @@ export interface PageToolbarProps {
   selectedCount?: number;
   onDeleteSelected?: () => void;
   onCancelSelection?: () => void;
-  onExport?: () => void;
-  /** @default "Export" */
-  exportLabel?: string;
   search?: string;
   onSearchChange?: (value: string) => void;
   /** @default "Search" */

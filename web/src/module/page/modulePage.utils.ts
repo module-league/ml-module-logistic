@@ -38,10 +38,10 @@ export function recordFieldValue(
   field: ISidebarField,
   record?: ISidebarRecord,
 ) {
-  if (field?.isSystemField) return SYSTEM_FIELD_VALUES[field.type]?.(record);
-  if (field?.type === "lookup") {
-    return record?.values?.[field?.lookupSettings?.linkFieldId ?? ""];
+  if (field.isSystemField) return SYSTEM_FIELD_VALUES[field.type]?.(record);
+  if (field.type === "lookup") {
+    return record?.values[field.lookupSettings?.linkFieldId ?? ""];
   }
-  if (field?.type === "formula") return formulaValue(field, record?.values);
-  return record?.values?.[field?.objId];
+  if (field.type === "formula") return formulaValue(field, record?.values);
+  return record?.values[field.objId];
 }

@@ -12,14 +12,14 @@ export function toOptionInputs(
   field: Pick<IField, "type" | "dropDownValues">,
   existingIds?: Set<string>,
 ) {
-  if (!["single_select", "multi_select", "attachment"].includes(field?.type)) {
+  if (!["single_select", "multi_select", "attachment"].includes(field.type)) {
     return undefined;
   }
-  return field?.dropDownValues?.map((option, index) => ({
-    ...(existingIds?.has(option?.id) && { id: option.id }),
-    value: option?.value,
-    colorCode: option?.colorCode,
-    displayOrder: option?.displayOrder ?? index,
+  return field.dropDownValues.map((option) => ({
+    ...(existingIds?.has(option.id) === true ? { id: option.id } : {}),
+    value: option.value,
+    colorCode: option.colorCode,
+    displayOrder: option.displayOrder,
   }));
 }
 

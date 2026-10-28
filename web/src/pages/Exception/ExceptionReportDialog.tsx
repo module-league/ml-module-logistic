@@ -23,6 +23,7 @@ import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControl
 import { DispatchField } from "../Dispatch/DispatchJobDialog";
 import type { DispatchShipment } from "../Dispatch/dispatchBoard.utils";
 import { ATTEMPT_REASONS, routeText, SEVERITIES } from "./exception.utils";
+import { nonEmpty } from "@/lib/stringHelper";
 
 const OWNER_FIELD = toField({
   type: "member",
@@ -97,10 +98,16 @@ function ReportForm({
     () =>
       submitted
         ? {
-            shipmentId: draft.shipmentId ? "" : "Pick the shipment.",
-            reason: failed && !draft.reason ? "Say why it failed." : "",
+            shipmentId:
+              draft.shipmentId != null && draft.shipmentId !== ""
+                ? ""
+                : "Pick the shipment.",
+            reason:
+              failed && draft.reason === undefined ? "Say why it failed." : "",
             title:
-              !failed && !draft.title?.trim() ? "Give it a short title." : "",
+              !failed && (draft.title?.trim() ?? "") === ""
+                ? "Give it a short title."
+                : "",
           }
         : { shipmentId: "", reason: "", title: "" },
     [submitted, draft, failed],
@@ -124,8 +131,17 @@ function ReportForm({
     async (event: FormEvent) => {
       event.preventDefault();
       setSubmitted(true);
-      if (!draft.shipmentId || !draft.ruleKey) return;
-      if (failed ? !draft.reason : !draft.title?.trim()) return;
+      if (
+        draft.shipmentId == null ||
+        draft.shipmentId === "" ||
+        draft.ruleKey == null ||
+        draft.ruleKey === ""
+      )
+        return;
+      if (
+        failed ? draft.reason === undefined : (draft.title?.trim() ?? "") === ""
+      )
+        return;
       const shipment = shipments.find((entry) => entry.id === draft.shipmentId);
       try {
         await onCreate({
@@ -135,12 +151,12 @@ function ReportForm({
           severity: draft.severity,
           reason: failed ? draft.reason : undefined,
           title: failed ? undefined : draft.title?.trim(),
-          note: draft.note?.trim() || undefined,
-          ownerId: draft.ownerId || undefined,
+          note: nonEmpty(draft.note?.trim()),
+          ownerId: nonEmpty(draft.ownerId),
         });
         toast.success("Exception raised");
         onOpenChange(false);
-      } catch (error) {
+      } catch (error: unknown) {
         toast.error("Couldn't raise it", {
           description: errorParser(error)?.message,
         });
@@ -150,7 +166,10 @@ function ReportForm({
   );
 
   return (
-    <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+    <form
+      onSubmit={(event) => void submit(event)}
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
         <DispatchField label="Shipment" error={errors.shipmentId}>
           {(id) => (
@@ -226,7 +245,7 @@ function ReportForm({
               field={OWNER_FIELD}
               members={members}
               value={draft.ownerId ?? ""}
-              onChange={(value) => change("ownerId", value || undefined)}
+              onChange={(value) => change("ownerId", nonEmpty(value))}
             />
           )}
         </DispatchField>

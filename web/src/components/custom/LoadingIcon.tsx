@@ -10,7 +10,7 @@ type LoadingIconProps = Omit<
   loadingText?: string;
 };
 
-export default memo(function LoadingIcon(props: LoadingIconProps) {
+export const LoadingIcon = memo(function LoadingIcon(props: LoadingIconProps) {
   const { className, loadingText, ...others } = props;
   return (
     <div className={clsx(classes.container, className)}>
@@ -36,7 +36,9 @@ export default memo(function LoadingIcon(props: LoadingIconProps) {
         <div className={classes.loader}></div>
       </div>
 
-      {!!loadingText && <h6 className="p-4">{loadingText}</h6>}
+      {loadingText != null && loadingText !== "" && (
+        <h6 className="p-4">{loadingText}</h6>
+      )}
     </div>
   );
 });

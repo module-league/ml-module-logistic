@@ -9,7 +9,7 @@ import {
   toast,
 } from "@moduleleague/ui";
 import { errorParser } from "@/hooks/useErrorParser";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { ModuleRecordForm } from "./ModuleRecordForm";
 import { ModuleLookupPreview } from "./ModuleLookupPreview";
 import { ModuleAutoSaveStatus } from "./ModuleAutoSaveStatus";
@@ -36,7 +36,7 @@ export function ModuleOpenRecord({
     async (values: ISidebarRecordValues) => {
       try {
         await onSave?.(values);
-      } catch (err) {
+      } catch (err: unknown) {
         toast.error("Couldn't save record", {
           description: errorParser(err)?.message,
         });
@@ -63,21 +63,20 @@ export function ModuleOpenRecord({
     draft?.recordId === recordId ? draft?.values : record?.values;
   const previewField = useMemo(
     () =>
-      fields?.find(
+      fields.find(
         (field) =>
-          field?.objId === previewFieldId &&
-          field?.lookupSettings?.previewEnabled !== false,
+          field.objId === previewFieldId &&
+          field.lookupSettings?.previewEnabled !== false,
       ),
     [fields, previewFieldId],
   );
   const togglePreview = useCallback(
     (field: ISidebarField) =>
       setPreviewFieldId((current) =>
-        current === field?.objId ? undefined : field?.objId,
+        current === field.objId ? undefined : field.objId,
       ),
     [],
   );
-  const closePreview = useCallback(() => setPreviewFieldId(undefined), []);
   const dialogStyle = useMemo(
     () =>
       previewField
@@ -88,7 +87,7 @@ export function ModuleOpenRecord({
   const changeOpen = useCallback(
     (next: boolean) => {
       if (next) return;
-      flush();
+      void flush();
       setPreviewFieldId(undefined);
       onClose();
     },
@@ -96,14 +95,17 @@ export function ModuleOpenRecord({
   );
   const navigate = useCallback(
     (key?: string) => {
-      if (!key || !onNavigate) return;
-      flush().then(() => onNavigate(key));
+      if (key == null || key === "" || !onNavigate) return;
+      void flush().then(() => onNavigate(key));
     },
     [flush, onNavigate],
   );
 
   return (
-    <Dialog open={!!recordKey} onOpenChange={changeOpen}>
+    <Dialog
+      open={recordKey != null && recordKey !== ""}
+      onOpenChange={changeOpen}
+    >
       <DialogContent
         overlayClassName="supports-backdrop-filter:backdrop-blur-none"
         className="flex flex-col gap-0 p-0 rounded-md"
@@ -120,7 +122,7 @@ export function ModuleOpenRecord({
                 size="icon-sm"
                 aria-label="Previous record"
                 title="Previous record"
-                disabled={!previousKey}
+                disabled={previousKey == null || previousKey === ""}
                 className="text-black"
                 startIcon={<ChevronLeft size={13} />}
                 onClick={() => navigate(previousKey)}
@@ -130,7 +132,7 @@ export function ModuleOpenRecord({
                 size="icon-sm"
                 aria-label="Next record"
                 title="Next record"
-                disabled={!nextKey}
+                disabled={nextKey == null || nextKey === ""}
                 className="text-black"
                 startIcon={<ChevronRight size={13} />}
                 onClick={() => navigate(nextKey)}
@@ -162,12 +164,9 @@ export function ModuleOpenRecord({
                 <ModuleLookupPreview
                   field={previewField}
                   value={
-                    liveValues?.[
-                      previewField?.lookupSettings?.linkFieldId ?? ""
-                    ]
+                    liveValues?.[previewField.lookupSettings?.linkFieldId ?? ""]
                   }
                   members={members}
-                  onClose={closePreview}
                 />
               )}
             </div>

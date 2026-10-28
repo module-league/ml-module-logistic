@@ -57,8 +57,8 @@ function RulesForm({
   const [saving, setSaving] = useState(false);
   const fields = useMemo(
     () =>
-      tableFields(lookups?.[sources?.shipmentSidebarId ?? ""]).filter(
-        (field) => !field?.isSystemField,
+      tableFields(lookups[sources?.shipmentSidebarId ?? ""]).filter(
+        (field) => !field.isSystemField,
       ),
     [lookups, sources?.shipmentSidebarId],
   );
@@ -76,7 +76,7 @@ function RulesForm({
       });
       toast.success("Document fields saved");
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Couldn't save the document fields", {
         description: errorParser(error)?.message,
       });
@@ -139,7 +139,7 @@ function RulesForm({
                 </tr>
               </thead>
               <tbody>
-                {rules?.requirements?.map((requirement) => (
+                {rules?.requirements.map((requirement) => (
                   <tr key={requirement.key} className="border-t align-top">
                     <td className="px-3 py-2 font-medium">
                       {typeTitle(rules, requirement.docType)}
@@ -149,7 +149,7 @@ function RulesForm({
                       {stepLabel(requirement.requiredAtStep)}
                     </td>
                     <td className="px-3 py-2">
-                      {requirement.blocks
+                      {requirement.blocks !== undefined
                         ? `Can't reach ${gateName(requirement.blocks)} until verified`
                         : "Nothing"}
                     </td>
@@ -177,7 +177,7 @@ function RulesForm({
         >
           Cancel
         </Button>
-        <Button size="sm" isLoading={saving} onClick={save}>
+        <Button size="sm" isLoading={saving} onClick={() => void save()}>
           Save fields
         </Button>
       </DialogFooter>

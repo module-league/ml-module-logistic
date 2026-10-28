@@ -67,7 +67,8 @@ export const FieldTypeIcon = memo(function FieldTypeIcon({
   size,
   ...props
 }: FieldTypeIconProps) {
-  const Icon = (type && FIELD_TYPE_ICONS[type]) || CircleDashed;
+  const Icon =
+    (type === undefined ? undefined : FIELD_TYPE_ICONS[type]) ?? CircleDashed;
   return (
     <Icon
       aria-hidden

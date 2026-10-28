@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import type { GridViewProps } from "../moduleAppView.types";
 import { RecordGrid } from "./RecordGrid";
 import { Skeleton } from "@/ui-kit";
@@ -17,21 +17,22 @@ function GridViewComponent<T>({
 }: GridViewProps<T>) {
   const pageRecords = useMemo(() => {
     const start = (page - 1) * pageSize;
-    if (!pinnedRows?.length)
-      return records?.slice(start, start + pageSize) ?? [];
-    const byKey = new Map(records?.map((record) => [getKey(record), record]));
+    if (pinnedRows === undefined || pinnedRows.length === 0)
+      return records.slice(start, start + pageSize);
+    const byKey = new Map(records.map((record) => [getKey(record), record]));
     const pinned = pinnedRows
       .map((key) => byKey.get(key))
-      .filter((record): record is T => !!record);
-    const rest =
-      records?.filter((record) => !pinnedRows.includes(getKey(record))) ?? [];
+      .filter((record): record is T => record !== undefined);
+    const rest = records.filter(
+      (record) => !pinnedRows.includes(getKey(record)),
+    );
     return [...pinned, ...rest.slice(start, start + pageSize)];
   }, [records, getKey, pinnedRows, page, pageSize]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-background">
       <QueryWrapper
-        isLoading={!!isLoading}
+        isLoading={isLoading === true}
         error={error}
         onRetry={onRetry}
         renderLoader={GridLoadingSkeleton()}

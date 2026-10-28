@@ -9,7 +9,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControls";
 import { DispatchBoard, DispatchBoardSkeleton } from "./DispatchBoard";
 import { DispatchCardSettings } from "./DispatchCardSettings";
@@ -40,7 +40,7 @@ const DISPATCH_VIEWS: { value: DispatchView; label: string }[] = [
 
 const COMING_SOON_ICONS = { schedule: CalendarDays, fleet: Truck };
 
-export default function DispatchPage(props: DispatchPageProps) {
+export function DispatchPage(props: DispatchPageProps) {
   const { data, detail } = props;
   // The picked view lives in the URL (?view=…), so it survives a reload and can be linked to
   const [searchParams, setSearchParams] = useSearchParams();
@@ -60,18 +60,21 @@ export default function DispatchPage(props: DispatchPageProps) {
   );
   const [now] = useState(() => new Date());
   const [customizing, setCustomizing] = useState(false);
-  const picks = data?.settings?.versionNo ? data.settings : undefined;
+  const picks =
+    data.settings?.versionNo != null && data.settings.versionNo !== 0
+      ? data.settings
+      : undefined;
 
   const board = useMemo(
     () =>
       buildDispatchBoard(
-        data?.sources,
-        data?.lookups,
-        data?.dispatches,
-        data?.members,
+        data.sources,
+        data.lookups,
+        data.dispatches,
+        data.members,
         picks,
       ),
-    [data?.sources, data?.lookups, data?.dispatches, data?.members, picks],
+    [data.sources, data.lookups, data.dispatches, data.members, picks],
   );
   const columns = useMemo(
     () => boardColumns(board.shipments, now),
@@ -81,25 +84,25 @@ export default function DispatchPage(props: DispatchPageProps) {
   const previewOf = useCallback(
     (draft: DispatchCardPicks) =>
       buildDispatchBoard(
-        data?.sources,
-        data?.lookups,
-        data?.dispatches,
-        data?.members,
+        data.sources,
+        data.lookups,
+        data.dispatches,
+        data.members,
         draft,
-      ).shipments?.[0],
-    [data?.sources, data?.lookups, data?.dispatches, data?.members],
+      ).shipments[0],
+    [data.sources, data.lookups, data.dispatches, data.members],
   );
 
-  const onOpenDialog = data?.onOpenDialog;
+  const onOpenDialog = data.onOpenDialog;
   const assign = useCallback(
     (shipment?: DispatchShipment) => onOpenDialog(shipmentDraft(shipment)),
     [onOpenDialog],
   );
   const customize = useCallback(() => setCustomizing(true), []);
-  const onOpenDetail = detail?.onOpen;
+  const onOpenDetail = detail.onOpen;
   const open = useCallback(
     (shipment: DispatchShipment) =>
-      shipment?.dispatch
+      shipment.dispatch
         ? onOpenDetail(shipment.dispatch.objId)
         : assign(shipment),
     [onOpenDetail, assign],
@@ -107,9 +110,9 @@ export default function DispatchPage(props: DispatchPageProps) {
   const opened = useMemo(
     () =>
       board.shipments.find(
-        (shipment) => shipment?.dispatch?.objId === detail?.dispatchId,
+        (shipment) => shipment.dispatch?.objId === detail.dispatchId,
       ),
-    [board.shipments, detail?.dispatchId],
+    [board.shipments, detail.dispatchId],
   );
 
   const ComingSoonIcon = view === "board" ? undefined : COMING_SOON_ICONS[view];
@@ -129,7 +132,7 @@ export default function DispatchPage(props: DispatchPageProps) {
             variant="outline"
             size="sm"
             startIcon={<Settings2 size={14} />}
-            disabled={!data?.sources}
+            disabled={!data.sources}
             onClick={customize}
           >
             Customize card
@@ -138,7 +141,7 @@ export default function DispatchPage(props: DispatchPageProps) {
             variant="outline"
             size="sm"
             startIcon={<PanelRightOpen size={14} />}
-            disabled={!data?.sources}
+            disabled={!data.sources}
             onClick={() => assign()}
           >
             Open full assign panel
@@ -159,9 +162,9 @@ export default function DispatchPage(props: DispatchPageProps) {
         </Empty>
       ) : (
         <QueryWrapper
-          isLoading={data?.isLoading}
-          error={data?.error}
-          onRetry={data?.onRetry}
+          isLoading={data.isLoading}
+          error={data.error}
+          onRetry={data.onRetry}
           renderLoader={<DispatchBoardSkeleton />}
         >
           <DispatchBoard
@@ -178,19 +181,19 @@ export default function DispatchPage(props: DispatchPageProps) {
       <DispatchDetailDialog
         shipment={opened}
         detail={detail}
-        members={data?.members}
+        members={data.members}
         now={now}
       />
       <DispatchCardSettings
         open={customizing}
         onOpenChange={setCustomizing}
         fields={board.shipmentFields}
-        locationSidebarId={data?.sources?.locationSidebarId}
+        locationSidebarId={data.sources?.locationSidebarId}
         saved={picks}
-        versionNo={data?.settings?.versionNo ?? 0}
+        versionNo={data.settings?.versionNo ?? 0}
         previewOf={previewOf}
         now={now}
-        onSave={data?.onSaveSettings}
+        onSave={data.onSaveSettings}
       />
     </div>
   );

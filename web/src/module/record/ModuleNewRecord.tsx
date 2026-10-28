@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@moduleleague/ui";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { ModuleRecordForm } from "./ModuleRecordForm";
 import { RECORD_DIALOG_STYLE } from "./moduleRecord.utils";
 import { useNewRecordSave } from "./useNewRecordSave";
@@ -32,14 +32,18 @@ export function ModuleNewRecord({
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogContent
-        {...(!description && { "aria-describedby": undefined })}
+        {...((description == null || description === "") && {
+          "aria-describedby": undefined,
+        })}
         overlayClassName="supports-backdrop-filter:backdrop-blur-none"
         className="flex flex-col gap-0 p-0 rounded-md"
         style={RECORD_DIALOG_STYLE}
       >
         <DialogHeader className="shrink-0 p-4 pr-10 pb-3 border-b">
           <DialogTitle>{title}</DialogTitle>
-          {description && <DialogDescription>{description}</DialogDescription>}
+          {description != null && description !== "" && (
+            <DialogDescription>{description}</DialogDescription>
+          )}
         </DialogHeader>
         <QueryWrapper isLoading={isLoading} error={error} onRetry={onRetry}>
           <ModuleRecordForm
@@ -50,7 +54,7 @@ export function ModuleNewRecord({
             submitLabel="Add record"
             savingLabel="Adding…"
             onCancel={close}
-            onSave={save}
+            onSave={(values) => void save(values)}
           />
         </QueryWrapper>
       </DialogContent>

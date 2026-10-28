@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Button, cn, Input, Skeleton, toast } from "@moduleleague/ui";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { errorParser } from "@/hooks/useErrorParser";
 import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControls";
 import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
@@ -24,6 +24,7 @@ import {
   type ExceptionRow,
 } from "./exception.utils";
 import type { ExceptionActivityData, ExceptionData } from "./useExceptionData";
+import { nonEmpty } from "@/lib/stringHelper";
 
 const OTHER = "__other";
 
@@ -115,7 +116,7 @@ export function ExceptionDetail({
           <span className="font-medium text-foreground">
             {exception.ruleKey}
           </span>
-          {rule?.when && (
+          {rule?.when != null && rule.when !== "" && (
             <>
               :{" "}
               <code className="rounded bg-background px-1.5 py-0.5 font-mono text-[11px]">
@@ -126,7 +127,7 @@ export function ExceptionDetail({
         </p>
       </section>
 
-      {!!cards.length && (
+      {cards.length > 0 && (
         <section className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold">Facts when it opened</h3>
           <dl className="grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -156,7 +157,8 @@ export function ExceptionDetail({
         <p className="rounded-lg border bg-muted/40 p-3 text-sm">
           Resolved {stamp(exception.resolvedAt)} ·{" "}
           <span className="font-medium">{exception.resolutionReason}</span>
-          {!exception.resolvedBy && " · closed itself"}
+          {(exception.resolvedBy == null || exception.resolvedBy === "") &&
+            " · closed itself"}
         </p>
       )}
 
@@ -182,7 +184,7 @@ function OwnerPicker({
   const { exception } = row;
   const { onAssign, members } = data;
   const options = useMemo(() => {
-    const others = members.filter((member) => member?.id !== me.id);
+    const others = members.filter((member) => member.id !== me.id);
     const shown = others.slice(0, 4);
     const owner = others.find((member) => member.id === exception.ownerId);
     return [
@@ -195,7 +197,7 @@ function OwnerPicker({
   }, [members, me, exception.ownerId]);
   const assign = useCallback(
     (ownerId: string) =>
-      onAssign(exception, ownerId || undefined).catch((error) =>
+      onAssign(exception, nonEmpty(ownerId)).catch((error: unknown) =>
         toast.error("Couldn't change the owner", {
           description: errorParser(error)?.message,
         }),
@@ -216,10 +218,10 @@ function OwnerPicker({
           label="Owner"
           value={exception.ownerId ?? ""}
           options={options}
-          onChange={assign}
+          onChange={(ownerId) => void assign(ownerId)}
         />
       </div>
-      {deadline && (
+      {deadline !== "" && (
         <span
           className={cn(
             "text-xs",
@@ -263,7 +265,7 @@ function ResolveBar({
   const snoozes = useMemo(() => snoozeTimes(exception, now), [exception, now]);
   const run = useCallback(
     (action: Promise<unknown>, failure: string) =>
-      action.catch((error) =>
+      action.catch((error: unknown) =>
         toast.error(failure, { description: errorParser(error)?.message }),
       ),
     [],
@@ -292,9 +294,9 @@ function ResolveBar({
       <div className="flex flex-wrap items-center gap-2">
         <Button
           size="sm"
-          disabled={!reason || isSaving}
+          disabled={reason === "" || isSaving}
           onClick={() =>
-            run(onResolve(exception, reason), "Couldn't resolve it")
+            void run(onResolve(exception, reason), "Couldn't resolve it")
           }
         >
           Resolve exception
@@ -304,7 +306,7 @@ function ResolveBar({
             variant="outline"
             size="sm"
             disabled={isSaving}
-            onClick={() => run(onWake(exception), "Couldn't wake it")}
+            onClick={() => void run(onWake(exception), "Couldn't wake it")}
           >
             Wake now
           </Button>
@@ -316,7 +318,10 @@ function ResolveBar({
               size="sm"
               disabled={isSaving}
               onClick={() =>
-                run(onSnooze(exception, snooze.until), "Couldn't snooze it")
+                void run(
+                  onSnooze(exception, snooze.until),
+                  "Couldn't snooze it",
+                )
               }
             >
               {snooze.label}
@@ -352,11 +357,11 @@ function ActivityLog({
   const post = useCallback(
     async (event: FormEvent) => {
       event.preventDefault();
-      if (!note.trim()) return;
+      if (note.trim() === "") return;
       try {
         await onLog(exception, "note", note.trim());
         setNote("");
-      } catch (error) {
+      } catch (error: unknown) {
         toast.error("Couldn't add the note", {
           description: errorParser(error)?.message,
         });
@@ -368,7 +373,7 @@ function ActivityLog({
   return (
     <section className="flex flex-col gap-2">
       <h3 className="text-sm font-semibold">Activity</h3>
-      <form onSubmit={post} className="flex gap-2">
+      <form onSubmit={(event) => void post(event)} className="flex gap-2">
         <Input
           aria-label="Add a note"
           placeholder="Add a note"
@@ -380,7 +385,7 @@ function ActivityLog({
           type="submit"
           size="sm"
           variant="outline"
-          disabled={!note.trim()}
+          disabled={note.trim() === ""}
         >
           Add note
         </Button>

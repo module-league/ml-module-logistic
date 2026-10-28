@@ -22,7 +22,7 @@ import {
   wakeException,
 } from "@/services/exceptions/exception.api";
 import { useExceptionData, type ExceptionApi } from "./useExceptionData";
-import ExceptionPage from "./ExceptionPage";
+import { ExceptionPage } from "./ExceptionPage";
 
 const exceptionApi: ExceptionApi = {
   getFields,

@@ -17,8 +17,12 @@ export const NUMBER_ABBREVIATIONS: Record<
 };
 
 /** Formats a number with the field's settings: `-$34.0M` for -34000000 with symbol "$", 1 decimal place and "million". Without decimalPlaces the decimals show as typed. */
-export function formatNumber(value: number, settings?: Partial<NumberSettings>) {
+export function formatNumber(
+  value: number,
+  settings?: Partial<NumberSettings>,
+) {
   const { divisor, suffix } =
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- saved field settings may hold an abbreviation this build doesn't know
     NUMBER_ABBREVIATIONS[settings?.abbreviation ?? "none"] ??
     NUMBER_ABBREVIATIONS.none;
   const decimalPlaces = settings?.decimalPlaces;
@@ -34,8 +38,8 @@ export function formatFieldNumber(
   field: Pick<IField, "numberSettings">,
   value?: string | null,
 ) {
-  if (!value) return "";
+  if (value == null || value === "") return "";
   const amount = Number(value);
   if (!Number.isFinite(amount)) return value;
-  return formatNumber(amount, field?.numberSettings);
+  return formatNumber(amount, field.numberSettings);
 }

@@ -18,7 +18,7 @@ import {
   voidInvoice,
 } from "@/services/billing/billing.api";
 import { useBillingData, type BillingApi } from "./useBillingData";
-import BillingPage from "./BillingPage";
+import { BillingPage } from "./BillingPage";
 
 const billingApi: BillingApi = {
   getFields,

@@ -41,29 +41,29 @@ export async function deleteField(objId: string) {
 
 function toFieldSettings(field: IField) {
   return {
-    ...(field?.isUserField && { memberSettings: field.memberSettings }),
-    ...(field?.numberSettings && { numberSettings: field.numberSettings }),
-    ...((field?.type === "lookup" || field?.type === "link_table") && {
+    ...(field.isUserField && { memberSettings: field.memberSettings }),
+    ...(field.numberSettings && { numberSettings: field.numberSettings }),
+    ...((field.type === "lookup" || field.type === "link_table") && {
       lookupSettings: field.lookupSettings,
     }),
-    ...(field?.type === "formula" && {
+    ...(field.type === "formula" && {
       formulaSettings: field.formulaSettings,
     }),
-    ...(field?.isDateField && {
+    ...(field.isDateField && {
       dateFormat: field.dateFormat,
       displayTime: field.displayTime,
       timeFormat: field.timeFormat,
     }),
-    ...(field?.type === "time" && { timeFormat: field.timeFormat }),
+    ...(field.type === "time" && { timeFormat: field.timeFormat }),
   };
 }
 
 /** The create body for a field built by ModuleAddNewFieldDialog; the server makes the ids. */
 export function toFieldCreate(field: IField): ISidebarFieldCreate {
   return {
-    name: field?.name,
-    type: field?.type,
-    description: field?.description,
+    name: field.name,
+    type: field.type,
+    description: field.description,
     dropDownValues: toOptionInputs(field),
     ...toFieldSettings(field),
   };
@@ -75,12 +75,12 @@ export function toFieldUpdate(
   edited: IField,
 ): ISidebarFieldUpdate {
   return {
-    name: edited?.name,
-    description: saved?.description,
-    versionNo: saved?.versionNo,
+    name: edited.name,
+    description: saved.description,
+    versionNo: saved.versionNo,
     dropDownValues: toOptionInputs(
       edited,
-      new Set(saved?.dropDownValues?.map((option) => option?.id)),
+      new Set(saved.dropDownValues.map((option) => option.id)),
     ),
     ...toFieldSettings(edited),
   };
@@ -91,7 +91,7 @@ export function useFields(sidebarId?: string) {
   return useQuery({
     queryKey: fieldKeys.list(sidebarId ?? ""),
     queryFn: () => getFields(sidebarId ?? ""),
-    enabled: !!sidebarId,
+    enabled: sidebarId != null && sidebarId !== "",
   });
 }
 
@@ -100,7 +100,7 @@ export function useField(objId?: string) {
   return useQuery({
     queryKey: fieldKeys.detail(objId ?? ""),
     queryFn: () => getField(objId ?? ""),
-    enabled: !!objId,
+    enabled: objId != null && objId !== "",
   });
 }
 

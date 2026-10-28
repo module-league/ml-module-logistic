@@ -147,14 +147,14 @@ const CATEGORIES = Object.keys(FALLBACK_SPECS) as FallbackCategory[];
 
 /** Which icon a file gets: by its extension first, then by its MIME type. */
 export function fileCategory(fileType = "", extension = ""): FallbackCategory {
-  const lowered = extension?.toLowerCase();
+  const lowered = extension.toLowerCase();
   return (
     CATEGORIES.find((category) =>
-      FALLBACK_SPECS[category]?.extensions?.includes(lowered),
+      FALLBACK_SPECS[category].extensions.includes(lowered),
     ) ??
     CATEGORIES.find((category) =>
-      FALLBACK_SPECS[category]?.fileTypes?.some((type) =>
-        fileType?.startsWith(type),
+      FALLBACK_SPECS[category].fileTypes.some((type) =>
+        fileType.startsWith(type),
       ),
     ) ??
     "default"

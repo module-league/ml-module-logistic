@@ -22,7 +22,7 @@ import {
   toast,
   toField,
 } from "@moduleleague/ui";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { RecordLinkInput } from "@/components/custom/RecordLinkInput";
 import { RecordLookupContext } from "@/components/custom/RecordLookup.context";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
@@ -31,6 +31,7 @@ import { parseFieldDate } from "@/lib/dateHelper";
 import { parseRecordIds, toRecordIdsValue } from "@/lib/lookupHelper";
 import type { DispatchShipment } from "./dispatchBoard.utils";
 import type { DispatchData } from "./useDispatchData";
+import { nonEmpty } from "@/lib/stringHelper";
 
 export type DispatchDraft = Partial<IDispatchCreate>;
 export type DispatchErrors = Partial<Record<keyof IDispatchCreate, string>>;
@@ -46,14 +47,20 @@ const REQUIRED: [keyof IDispatchCreate, string][] = [
 
 function draftErrors(draft: DispatchDraft): DispatchErrors {
   const errors: DispatchErrors = Object.fromEntries(
-    REQUIRED.filter(([key]) => !draft?.[key]),
+    REQUIRED.filter(([key]) => draft[key] == null || draft[key] === ""),
   );
-  if (draft?.originId && draft?.originId === draft?.destinationId) {
+  if (
+    draft.originId != null &&
+    draft.originId !== "" &&
+    draft.originId === draft.destinationId
+  ) {
     errors.destinationId = "Pick a destination other than the origin.";
   }
   if (
-    draft?.plannedPickupAt &&
-    draft?.plannedDeliveryAt &&
+    draft.plannedPickupAt != null &&
+    draft.plannedPickupAt !== "" &&
+    draft.plannedDeliveryAt != null &&
+    draft.plannedDeliveryAt !== "" &&
     draft.plannedDeliveryAt < draft.plannedPickupAt
   ) {
     errors.plannedDeliveryAt = "Plan the delivery on or after the pickup.";
@@ -75,7 +82,7 @@ type DispatchJobDialogProps = {
  */
 export function DispatchJobDialog({ data, shipments }: DispatchJobDialogProps) {
   return (
-    <Dialog open={data?.dialog?.open} onOpenChange={data?.onDialogOpenChange}>
+    <Dialog open={data.dialog.open} onOpenChange={data.onDialogOpenChange}>
       <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 border-b p-4 pr-10 pb-3">
           <DialogTitle>Dispatch job</DialogTitle>
@@ -84,9 +91,9 @@ export function DispatchJobDialog({ data, shipments }: DispatchJobDialogProps) {
           </DialogDescription>
         </DialogHeader>
         <QueryWrapper
-          isLoading={data?.isLoading}
-          error={data?.error}
-          onRetry={data?.onRetry}
+          isLoading={data.isLoading}
+          error={data.error}
+          onRetry={data.onRetry}
           loadingText="Loading shipments, drivers and vehicles…"
         >
           <DispatchJobForm data={data} shipments={shipments} />
@@ -98,10 +105,8 @@ export function DispatchJobDialog({ data, shipments }: DispatchJobDialogProps) {
 
 function DispatchJobForm({ data, shipments }: DispatchJobDialogProps) {
   const { sources, lookupSources, lookups, members, onCreateDispatch } = data;
-  const onOpenChange = data?.onDialogOpenChange;
-  const [draft, setDraft] = useState<DispatchDraft>(
-    () => data?.dialog?.draft ?? {},
-  );
+  const onOpenChange = data.onDialogOpenChange;
+  const [draft, setDraft] = useState<DispatchDraft>(() => data.dialog.draft);
   const [submitted, setSubmitted] = useState(false);
   const errors = useMemo(
     () => (submitted ? draftErrors(draft) : {}),
@@ -116,11 +121,11 @@ function DispatchJobForm({ data, shipments }: DispatchJobDialogProps) {
     (key: keyof IDispatchCreate, value?: string) => {
       const shipment =
         key === "shipmentId"
-          ? shipments?.find((entry) => entry?.id === value)
+          ? shipments.find((entry) => entry.id === value)
           : undefined;
       setDraft((current) => ({
         ...current,
-        [key]: value || undefined,
+        [key]: nonEmpty(value),
         ...(shipment?.origin && { originId: shipment.origin.id }),
         ...(shipment?.destination && {
           destinationId: shipment.destination.id,
@@ -133,15 +138,15 @@ function DispatchJobForm({ data, shipments }: DispatchJobDialogProps) {
     async (event: FormEvent) => {
       event.preventDefault();
       setSubmitted(true);
-      if (Object.keys(draftErrors(draft)).length) return;
+      if (Object.keys(draftErrors(draft)).length > 0) return;
       try {
         const created = await onCreateDispatch({
           ...(draft as IDispatchCreate),
-          notes: draft?.notes?.trim() || undefined,
+          notes: nonEmpty(draft.notes?.trim()),
         });
-        toast.success(`Dispatch #${created?.docId} planned`);
+        toast.success(`Dispatch #${created.docId} planned`);
         onOpenChange(false);
-      } catch (error) {
+      } catch (error: unknown) {
         toast.error("Couldn't dispatch the job", {
           description: errorParser(error)?.message,
         });
@@ -155,26 +160,29 @@ function DispatchJobForm({ data, shipments }: DispatchJobDialogProps) {
   const linkProps = { draft, errors, members, onChange: change };
   return (
     <RecordLookupContext.Provider value={lookupContext}>
-      <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+      <form
+        onSubmit={(event) => void submit(event)}
+        className="flex min-h-0 flex-1 flex-col"
+      >
         <div className="grid min-h-0 flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-4 sm:grid-cols-2">
           <DispatchLinkField
             {...linkProps}
             name="shipmentId"
             label="Shipment"
-            sidebarId={sources?.shipmentSidebarId}
+            sidebarId={sources.shipmentSidebarId}
             className="sm:col-span-2"
           />
           <DispatchLinkField
             {...linkProps}
             name="driverId"
             label="Driver"
-            sidebarId={sources?.driverSidebarId}
+            sidebarId={sources.driverSidebarId}
           />
           <DispatchLinkField
             {...linkProps}
             name="vehicleId"
             label="Vehicle"
-            sidebarId={sources?.vehicleSidebarId}
+            sidebarId={sources.vehicleSidebarId}
           />
           <DispatchDateField
             {...linkProps}
@@ -190,13 +198,13 @@ function DispatchJobForm({ data, shipments }: DispatchJobDialogProps) {
             {...linkProps}
             name="originId"
             label="Origin"
-            sidebarId={sources?.locationSidebarId}
+            sidebarId={sources.locationSidebarId}
           />
           <DispatchLinkField
             {...linkProps}
             name="destinationId"
             label="Destination"
-            sidebarId={sources?.locationSidebarId}
+            sidebarId={sources.locationSidebarId}
           />
           <DispatchField label="Notes (optional)" className="sm:col-span-2">
             {(id) => (
@@ -205,7 +213,7 @@ function DispatchJobForm({ data, shipments }: DispatchJobDialogProps) {
                 rows={3}
                 maxLength={1000}
                 placeholder="Instructions for the driver"
-                value={draft?.notes ?? ""}
+                value={draft.notes ?? ""}
                 onChange={(event) => change("notes", event.target.value)}
               />
             )}
@@ -215,13 +223,13 @@ function DispatchJobForm({ data, shipments }: DispatchJobDialogProps) {
           <Button
             variant="outline"
             size="sm"
-            disabled={data?.isCreating}
+            disabled={data.isCreating}
             onClick={() => onOpenChange(false)}
           >
             Cancel
           </Button>
-          <Button type="submit" size="sm" disabled={data?.isCreating}>
-            {data?.isCreating ? "Dispatching…" : "Dispatch"}
+          <Button type="submit" size="sm" disabled={data.isCreating}>
+            {data.isCreating ? "Dispatching…" : "Dispatch"}
           </Button>
         </DialogFooter>
       </form>
@@ -253,7 +261,10 @@ export function DispatchField({
 }) {
   const id = useId();
   return (
-    <Field className={cn("gap-1.5", className)} data-invalid={!!error}>
+    <Field
+      className={cn("gap-1.5", className)}
+      data-invalid={error != null && error !== ""}
+    >
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
       {children(id)}
       <FieldError>{error}</FieldError>
@@ -282,16 +293,18 @@ export function DispatchLinkField({
       }),
     [label, sidebarId],
   );
-  const recordId = draft?.[name];
+  const recordId = draft[name];
   return (
-    <DispatchField label={label} error={errors?.[name]} className={className}>
+    <DispatchField label={label} error={errors[name]} className={className}>
       {(id) => (
         <RecordLinkInput
           id={id}
           field={field}
           members={members}
-          value={toRecordIdsValue(recordId ? [recordId] : [])}
-          onChange={(value) => onChange(name, parseRecordIds(value)?.[0])}
+          value={toRecordIdsValue(
+            recordId != null && recordId !== "" ? [recordId] : [],
+          )}
+          onChange={(value) => onChange(name, parseRecordIds(value)[0])}
         />
       )}
     </DispatchField>
@@ -307,11 +320,11 @@ export function DispatchDateField({
   className,
 }: DispatchInputProps) {
   return (
-    <DispatchField label={label} error={errors?.[name]} className={className}>
+    <DispatchField label={label} error={errors[name]} className={className}>
       {() => (
         <DateTimePicker
           granularity="minute"
-          value={parseFieldDate(draft?.[name])}
+          value={parseFieldDate(draft[name])}
           onChange={(date) => onChange(name, date?.toISOString())}
         />
       )}

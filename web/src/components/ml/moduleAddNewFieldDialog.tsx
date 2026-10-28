@@ -171,7 +171,7 @@ function FieldDialog({
             ? `Changes to ${built.name} were saved.`
             : `${built.name} was added as a ${fieldTypeOption(built.type)?.label.toLowerCase()} field.`,
         });
-      } catch (error) {
+      } catch (error: unknown) {
         toast.error(field ? "Couldn't save field" : "Couldn't add field", {
           description: errorParser(error)?.message,
         });
@@ -194,7 +194,7 @@ function FieldDialog({
       >
         <AddFieldSteps
           field={field}
-          onAdd={save}
+          onAdd={(built) => void save(built)}
           onCancel={close}
           takenNames={takenNames}
           saving={saving}
@@ -822,7 +822,7 @@ function FieldLookupSettings({
       {
         id: LOOKUP_CREATE_TIME_ID,
         name: "Create time",
-        type: "ds_create_time" as IField["type"],
+        type: "ds_create_time" as const,
       },
     ],
     [previewFields],

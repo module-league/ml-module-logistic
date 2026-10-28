@@ -3,6 +3,7 @@ import { memberNames } from "./memberHelper";
 import { attachmentNames } from "./attachmentHelper";
 import { formatFieldNumber } from "./numberHelper";
 import { optionNames } from "./selectHelper";
+import { nonEmpty } from "./stringHelper";
 import {
   isLinkingField,
   lookupDisplayField,
@@ -18,20 +19,20 @@ export function toRecordText(
   members?: IUserInfo[],
   lookups?: RecordLookups,
 ): string {
-  if (!value || field?.type === "checkbox") return "";
-  if (field?.type === "member") return memberNames(members, value);
-  if (field?.type === "attachment") return attachmentNames(value);
-  if (field?.isDateField) return formatFieldDate(field, value);
-  if (field?.type === "time") return formatFieldTime(field, value);
-  if (field?.isNumeric) {
+  if (value == null || value === "" || field.type === "checkbox") return "";
+  if (field.type === "member") return memberNames(members, value);
+  if (field.type === "attachment") return attachmentNames(value);
+  if (field.isDateField) return formatFieldDate(field, value);
+  if (field.type === "time") return formatFieldTime(field, value);
+  if (field.isNumeric === true) {
     return formatFieldNumber(field, value);
   }
-  if (field?.type === "single_select") {
+  if (field.type === "single_select") {
     return (
-      field?.dropDownValues?.find((option) => option?.id === value)?.value ?? ""
+      field.dropDownValues.find((option) => option.id === value)?.value ?? ""
     );
   }
-  if (field?.type === "multi_select") return optionNames(field, value);
+  if (field.type === "multi_select") return optionNames(field, value);
   if (isLinkingField(field)) {
     return lookupLabels(field, value, members, lookups)
       .map((linked) => linked.label)
@@ -49,7 +50,7 @@ export function lookupLabels(
 ) {
   const records = lookupRecordsOf(field, lookups);
   const shown = lookupDisplayField(field, lookups);
-  const byId = new Map(records?.map((record) => [record?.objId, record]));
+  const byId = new Map(records?.map((record) => [record.objId, record]));
   return parseRecordIds(value).map((id) => ({
     id,
     label: linkedRecordLabel(shown, records && byId.get(id), members, !records),
@@ -65,8 +66,9 @@ export function linkedRecordLabel(
 ) {
   if (loading) return "…";
   if (!record) return "Unknown record";
+  if (!shown) return "Untitled record";
   return (
-    (shown && toRecordText(shown, record?.values?.[shown.objId], members)) ||
+    nonEmpty(toRecordText(shown, record.values[shown.objId], members)) ??
     "Untitled record"
   );
 }

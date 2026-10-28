@@ -16,7 +16,7 @@ export function AttachmentThumbnail({
     return <AttachmentTypeIcon attachment={attachment} size={iconSize} />;
   return (
     <img
-      src={attachmentUrl(attachment?.id)}
+      src={attachmentUrl(attachment.id)}
       alt=""
       onError={() => setFailed(true)}
       className={className}

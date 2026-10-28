@@ -8,7 +8,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { buildDispatchBoard } from "../Dispatch/dispatchBoard.utils";
 import { DocumentList } from "./DocumentList";
 import { DocumentChecklist } from "./DocumentChecklist";
@@ -17,7 +17,7 @@ import { DocumentRulesDialog } from "./DocumentRulesDialog";
 import { buildDocumentRows } from "./document.utils";
 import type { DocumentApi, DocumentData } from "./useDocumentData";
 
-export default function DocumentPage({
+export function DocumentPage({
   data,
   getActivity,
 }: {
@@ -35,7 +35,10 @@ export default function DocumentPage({
     onSelect,
   } = data;
   const [rulesOpen, setRulesOpen] = useState(false);
-  const picks = settings?.versionNo ? settings : undefined;
+  const picks =
+    settings?.versionNo != null && settings.versionNo !== 0
+      ? settings
+      : undefined;
 
   const board = useMemo(
     () => buildDispatchBoard(sources, lookups, dispatches, members, picks),
@@ -65,9 +68,9 @@ export default function DocumentPage({
         </Button>
       </header>
       <QueryWrapper
-        isLoading={data?.isLoading}
-        error={data?.error}
-        onRetry={data?.onRetry}
+        isLoading={data.isLoading}
+        error={data.error}
+        onRetry={data.onRetry}
         renderLoader={<DocumentPageSkeleton />}
       >
         {selected ? (

@@ -9,15 +9,15 @@ type ErrorResultProps = {
   title?: React.ReactNode;
   /** Additional content of the error result, can be description, or render custom button for your user */
   content?: React.ReactNode;
-  onRetry?(): void;
+  onRetry?: () => void;
 };
 
-export default function ErrorResult(props: ErrorResultProps) {
+export function ErrorResult(props: ErrorResultProps) {
   const { onRetry } = props;
 
   return (
     <div className="flex flex-col gap-4 p-8 w-full items-center">
-      <CircleXIcon size="40" color="#ff3d32" />
+      <CircleXIcon size="40" className="text-destructive" />
 
       <h2>{props.title ?? errorParser(props.error)?.message}</h2>
 

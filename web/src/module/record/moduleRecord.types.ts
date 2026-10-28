@@ -103,7 +103,6 @@ export interface ModuleLookupPreviewProps {
   /** Its link field's current value, unsaved edits included: a JSON array of linked record ids. */
   value?: string | null;
   members?: IUserInfo[];
-  onClose: () => void;
 }
 
 export interface ModuleLinkedRecordCardProps {

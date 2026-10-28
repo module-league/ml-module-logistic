@@ -30,7 +30,7 @@ import type {
 import { FieldTypeIcon } from "@/components/custom/fieldTypeIcon";
 
 const ADD_LABEL = "New record";
-const getRecordKey = (record: ISidebarRecord) => record?.objId;
+const getRecordKey = (record: ISidebarRecord) => record.objId;
 
 export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
   const { fields, records, members, lookupSources, lookups } = data;
@@ -65,7 +65,8 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [onOpenRecord, onRefreshFields],
   );
   const openedRecordLoading =
-    !!data.fieldsState?.isLoading || !!data.openedRecordState?.isLoading;
+    data.fieldsState.isLoading === true ||
+    data.openedRecordState.isLoading === true;
   const onAddRecord = data.onAddRecord;
   const saveRecord = useCallback(
     async (values: ISidebarRecordValues) => {
@@ -75,27 +76,22 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [onAddRecord],
   );
 
-  const gridFields = useMemo(
-    () => [...(fields ?? []), ...SYSTEM_FIELDS],
-    [fields],
-  );
+  const gridFields = useMemo(() => [...fields, ...SYSTEM_FIELDS], [fields]);
 
   const filteredRecords = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return records ?? [];
-    return (
-      records?.filter((record) =>
-        gridFields.some((field) =>
-          toRecordText(field, recordFieldValue(field, record), members, lookups)
-            .toLowerCase()
-            .includes(term),
-        ),
-      ) ?? []
+    if (term === "") return records;
+    return records.filter((record) =>
+      gridFields.some((field) =>
+        toRecordText(field, recordFieldValue(field, record), members, lookups)
+          .toLowerCase()
+          .includes(term),
+      ),
     );
   }, [records, gridFields, search, members, lookups]);
 
   const orderedRecords = useMemo(() => {
-    if (!rowOrder.length) return filteredRecords;
+    if (rowOrder.length === 0) return filteredRecords;
     const position = new Map(rowOrder.map((key, index) => [key, index]));
     return [...filteredRecords].sort(
       (a, b) =>
@@ -113,7 +109,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [orderedRecords],
   );
   const shownPinnedRows = useMemo(() => {
-    if (!pinnedRows.length) return pinnedRows;
+    if (pinnedRows.length === 0) return pinnedRows;
     const keys = new Set(filteredRecords.map(getRecordKey));
     return pinnedRows.filter((key) => keys.has(key));
   }, [filteredRecords, pinnedRows]);
@@ -175,14 +171,14 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
       .sort((a, b) => position(a.key) - position(b.key));
   }, [gridFields, columnOrder, members]);
   const fieldTypeById = useMemo(
-    () => new Map(gridFields.map((field) => [field?.objId, field?.type])),
+    () => new Map(gridFields.map((field) => [field.objId, field.type])),
     [gridFields],
   );
   const columnOptions = useMemo(
     () =>
       orderedColumns.map((column) => ({
         key: column.key,
-        label: String(column.header),
+        label: typeof column.header === "string" ? column.header : column.key,
         type: fieldTypeById.get(column.key),
         system: column.system,
       })),
@@ -198,12 +194,12 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     ];
   }, [orderedColumns, hiddenColumns, pinnedColumns]);
   const selectedCount = useMemo(() => {
-    const keys = new Set(records?.map(getRecordKey));
+    const keys = new Set(records.map(getRecordKey));
     return selectedKeys.filter((key) => keys.has(key)).length;
   }, [records, selectedKeys]);
   const clearSelection = useCallback(() => setSelectedKeys([]), []);
   const deleteSelected = useCallback(() => {
-    const keys = new Set(records?.map(getRecordKey));
+    const keys = new Set(records.map(getRecordKey));
     setRecordDeletion({
       keys: selectedKeys.filter((key) => keys.has(key)),
       open: true,
@@ -220,7 +216,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
       ),
     [],
   );
-  const deletingCount = recordDeletion?.keys?.length ?? 0;
+  const deletingCount = recordDeletion?.keys.length ?? 0;
   const onDeleteRecords = data.onDeleteRecords;
   const confirmDeleteRecords = useCallback(async () => {
     const keys = recordDeletion?.keys ?? [];
@@ -251,7 +247,9 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
       let next = 0;
       setColumnOrder(
         orderedColumns.map((column) =>
-          hiddenColumns.includes(column.key) ? column.key : visibleKeys[next++],
+          hiddenColumns.includes(column.key)
+            ? column.key
+            : (visibleKeys[next++] ?? column.key),
         ),
       );
     },
@@ -283,14 +281,14 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     [],
   );
   const actionField = useMemo(
-    () => fields?.find((field) => field?.objId === fieldAction?.fieldId),
+    () => fields.find((field) => field.objId === fieldAction?.fieldId),
     [fields, fieldAction?.fieldId],
   );
   const otherFieldNames = useMemo(
     () =>
       fields
-        ?.filter((field) => field?.objId !== fieldAction?.fieldId)
-        .map((field) => field?.name) ?? [],
+        .filter((field) => field.objId !== fieldAction?.fieldId)
+        .map((field) => field.name),
     [fields, fieldAction?.fieldId],
   );
   const onUpdateField = data.onUpdateField;
@@ -312,17 +310,17 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
 
   const empty = useMemo(
     () =>
-      records?.length
+      records.length > 0
         ? {
             title: "No matching records",
             description: "Try another search or clear the filters.",
           }
         : { actionLabel: ADD_LABEL, onAction: openNewRecord },
-    [records?.length, openNewRecord],
+    [records.length, openNewRecord],
   );
 
   const linkFields = useMemo(
-    () => fields?.filter((field) => field?.type === "link_table") ?? [],
+    () => fields.filter((field) => field.type === "link_table"),
     [fields],
   );
   const linkedRecord = useNewLinkedRecord(
@@ -334,13 +332,13 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
 
   const lookupContext = useMemo(
     () => ({
-      sidebarId: item?.sidebarId,
+      sidebarId: item.sidebarId,
       sources: lookupSources,
       linkFields,
       lookups,
       onNewLinkedRecord,
     }),
-    [item?.sidebarId, lookupSources, linkFields, lookups, onNewLinkedRecord],
+    [item.sidebarId, lookupSources, linkFields, lookups, onNewLinkedRecord],
   );
 
   const pageToolbar = useMemo<PageToolbarProps>(
@@ -377,11 +375,11 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
     <RecordLookupContext.Provider value={lookupContext}>
       <div className="flex min-h-0 flex-1 flex-col">
         <main className="flex min-h-0 flex-1 flex-col">
-          {!!(item?.sidebarText?.length || item?.sidebarDesc?.length) && (
+          {!!(item.sidebarText.length > 0 || item.sidebarDesc.length > 0) && (
             <PageHeader
-              title={item?.sidebarText}
-              description={item?.sidebarDesc}
-              hidePageSeparator={item?.hidePageSeparator}
+              title={item.sidebarText}
+              description={item.sidebarDesc}
+              hidePageSeparator={item.hidePageSeparator}
               actions={actions}
               people={people}
               onInvitePeople={invitePeople}
@@ -430,7 +428,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           {...data.formsState}
           open={formsOpen}
           onOpenChange={setFormsOpen}
-          title={item?.sidebarText ?? ""}
+          title={item.sidebarText}
           fields={fields}
           members={members}
           forms={data.forms}
@@ -464,8 +462,8 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           {...recordNavigation}
           onNavigate={onOpenRecord}
           isLoading={openedRecordLoading}
-          error={data.openedRecordState?.error ?? data.fieldsState?.error}
-          onRetry={data.openedRecordState?.onRetry}
+          error={data.openedRecordState.error ?? data.fieldsState.error}
+          onRetry={data.openedRecordState.onRetry}
           onSave={data.onUpdateRecord}
         />
         <ModuleEditFieldDialog
@@ -483,7 +481,7 @@ export function ModulePage({ data, actions, pageSize = 20 }: ModulePageProps) {
           onDelete={deleteField}
         />
         <ConfirmDeleteDialog
-          open={!!recordDeletion?.open}
+          open={recordDeletion?.open === true}
           onOpenChange={changeRecordDeletionOpen}
           title={
             deletingCount === 1

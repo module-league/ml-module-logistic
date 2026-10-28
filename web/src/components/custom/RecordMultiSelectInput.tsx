@@ -17,8 +17,8 @@ export function RecordMultiSelectInput({
   onBlur,
 }: RecordMultiSelectInputProps) {
   const optionById = useMemo(
-    () => new Map(field?.dropDownValues?.map((option) => [option?.id, option])),
-    [field?.dropDownValues],
+    () => new Map(field.dropDownValues.map((option) => [option.id, option])),
+    [field.dropDownValues],
   );
   const selectedIds = useMemo(
     () => parseOptionIds(value).filter((optionId) => optionById.has(optionId)),
@@ -26,12 +26,12 @@ export function RecordMultiSelectInput({
   );
   const options = useMemo(
     () =>
-      field?.dropDownValues?.map((option) => ({
-        value: option?.id,
-        label: option?.value,
-        color: option?.colorCode,
-      })) ?? [],
-    [field?.dropDownValues],
+      field.dropDownValues.map((option) => ({
+        value: option.id,
+        label: option.value,
+        color: option.colorCode,
+      })),
+    [field.dropDownValues],
   );
 
   const change = useCallback(

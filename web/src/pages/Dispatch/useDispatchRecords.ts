@@ -54,10 +54,10 @@ export function useDispatchRecords(api: DispatchRecordsApi) {
       sources
         ? [
             ...new Set([
-              sources?.shipmentSidebarId,
-              sources?.driverSidebarId,
-              sources?.vehicleSidebarId,
-              sources?.locationSidebarId,
+              sources.shipmentSidebarId,
+              sources.driverSidebarId,
+              sources.vehicleSidebarId,
+              sources.locationSidebarId,
             ]),
           ]
         : NO_IDS,
@@ -72,13 +72,13 @@ export function useDispatchRecords(api: DispatchRecordsApi) {
   const lookupError = useMemo(() => {
     const missing = sidebarIds.find(
       (sidebarId) =>
-        !lookupSources?.some((source) => source?.sidebarId === sidebarId),
+        !lookupSources.some((source) => source.sidebarId === sidebarId),
     );
-    return missing
+    return missing != null && missing !== ""
       ? new Error(
           `'${missing}' isn't a page of this module. Fix the Dispatch section of the API's appsettings.`,
         )
-      : Object.values(lookupErrors)?.[0];
+      : Object.values(lookupErrors)[0];
   }, [sidebarIds, lookupSources, lookupErrors]);
   const error =
     sourcesQuery.error ??
@@ -89,16 +89,17 @@ export function useDispatchRecords(api: DispatchRecordsApi) {
     sourcesQuery.isLoading ||
     dispatchesQuery.isLoading ||
     settingsQuery.isLoading ||
-    (!error && sidebarIds.some((sidebarId) => !lookups?.[sidebarId]));
+    (error == null &&
+      sidebarIds.some((sidebarId) => lookups[sidebarId] === undefined));
 
   const refetchSources = sourcesQuery.refetch;
   const refetchDispatches = dispatchesQuery.refetch;
   const refetchSettings = settingsQuery.refetch;
   const onRetry = useCallback(() => {
-    refetchSources();
-    refetchDispatches();
-    refetchSettings();
-    sidebarIds.forEach(retry);
+    void refetchSources();
+    void refetchDispatches();
+    void refetchSettings();
+    sidebarIds.forEach((sidebarId) => void retry(sidebarId));
   }, [refetchSources, refetchDispatches, refetchSettings, sidebarIds, retry]);
 
   return useMemo(

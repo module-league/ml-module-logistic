@@ -96,11 +96,12 @@ export function ExceptionList({
                       : "Unassigned"}
                   </span>
                 </span>
-                {row.rule?.autoClose && exception.status !== "resolved" && (
-                  <span className={cn("w-fit bg-muted", CHIP_CLASS)}>
-                    Closes itself
-                  </span>
-                )}
+                {row.rule?.autoClose === true &&
+                  exception.status !== "resolved" && (
+                    <span className={cn("w-fit bg-muted", CHIP_CLASS)}>
+                      Closes itself
+                    </span>
+                  )}
               </span>
             </button>
           </li>

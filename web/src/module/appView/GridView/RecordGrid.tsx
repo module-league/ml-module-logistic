@@ -22,7 +22,7 @@ import {
   type RowSelectionState,
   type Updater,
 } from "@tanstack/react-table";
-import { FilePenIcon, Maximize2, Pin, Plus, SquarePenIcon } from "lucide-react";
+import { Pin, Plus, SquarePenIcon } from "lucide-react";
 import {
   Button,
   Checkbox,
@@ -92,13 +92,13 @@ export function RecordGrid<T>({
   const fieldNames = useMemo(
     () =>
       columns
-        ?.filter((column) => !column?.system)
-        .map((column) => columnLabel(column)) ?? [],
+        .filter((column) => column.system !== true)
+        .map((column) => columnLabel(column)),
     [columns],
   );
-  const data = useMemo(() => records ?? [], [records]);
+  const data = records;
   const columnByKey = useMemo(
-    () => new Map(columns?.map((column) => [column?.key, column])),
+    () => new Map(columns.map((column) => [column.key, column])),
     [columns],
   );
   const columnDefs = useMemo(
@@ -160,7 +160,7 @@ export function RecordGrid<T>({
     [table],
   );
   const toggleRow = useCallback(
-    (key: string) => table.getRow(key)?.toggleSelected(),
+    (key: string) => table.getRow(key).toggleSelected(),
     [table],
   );
   const sensors = useSensors(
@@ -202,9 +202,14 @@ export function RecordGrid<T>({
   );
   const handleDragEnd = useCallback(
     ({ active, over }: DragEndEvent) => {
-      if (!over || active?.id === over?.id) return;
-      if (active?.data?.current?.type === "row") {
-        onRowReorder?.(active.data.current?.key, over.data.current?.key);
+      if (!over || active.id === over.id) return;
+      if (active.data.current?.type === "row") {
+        // dnd-kit types drag data loosely; RecordGridRow sets `key` to the row key string
+        const activeKey: unknown = active.data.current.key;
+        const overKey: unknown = over.data.current?.key;
+        if (typeof activeKey === "string" && typeof overKey === "string") {
+          onRowReorder?.(activeKey, overKey);
+        }
         return;
       }
       onColumnReorder?.(
@@ -253,7 +258,7 @@ export function RecordGrid<T>({
                       <Checkbox
                         aria-label="Select all on this page"
                         checked={pageSelection}
-                        disabled={!pageKeys.length}
+                        disabled={pageKeys.length === 0}
                         onCheckedChange={togglePage}
                       />
                     </span>
@@ -289,7 +294,7 @@ export function RecordGrid<T>({
             </SortableContext>
           </TableHeader>
           <TableBody>
-            {!rows.length && (
+            {rows.length === 0 && (
               <TableRow className="hover:bg-transparent">
                 <TableCell
                   colSpan={
@@ -390,7 +395,7 @@ export function RecordGrid<T>({
                 );
               })}
             </SortableContext>
-            {fillerRows?.map((filler) => (
+            {fillerRows.map((filler) => (
               <TableRow
                 key={`filler-${filler}`}
                 style={fillerStyle}

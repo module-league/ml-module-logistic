@@ -186,7 +186,7 @@ export function ModuleSidebar({
                   key={item.sidebarId}
                   item={item}
                   collapsed={collapsed}
-                  searching={!!term}
+                  searching={term !== ""}
                 />
               ))}
             </SidebarMenu>
@@ -247,13 +247,13 @@ function SidebarNavItem({
 }) {
   const currentKey = useCurrentKey();
   const [userOpen, setUserOpen] = useState<boolean>();
-  const useBadge = item?.useBadge ?? useNoBadge;
+  const useBadge = item.useBadge ?? useNoBadge;
   const badge = useBadge();
   const Icon = item.sidebarIcon;
-  const itemChildren = item?.sidebarItems;
+  const itemChildren = item.sidebarItems;
   const children = useMemo(() => itemChildren ?? [], [itemChildren]);
   const childActive = useMemo(
-    () => children.some((child) => child?.sidebarId === currentKey),
+    () => children.some((child) => child.sidebarId === currentKey),
     [children, currentKey],
   );
   const open = searching || (userOpen ?? childActive);
@@ -270,25 +270,26 @@ function SidebarNavItem({
       <span>{item.sidebarText}</span>
     </>
   );
-  const badgeNode = badge ? (
-    <SidebarMenuBadge
-      className={cn(
-        "rounded-full bg-amber-100 px-1.5 text-amber-900",
-        children.length > 0 && "right-7",
-      )}
-    >
-      {badge}
-    </SidebarMenuBadge>
-  ) : null;
+  const badgeNode =
+    badge != null && badge !== 0 ? (
+      <SidebarMenuBadge
+        className={cn(
+          "rounded-full bg-amber-100 px-1.5 text-amber-900",
+          children.length > 0 && "right-7",
+        )}
+      >
+        {badge}
+      </SidebarMenuBadge>
+    ) : null;
 
-  if (!children.length) {
+  if (children.length === 0) {
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
           asChild
           isActive={isActive}
           tooltip={item.sidebarText}
-          className={cn("relative", item?.className)}
+          className={cn("relative", item.className)}
         >
           <NavLink to={`/${item.sidebarId}`} title={item.sidebarDesc}>
             {content}
@@ -306,9 +307,9 @@ function SidebarNavItem({
           asChild
           isActive={isActive}
           tooltip={item.sidebarText}
-          className={cn("relative pr-8", item?.className)}
+          className={cn("relative pr-8", item.className)}
         >
-          {item?.page || collapsed ? (
+          {item.page || collapsed ? (
             <NavLink to={`/${targetKey}`} title={item.sidebarDesc}>
               {content}
             </NavLink>
@@ -341,7 +342,7 @@ function SidebarNavItem({
 
 function SidebarNavSubItem({ item }: { item: INavSubItemConfig }) {
   const isActive = useCurrentKey() === item.sidebarId;
-  const useBadge = item?.useBadge ?? useNoBadge;
+  const useBadge = item.useBadge ?? useNoBadge;
   const badge = useBadge();
   const Icon = item.sidebarIcon;
 
@@ -350,12 +351,12 @@ function SidebarNavSubItem({ item }: { item: INavSubItemConfig }) {
       <SidebarMenuSubButton
         asChild
         isActive={isActive}
-        className={item?.className}
+        className={item.className}
       >
         <NavLink to={`/${item.sidebarId}`} title={item.sidebarDesc}>
           {Icon && <Icon />}
           <span className="min-w-0 flex-1 truncate">{item.sidebarText}</span>
-          {badge ? (
+          {badge != null && badge !== 0 ? (
             <span className="ml-auto rounded-full bg-amber-100 px-1.5 text-xs text-amber-900 tabular-nums">
               {badge}
             </span>

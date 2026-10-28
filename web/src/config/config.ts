@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { ChartColumn, FileText, LayoutDashboard, MapPin, Package, Receipt, TriangleAlert, Truck } from "lucide-react";
+import { FileText, Package, Receipt, TriangleAlert, Truck } from "lucide-react";
 import type { IModuleConfig } from "@/module/shell/module.types";
 
 export const moduleConfig: IModuleConfig = {
@@ -8,18 +8,6 @@ export const moduleConfig: IModuleConfig = {
   icon: Truck,
   homeKey: "logistic", // switch to "dashboard" once that page is built
   groups: [
-    // {
-    //   label: "Overview",
-    //   sidebarItems: [
-    //     {
-    //       sidebarId: "dashboard",
-    //       sidebarText: "Dashboard",
-    //       sidebarDesc: "Today’s shipments at a glance.",
-    //       sidebarIcon: LayoutDashboard,
-    //       page: ComingSoon,
-    //     },
-    //   ],
-    // },
     {
       label: "Operations",
       sidebarItems: [
@@ -29,13 +17,13 @@ export const moduleConfig: IModuleConfig = {
           sidebarDesc: "Track shipments from origin to destination.",
           sidebarIcon: Package,
           page: lazy(() => import("@/pages/Logistic/Logistic")),
-          sidebarItems:[
+          sidebarItems: [
             {
-                sidebarId: "shipment",
-                sidebarText: "Shipments",
-                sidebarDesc: "Track shipments from origin to destination.",
-                sidebarIcon: Package,
-                page: lazy(() => import("@/pages/Logistic/Shipment")),
+              sidebarId: "shipment",
+              sidebarText: "Shipments",
+              sidebarDesc: "Track shipments from origin to destination.",
+              sidebarIcon: Package,
+              page: lazy(() => import("@/pages/Logistic/Shipment")),
             },
             {
               sidebarId: "shipment-party",
@@ -53,7 +41,7 @@ export const moduleConfig: IModuleConfig = {
             },
             {
               sidebarId: "shipment-tracking-event",
-              sidebarText: "Tracking Event",
+              sidebarText: "Tracking event",
               sidebarDesc: "Track shipments from origin to destination.",
               sidebarIcon: Package,
               page: lazy(() => import("@/pages/Logistic/ShipmentTrackEvent")),
@@ -66,37 +54,38 @@ export const moduleConfig: IModuleConfig = {
               page: lazy(() => import("@/pages/Logistic/ShipmentLocation")),
             },
             {
+              // NOTE: the misspelt id is the URL path and the key of saved tabs, so it stays as is.
               sidebarId: "shipment-execption",
-              sidebarText: "Shipment Execption",
+              sidebarText: "Shipment exception",
               sidebarDesc: "Track shipments from origin to destination.",
               sidebarIcon: Package,
               page: lazy(() => import("@/pages/Logistic/ShipmentException")),
             },
-             {
+            {
               sidebarId: "shipment-driver",
               sidebarText: "Driver",
               sidebarDesc: "Track shipments from origin to destination.",
               sidebarIcon: Package,
               page: lazy(() => import("@/pages/Logistic/Driver")),
             },
-             {
+            {
               sidebarId: "shipment-vehicle",
               sidebarText: "Vehicle",
               sidebarDesc: "Track shipments from origin to destination.",
               sidebarIcon: Package,
               page: lazy(() => import("@/pages/Logistic/Vehicle")),
             },
-          ]
+          ],
         },
         {
           sidebarId: "dispatch",
           sidebarText: "Dispatch",
           sidebarDesc: "Pending shipments waiting to be dispatched.",
           sidebarIcon: Truck,
-          // className: "text-amber-700",
           page: lazy(() => import("@/pages/Dispatch/Dispatch")),
         },
         {
+          // NOTE: the misspelt id is the URL path (linked from Billing) and the key of saved tabs, so it stays as is.
           sidebarId: "exeptions",
           sidebarText: "Exceptions",
           sidebarDesc: "Late dispatches and problems being worked on.",
@@ -115,33 +104,13 @@ export const moduleConfig: IModuleConfig = {
         {
           sidebarId: "billing",
           sidebarText: "Billing",
-          sidebarDesc: "Delivered shipments priced from the rate card and invoiced.",
+          sidebarDesc:
+            "Delivered shipments priced from the rate card and invoiced.",
           sidebarIcon: Receipt,
           hidePageSeparator: false,
           page: lazy(() => import("@/pages/Billing/Billing")),
         },
-        //  {
-        //   sidebarId: "master-data",
-        //   sidebarText: "Master Data",
-        //   sidebarDesc: "",
-        //   sidebarIcon: Database,
-        //   hidePageSeparator: false,
-        //   page: lazy(() => import("@/pages/Shipment")),
-        // },
-       
       ],
     },
-    // {
-    //   label: "Insights",
-    //   sidebarItems: [
-    //     {
-    //       sidebarId: "reports",
-    //       sidebarText: "Reports",
-    //       sidebarDesc: "Volumes and delivery times by route.",
-    //       sidebarIcon: ChartColumn,
-    //       page: ComingSoon,
-    //     },
-    //   ],
-    // },
   ],
 };

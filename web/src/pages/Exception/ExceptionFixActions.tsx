@@ -20,6 +20,7 @@ import { tableFields } from "@/module/dashboard/moduleDashboard.utils";
 import { DispatchPlanDialog } from "../Dispatch/DispatchPlanDialog";
 import {
   FIX_ACTIONS,
+  MANUAL_FIX_ACTIONS,
   recordUpdate,
   stamp,
   type ExceptionRow,
@@ -53,7 +54,7 @@ export function ExceptionFixActions({
   row: ExceptionRow;
   data: ExceptionData;
 }) {
-  const actions = FIX_ACTIONS[row.exception.ruleKey] ?? FIX_ACTIONS.manual;
+  const actions = FIX_ACTIONS[row.exception.ruleKey] ?? MANUAL_FIX_ACTIONS;
   return (
     <div className="flex flex-wrap gap-2">
       {actions.map((action) => (
@@ -72,7 +73,7 @@ function useFixRunner(row: ExceptionRow, data: ExceptionData) {
         await onLog(row.exception, "action", step);
         await run?.();
         return true;
-      } catch (error) {
+      } catch (error: unknown) {
         toast.error("Couldn't apply the fix", {
           description: errorParser(error)?.message,
         });
@@ -115,48 +116,49 @@ function Fix(props: FixProps) {
         <FixButton
           disabled={!dispatch}
           title={dispatch ? undefined : "Not dispatched yet"}
-          onClick={() => navigate(`/dispatch?dispatch=${dispatch?.objId}`)}
+          onClick={() => void navigate(`/dispatch?dispatch=${dispatch?.objId}`)}
         >
           {label}
         </FixButton>
       );
     case "create_location":
       return (
-        <FixButton onClick={() => navigate("/shipment-location")}>
+        <FixButton onClick={() => void navigate("/shipment-location")}>
           {label}
         </FixButton>
       );
     case "use_pickup_weight": {
       const fieldId = data.exceptionSettings?.chargeableWeightFieldId;
-      const weight = exception.facts?.pickupWeight;
+      const weight = exception.facts.pickupWeight;
       const sidebarId = data.sources?.shipmentSidebarId ?? "";
+      const handleUsePickupWeight = async () => {
+        const body = recordUpdate(
+          data.lookups,
+          sidebarId,
+          exception.shipmentId,
+          fieldId ?? "",
+          String(weight),
+        );
+        if (!body) return;
+        await run(
+          `Set the chargeable weight to the pickup weight, ${weight} kg.`,
+          async () => {
+            await data.onResolve(exception, "Used the pickup weight");
+            await data.onUpdateRecord(sidebarId, exception.shipmentId, body);
+          },
+        );
+      };
       return (
         <FixButton
-          disabled={!fieldId || weight == null || data.isSaving}
-          title={
-            fieldId ? undefined : "Pick the chargeable weight field in Rules"
+          disabled={
+            fieldId == null || fieldId === "" || weight == null || data.isSaving
           }
-          onClick={async () => {
-            const body = recordUpdate(
-              data.lookups,
-              sidebarId,
-              exception.shipmentId,
-              fieldId ?? "",
-              String(weight),
-            );
-            if (!body) return;
-            await run(
-              `Set the chargeable weight to the pickup weight, ${weight} kg.`,
-              async () => {
-                await data.onResolve(exception, "Used the pickup weight");
-                await data.onUpdateRecord(
-                  sidebarId,
-                  exception.shipmentId,
-                  body,
-                );
-              },
-            );
-          }}
+          title={
+            fieldId != null && fieldId !== ""
+              ? undefined
+              : "Pick the chargeable weight field in Rules"
+          }
+          onClick={() => void handleUsePickupWeight()}
         >
           {label}
         </FixButton>
@@ -167,7 +169,7 @@ function Fix(props: FixProps) {
         <FixButton
           disabled={data.isSaving}
           onClick={() =>
-            run("Kept the chargeable weight on record.", () =>
+            void run("Kept the chargeable weight on record.", () =>
               data.onResolve(exception, "Kept the record weight"),
             )
           }
@@ -176,21 +178,24 @@ function Fix(props: FixProps) {
         </FixButton>
       );
     case "wait_until_opening": {
-      const opensAt = exception.facts?.opensAt;
-      const usable = !!opensAt && new Date(opensAt) > new Date();
+      const opensAt = exception.facts.opensAt;
+      const usable =
+        opensAt != null && opensAt !== "" && new Date(opensAt) > new Date();
       return (
         <FixButton
           disabled={!usable || data.isSaving}
           title={usable ? undefined : "It's open already"}
-          onClick={() =>
-            opensAt &&
-            run(
+          onClick={() => {
+            if (opensAt == null || opensAt === "") return;
+            void run(
               `Waiting until the destination opens at ${stamp(opensAt)}.`,
               () => data.onSnooze(exception, new Date(opensAt)),
-            )
-          }
+            );
+          }}
         >
-          {opensAt ? `Wait until ${format(new Date(opensAt), "HH:mm")}` : label}
+          {opensAt != null && opensAt !== ""
+            ? `Wait until ${format(new Date(opensAt), "HH:mm")}`
+            : label}
         </FixButton>
       );
     }
@@ -198,7 +203,7 @@ function Fix(props: FixProps) {
       return (
         <FixButton
           onClick={() =>
-            navigate(`/documents?shipment=${exception.shipmentId}`)
+            void navigate(`/documents?shipment=${exception.shipmentId}`)
           }
         >
           {label}
@@ -253,15 +258,15 @@ function UpdateDueFix({ row, data, action }: FixProps) {
   const sidebarId = data.sources?.shipmentSidebarId ?? "";
   const etaField = useMemo(
     () =>
-      tableFields(data.lookups?.[sidebarId]).find(
+      tableFields(data.lookups[sidebarId]).find(
         (field) => field.objId === data.exceptionSettings?.etaFieldId,
       ),
     [data.lookups, sidebarId, data.exceptionSettings?.etaFieldId],
   );
   const viaDispatch =
-    exception.facts?.dueSource === "planned_delivery" && !!dispatch;
+    exception.facts.dueSource === "planned_delivery" && !!dispatch;
   const [due, setDue] = useState<Date | undefined>(() =>
-    parseFieldDate(exception.facts?.due),
+    parseFieldDate(exception.facts.due),
   );
   const save = useCallback(
     async (close: () => void) => {
@@ -269,7 +274,7 @@ function UpdateDueFix({ row, data, action }: FixProps) {
       const done = await run(
         `Moved the due time to ${stamp(due.toISOString())}.`,
         () => {
-          if (viaDispatch && dispatch)
+          if (viaDispatch)
             return data.onPlan(dispatch, {
               driverId: dispatch.driverId,
               vehicleId: dispatch.vehicleId,
@@ -312,7 +317,7 @@ function UpdateDueFix({ row, data, action }: FixProps) {
             className="self-end"
             disabled={!due}
             isLoading={data.isSaving}
-            onClick={() => save(close)}
+            onClick={() => void save(close)}
           >
             Save
           </Button>
@@ -336,28 +341,40 @@ function ContactFix({ row, data, action }: FixProps) {
   const phoneFieldId = toDriver
     ? data.exceptionSettings?.driverPhoneFieldId
     : data.exceptionSettings?.locationPhoneFieldId;
-  const phone = data.lookups?.[sidebarId ?? ""]?.records?.find(
-    (record) => record?.objId === recordId,
-  )?.values?.[phoneFieldId ?? ""];
+  const phone = data.lookups[sidebarId ?? ""]?.records.find(
+    (record) => record.objId === recordId,
+  )?.values[phoneFieldId ?? ""];
   const name = toDriver ? driver?.title : shipment?.destination?.title;
   const step = {
     notify_consignee: "Notified the consignee",
     call_receiver: "Called the receiver",
     call_driver: "Called the driver",
   }[action as "notify_consignee" | "call_receiver" | "call_driver"];
+  const handleLogContact = async (close: () => void) => {
+    if (
+      await run(
+        phone != null && phone !== "" ? `${step} at ${phone}.` : `${step}.`,
+      )
+    )
+      close();
+  };
   return (
     <FixPopover
       label={FIX_LABEL[action]}
-      disabled={!recordId}
+      disabled={recordId == null || recordId === ""}
       title={
-        recordId ? undefined : toDriver ? "No driver yet" : "No destination yet"
+        recordId != null && recordId !== ""
+          ? undefined
+          : toDriver
+            ? "No driver yet"
+            : "No destination yet"
       }
     >
       {(close) => (
         <>
           <div className="flex flex-col gap-0.5">
             <span className="text-sm font-medium">{name ?? "Unknown"}</span>
-            {phone ? (
+            {phone != null && phone !== "" ? (
               <a
                 href={`tel:${phone}`}
                 className="flex items-center gap-1.5 text-sm text-primary hover:underline"
@@ -367,7 +384,7 @@ function ContactFix({ row, data, action }: FixProps) {
               </a>
             ) : (
               <span className="text-xs text-muted-foreground">
-                {phoneFieldId
+                {phoneFieldId != null && phoneFieldId !== ""
                   ? "No phone number on record."
                   : "Pick the phone field in Rules to show it here."}
               </span>
@@ -376,10 +393,7 @@ function ContactFix({ row, data, action }: FixProps) {
           <Button
             size="sm"
             className="self-end"
-            onClick={async () => {
-              if (await run(phone ? `${step} at ${phone}.` : `${step}.`))
-                close();
-            }}
+            onClick={() => void handleLogContact(close)}
           >
             {action === "notify_consignee"
               ? "Mark as notified"
@@ -419,12 +433,28 @@ function LinkDestinationFix({ row, data, action }: FixProps) {
     }),
     [data.lookupSources, data.lookups],
   );
+  const handleLink = async (close: () => void) => {
+    const body = recordUpdate(
+      data.lookups,
+      sidebarId,
+      exception.shipmentId,
+      fieldId ?? "",
+      toRecordIdsValue(picked != null && picked !== "" ? [picked] : []),
+    );
+    if (!body) return;
+    const done = await run("Linked a destination.", () =>
+      data.onUpdateRecord(sidebarId, exception.shipmentId, body),
+    );
+    if (done) close();
+  };
   return (
     <FixPopover
       label={FIX_LABEL[action]}
-      disabled={!fieldId}
+      disabled={fieldId == null || fieldId === ""}
       title={
-        fieldId ? undefined : "Pick the destination field in Customize card"
+        fieldId != null && fieldId !== ""
+          ? undefined
+          : "Pick the destination field in Customize card"
       }
     >
       {(close) => (
@@ -433,28 +463,17 @@ function LinkDestinationFix({ row, data, action }: FixProps) {
           <RecordLinkInput
             field={field}
             members={data.members}
-            value={toRecordIdsValue(picked ? [picked] : [])}
-            onChange={(value) => setPicked(parseRecordIds(value)?.[0])}
+            value={toRecordIdsValue(
+              picked != null && picked !== "" ? [picked] : [],
+            )}
+            onChange={(value) => setPicked(parseRecordIds(value)[0])}
           />
           <Button
             size="sm"
             className="self-end"
-            disabled={!picked}
+            disabled={picked == null || picked === ""}
             isLoading={data.isSaving}
-            onClick={async () => {
-              const body = recordUpdate(
-                data.lookups,
-                sidebarId,
-                exception.shipmentId,
-                fieldId ?? "",
-                toRecordIdsValue(picked ? [picked] : []),
-              );
-              if (!body) return;
-              const done = await run("Linked a destination.", () =>
-                data.onUpdateRecord(sidebarId, exception.shipmentId, body),
-              );
-              if (done) close();
-            }}
+            onClick={() => void handleLink(close)}
           >
             Link
           </Button>

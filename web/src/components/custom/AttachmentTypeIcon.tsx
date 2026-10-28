@@ -11,6 +11,7 @@ import {
   type FallbackCategory,
 } from "@/services/fileType/fileFallback";
 import type { AttachmentTypeIconProps } from "./RecordAttachmentInput.types";
+import { nonEmpty } from "@/lib/stringHelper";
 
 const SIZES = {
   xs: { box: 20, icon: 12, badge: 0 },
@@ -170,9 +171,9 @@ export function AttachmentTypeIcon({
     [attachment?.fileType, attachment?.fileExtension],
   );
   const spec = FALLBACK_SPECS[category];
-  const { box, icon, badge } = SIZES[size] ?? SIZES.md;
-  const label = (attachment?.fileExtension || spec?.label)
-    ?.toUpperCase()
+  const { box, icon, badge } = SIZES[size];
+  const label = (nonEmpty(attachment?.fileExtension) ?? spec.label)
+    .toUpperCase()
     .slice(0, 5);
 
   return (
@@ -184,9 +185,9 @@ export function AttachmentTypeIcon({
       style={{
         width: box,
         height: box,
-        color: spec?.primaryColor,
-        backgroundColor: spec?.bgSurface,
-        borderColor: spec?.borderStroke,
+        color: spec.primaryColor,
+        backgroundColor: spec.bgSurface,
+        borderColor: spec.borderStroke,
       }}
     >
       <svg
@@ -201,10 +202,10 @@ export function AttachmentTypeIcon({
       >
         {MOTIFS[category]}
       </svg>
-      {showBadge && !!badge && (
+      {showBadge && badge !== 0 && (
         <span
           className="absolute -right-1 -bottom-1 rounded px-1 py-0.5 font-mono leading-none font-semibold tracking-wider text-white shadow-xs"
-          style={{ backgroundColor: spec?.primaryColor, fontSize: badge }}
+          style={{ backgroundColor: spec.primaryColor, fontSize: badge }}
         >
           {label}
         </span>

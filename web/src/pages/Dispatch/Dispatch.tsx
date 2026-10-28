@@ -21,7 +21,7 @@ import {
 } from "@/services/checkpoints/checkpoint.api";
 import { useDispatchData, type DispatchApi } from "./useDispatchData";
 import { useDispatchDetail, type DispatchDetailApi } from "./useDispatchDetail";
-import DispatchPage from "./DispatchPage";
+import { DispatchPage } from "./DispatchPage";
 import { useSearchParams } from "react-router-dom";
 
 const dispatchApi: DispatchApi = {

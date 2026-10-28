@@ -49,7 +49,7 @@ export function totalsOf(lines: IBillingLine[]) {
 
 /** "14 Oct"; empty without a date. */
 export const day = (value?: string) =>
-  value ? format(new Date(value), "d MMM") : "";
+  value != null && value !== "" ? format(new Date(value), "d MMM") : "";
 
 /** "Air · MY-KLANG-01 → MY-SHAH-02". */
 export const rateCardText = (card?: IBillingRateCard) =>

@@ -37,7 +37,7 @@ export const RecordGridEmpty = memo(function RecordGridEmpty({
       {BLUEPRINT}
       <p className="mt-2 font-medium text-foreground">{title}</p>
       <p className="text-sm text-muted-foreground">{description}</p>
-      {actionLabel && onAction && (
+      {actionLabel != null && actionLabel !== "" && onAction && (
         <ModuleAddNewButton
           label={actionLabel}
           onClick={onAction}

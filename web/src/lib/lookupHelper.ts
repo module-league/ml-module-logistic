@@ -36,8 +36,8 @@ export function canShowInLookup(field?: Pick<IField, "type">) {
 
 /** The fields of a source a lookup can show, primary field first. */
 export function shownLookupFields(source?: LookupSource) {
-  return (source?.fields?.filter(canShowInLookup) ?? []).sort(
-    (a, b) => Number(b?.isPrimaryField) - Number(a?.isPrimaryField),
+  return (source?.fields.filter(canShowInLookup) ?? []).sort(
+    (a, b) => Number(b.isPrimaryField) - Number(a.isPrimaryField),
   );
 }
 
@@ -53,15 +53,15 @@ export function isLinkingField(field?: Pick<IField, "type">) {
 export function previewableLookupFields(fields?: ISidebarField[]) {
   return (fields ?? [])
     .filter((field) => !isLinkingField(field))
-    .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0));
+    .sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
 /** The field a lookup shows, or what labels a link's records: the primary or first showable field when none was picked or it was deleted. */
 export function lookupDisplayField(field: IField, lookups?: RecordLookups) {
-  const fields = lookups?.[field?.lookupSettings?.categoryId ?? ""]?.fields;
+  const fields = lookups?.[field.lookupSettings?.categoryId ?? ""]?.fields;
   return (
-    fields?.find((f) => f?.objId === field?.lookupSettings?.lookupFieldId) ??
-    fields?.find((f) => f?.isPrimaryField && canShowInLookup(f)) ??
+    fields?.find((f) => f.objId === field.lookupSettings?.lookupFieldId) ??
+    fields?.find((f) => f.isPrimaryField && canShowInLookup(f)) ??
     fields?.find(canShowInLookup)
   );
 }
@@ -72,22 +72,20 @@ export const LINK_CARD_FIELD_LIMIT = 3;
 /** The fields a link's record cards show under the title: the picked ones, else the first plain fields after the title field. */
 export function linkCardFields(field: IField, lookups?: RecordLookups) {
   const fields =
-    lookups?.[field?.lookupSettings?.categoryId ?? ""]?.fields ?? [];
-  const picked = field?.lookupSettings?.previewFieldIds;
+    lookups?.[field.lookupSettings?.categoryId ?? ""]?.fields ?? [];
+  const picked = field.lookupSettings?.previewFieldIds;
   if (picked) {
     return picked
-      .flatMap(
-        (id) => fields.find((candidate) => candidate?.objId === id) ?? [],
-      )
+      .flatMap((id) => fields.find((candidate) => candidate.objId === id) ?? [])
       .slice(0, LINK_CARD_FIELD_LIMIT);
   }
   const title = lookupDisplayField(field, lookups);
   return previewableLookupFields(fields)
-    .filter((candidate) => candidate?.objId !== title?.objId)
+    .filter((candidate) => candidate.objId !== title?.objId)
     .slice(0, LINK_CARD_FIELD_LIMIT);
 }
 
 /** Undefined while the linked sidebar's records are still loading. */
 export function lookupRecordsOf(field: IField, lookups?: RecordLookups) {
-  return lookups?.[field?.lookupSettings?.categoryId ?? ""]?.records;
+  return lookups?.[field.lookupSettings?.categoryId ?? ""]?.records;
 }

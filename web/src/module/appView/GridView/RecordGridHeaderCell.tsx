@@ -34,9 +34,9 @@ export function RecordGridHeaderCell<T>({
   return (
     <RecordGridHeaderContextMenu
       columnKey={header.id}
-      onColumnEdit={column?.system ? undefined : onColumnEdit}
+      onColumnEdit={column?.system === true ? undefined : onColumnEdit}
       onColumnHide={onColumnHide}
-      onColumnDelete={column?.system ? undefined : onColumnDelete}
+      onColumnDelete={column?.system === true ? undefined : onColumnDelete}
     >
       <TableHead
         ref={setNodeRef}

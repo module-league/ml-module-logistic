@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   Columns3,
-  Download,
   Search,
   Trash2,
   X,
@@ -57,8 +56,6 @@ export function ModulePageToolbar({
   onColumnOrderChange,
   onAddField,
   onEditField,
-  onExport,
-  exportLabel = "Export",
   search,
   onSearchChange,
   searchPlaceholder = "Search",
@@ -127,19 +124,6 @@ export function ModulePageToolbar({
           compact={compact}
         />
       ) : null}
-      {/* {onExport && (
-        <ToolbarTooltip label={exportLabel} enabled={compact}>
-          <Button
-            variant="outline"
-            size={compact ? "icon-xs" : "xs"}
-            onClick={onExport}
-            aria-label={exportLabel}
-            startIcon={<Download size={13} />}
-          >
-            {!compact && exportLabel}
-          </Button>
-        </ToolbarTooltip>
-      )} */}
       {onSearchChange && (
         <InputGroup className="ml-auto w-48 min-w-28 shrink bg-background">
           <InputGroupAddon>

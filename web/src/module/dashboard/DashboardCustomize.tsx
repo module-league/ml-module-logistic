@@ -33,6 +33,7 @@ import {
   DashboardSegmented,
   SettingsField,
 } from "./settings/DashboardControls";
+import { nonEmpty } from "@/lib/stringHelper";
 
 /** The data type a widget type carries while dragged from the Add widget panel. */
 const WIDGET_DRAG_TYPE = "application/x-dashboard-widget";
@@ -117,7 +118,7 @@ export function DashboardCustomize({
     try {
       await data.onSaveLayout();
       toast.success("Layout saved");
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Couldn't save the layout", {
         description: errorParser(error)?.message,
       });
@@ -129,8 +130,8 @@ export function DashboardCustomize({
     () =>
       data.forms.filter(
         (form) =>
-          sourceById.has(form?.sidebarId) &&
-          (!form?.isHidden || form?.objId === layout.newRecordFormId),
+          sourceById.has(form.sidebarId) &&
+          (!form.isHidden || form.objId === layout.newRecordFormId),
       ),
     [data.forms, sourceById, layout.newRecordFormId],
   );
@@ -151,7 +152,7 @@ export function DashboardCustomize({
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b bg-primary-10 px-4 py-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-primary">
-            Customizing {layout.title || item?.sidebarText} overview
+            Customizing {nonEmpty(layout.title) ?? item.sidebarText} overview
           </p>
           <p className="truncate text-xs text-muted-foreground">
             Drag widgets to reorder. Each widget reads any table and field in
@@ -167,7 +168,7 @@ export function DashboardCustomize({
           >
             Cancel
           </Button>
-          <Button size="sm" onClick={save} disabled={data.saving}>
+          <Button size="sm" onClick={() => void save()} disabled={data.saving}>
             {data.saving && <Spinner className="size-3.5" />}
             {data.saving ? "Saving…" : "Save layout"}
           </Button>
@@ -182,7 +183,7 @@ export function DashboardCustomize({
                 id="dashboard-title"
                 value={layout.title ?? ""}
                 maxLength={80}
-                placeholder={item?.sidebarText}
+                placeholder={item.sidebarText}
                 onChange={(event) => set({ title: event.target.value })}
               />
             </SettingsField>
@@ -191,7 +192,9 @@ export function DashboardCustomize({
                 id="dashboard-description"
                 value={layout.description ?? ""}
                 maxLength={200}
-                placeholder={item?.sidebarDesc || "A line under the title"}
+                placeholder={
+                  nonEmpty(item.sidebarDesc) ?? "A line under the title"
+                }
                 onChange={(event) => set({ description: event.target.value })}
               />
             </SettingsField>
@@ -220,7 +223,10 @@ export function DashboardCustomize({
             >
               <Select
                 value={
-                  layout.rangeSidebarId && layout.rangeFieldId
+                  layout.rangeSidebarId != null &&
+                  layout.rangeSidebarId !== "" &&
+                  layout.rangeFieldId != null &&
+                  layout.rangeFieldId !== ""
                     ? `${layout.rangeSidebarId}::${layout.rangeFieldId}`
                     : NONE
                 }
@@ -289,7 +295,7 @@ export function DashboardCustomize({
                 disabled={data.formsState.isLoading}
               >
                 <SelectTrigger id="dashboard-new-form" className="w-full">
-                  {data.formsState.isLoading ? (
+                  {data.formsState.isLoading === true ? (
                     <span className="flex items-center gap-2 text-muted-foreground">
                       <Spinner className="size-3.5" />
                       Loading forms…
@@ -324,7 +330,7 @@ export function DashboardCustomize({
                   })}
                 </SelectContent>
               </Select>
-              {!!data.formsState.error && (
+              {data.formsState.error != null && (
                 <button
                   type="button"
                   onClick={data.formsState.onRetry}
@@ -475,7 +481,7 @@ function WidgetPlaceholder({
     false,
     true,
   );
-  const label = widget.label || "Untitled widget";
+  const label = nonEmpty(widget.label) ?? "Untitled widget";
   return (
     <div
       ref={ref}

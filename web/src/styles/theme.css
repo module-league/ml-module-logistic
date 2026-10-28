@@ -54,15 +54,51 @@
    * red, green, gray, purple and pink have no 50 step: Tailwind's own red-50 (its palest shade)
    * is kept, because existing code relies on it. Tailwind's red-100 … red-950 etc. still work too.
    */
-  --color-primary-10: color-mix(in oklab, var(--primary) 10%, var(--background));
-  --color-primary-20: color-mix(in oklab, var(--primary) 20%, var(--background));
-  --color-primary-30: color-mix(in oklab, var(--primary) 30%, var(--background));
-  --color-primary-40: color-mix(in oklab, var(--primary) 40%, var(--background));
-  --color-primary-50: color-mix(in oklab, var(--primary) 50%, var(--background));
-  --color-primary-60: color-mix(in oklab, var(--primary) 60%, var(--background));
-  --color-primary-70: color-mix(in oklab, var(--primary) 70%, var(--background));
-  --color-primary-80: color-mix(in oklab, var(--primary) 80%, var(--background));
-  --color-primary-90: color-mix(in oklab, var(--primary) 90%, var(--background));
+  --color-primary-10: color-mix(
+    in oklab,
+    var(--primary) 10%,
+    var(--background)
+  );
+  --color-primary-20: color-mix(
+    in oklab,
+    var(--primary) 20%,
+    var(--background)
+  );
+  --color-primary-30: color-mix(
+    in oklab,
+    var(--primary) 30%,
+    var(--background)
+  );
+  --color-primary-40: color-mix(
+    in oklab,
+    var(--primary) 40%,
+    var(--background)
+  );
+  --color-primary-50: color-mix(
+    in oklab,
+    var(--primary) 50%,
+    var(--background)
+  );
+  --color-primary-60: color-mix(
+    in oklab,
+    var(--primary) 60%,
+    var(--background)
+  );
+  --color-primary-70: color-mix(
+    in oklab,
+    var(--primary) 70%,
+    var(--background)
+  );
+  --color-primary-80: color-mix(
+    in oklab,
+    var(--primary) 80%,
+    var(--background)
+  );
+  --color-primary-90: color-mix(
+    in oklab,
+    var(--primary) 90%,
+    var(--background)
+  );
 
   --color-red: var(--red);
   --color-red-10: color-mix(in oklab, var(--red) 10%, var(--background));
@@ -126,7 +162,16 @@
   --primary: #1d4ed8;
   --primary-foreground: oklch(0.985 0 0);
   /* Gradient behind the whole module; matches the default (Blue) preset in moduleSettingsUtil.ts */
-  --module-backdrop: linear-gradient(180deg, #c6d8e2 0%, #d6e2ea 15%, #e2dae0 30%, #e8ccd7 45%, #ebc1da 65%, #c3bbd8 85%, #a6bcd6 100%);
+  --module-backdrop: linear-gradient(
+    180deg,
+    #c6d8e2 0%,
+    #d6e2ea 15%,
+    #e2dae0 30%,
+    #e8ccd7 45%,
+    #ebc1da 65%,
+    #c3bbd8 85%,
+    #a6bcd6 100%
+  );
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);

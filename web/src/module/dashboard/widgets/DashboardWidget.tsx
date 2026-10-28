@@ -39,20 +39,25 @@ export function DashboardWidget({
 }) {
   const view = useWidgetView(widget);
   const { onRetryLookup } = useDashboard();
-  const Widget = WIDGETS[widget?.type] ?? MetricWidget;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- saved dashboards may hold a widget type this build doesn't know
+  const Widget = WIDGETS[widget.type] ?? MetricWidget;
 
-  if (view.problem || view.isLoading || view.error) {
+  if (
+    (view.problem != null && view.problem !== "") ||
+    view.isLoading ||
+    view.error != null
+  ) {
     return (
-      <DashboardWidgetFrame title={widget?.label}>
-        {view.problem ? (
+      <DashboardWidgetFrame title={widget.label}>
+        {view.problem != null && view.problem !== "" ? (
           <DashboardWidgetMessage>{view.problem}</DashboardWidgetMessage>
-        ) : view.error ? (
+        ) : view.error != null ? (
           <DashboardWidgetError
             error={view.error}
             onRetry={() => onRetryLookup(widget.sidebarId)}
           />
         ) : (
-          <DashboardWidgetSkeleton rows={widget?.type === "metric" ? 2 : 4} />
+          <DashboardWidgetSkeleton rows={widget.type === "metric" ? 2 : 4} />
         )}
       </DashboardWidgetFrame>
     );

@@ -93,22 +93,23 @@ function DispatchCardSettingsForm({
     [],
   );
 
-  const routeError = !draft?.originFieldId
-    ? "Pick the origin field."
-    : !draft?.destinationFieldId
-      ? "Pick the destination field."
-      : draft.originFieldId === draft.destinationFieldId
-        ? "Pick a different field for the destination."
-        : undefined;
+  const routeError =
+    draft.originFieldId == null || draft.originFieldId === ""
+      ? "Pick the origin field."
+      : draft.destinationFieldId == null || draft.destinationFieldId === ""
+        ? "Pick the destination field."
+        : draft.originFieldId === draft.destinationFieldId
+          ? "Pick a different field for the destination."
+          : undefined;
 
   const save = useCallback(async () => {
-    if (routeError) return;
+    if (routeError !== undefined) return;
     setSaving(true);
     try {
       await onSave({ ...draft, versionNo });
       toast.success("Shipment card saved");
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Couldn't save the shipment card", {
         description: errorParser(error)?.message,
       });
@@ -132,14 +133,14 @@ function DispatchCardSettingsForm({
               <SettingsField label="Origin" hint="link to locations">
                 <DashboardFieldSelect
                   fields={links}
-                  value={draft?.originFieldId}
+                  value={draft.originFieldId}
                   onChange={(originFieldId) => set({ originFieldId })}
                 />
               </SettingsField>
               <SettingsField label="Destination" hint="link to locations">
                 <DashboardFieldSelect
                   fields={links}
-                  value={draft?.destinationFieldId}
+                  value={draft.destinationFieldId}
                   onChange={(destinationFieldId) => set({ destinationFieldId })}
                 />
               </SettingsField>
@@ -152,7 +153,7 @@ function DispatchCardSettingsForm({
                 <DashboardFieldSelect
                   fields={fields}
                   accepts={canShowInLookup}
-                  value={draft?.titleFieldId}
+                  value={draft.titleFieldId}
                   onChange={(titleFieldId) => set({ titleFieldId })}
                   noneLabel="Primary field"
                 />
@@ -161,7 +162,7 @@ function DispatchCardSettingsForm({
                 <DashboardFieldSelect
                   fields={fields}
                   accepts={canShowInLookup}
-                  value={draft?.badgeFieldId}
+                  value={draft.badgeFieldId}
                   onChange={(badgeFieldId) => set({ badgeFieldId })}
                   noneLabel="No badge"
                 />
@@ -170,8 +171,8 @@ function DispatchCardSettingsForm({
             <SettingsField label="Weight" hint="number field, shown in kg">
               <DashboardFieldSelect
                 fields={fields}
-                accepts={(field) => !!field?.isNumeric}
-                value={draft?.weightFieldId}
+                accepts={(field) => field.isNumeric === true}
+                value={draft.weightFieldId}
                 onChange={(weightFieldId) => set({ weightFieldId })}
                 noneLabel="No weight"
               />
@@ -179,7 +180,7 @@ function DispatchCardSettingsForm({
             <SettingsField label="Details" hint={`up to ${MAX_DETAILS}`}>
               <DetailFieldList
                 fields={fields}
-                value={draft?.detailFieldIds ?? []}
+                value={draft.detailFieldIds}
                 onChange={(detailFieldIds) => set({ detailFieldIds })}
               />
             </SettingsField>
@@ -193,7 +194,12 @@ function DispatchCardSettingsForm({
           {preview ? (
             <DispatchShipmentCard
               shipment={preview}
-              showRoute={!!draft?.originFieldId && !!draft?.destinationFieldId}
+              showRoute={
+                draft.originFieldId != null &&
+                draft.originFieldId !== "" &&
+                draft.destinationFieldId != null &&
+                draft.destinationFieldId !== ""
+              }
               now={now}
             />
           ) : (
@@ -204,7 +210,7 @@ function DispatchCardSettingsForm({
         </aside>
       </div>
       <DialogFooter className="m-0 shrink-0 items-center border-t p-4">
-        {routeError && (
+        {routeError !== undefined && (
           <span className="mr-auto text-xs text-destructive">{routeError}</span>
         )}
         <Button
@@ -215,7 +221,11 @@ function DispatchCardSettingsForm({
         >
           Cancel
         </Button>
-        <Button size="sm" disabled={!!routeError || saving} onClick={save}>
+        <Button
+          size="sm"
+          disabled={routeError !== undefined || saving}
+          onClick={() => void save()}
+        >
           {saving ? "Saving…" : "Save"}
         </Button>
       </DialogFooter>
@@ -286,7 +296,7 @@ function DetailFieldRow({
   onRemove: () => void;
 }) {
   const { ref, style, isDragging, handle } = useSortableRow(fieldId);
-  const field = fields.find((entry) => entry?.objId === fieldId);
+  const field = fields.find((entry) => entry.objId === fieldId);
   return (
     <div
       ref={ref}
@@ -307,7 +317,9 @@ function DetailFieldRow({
           (entry.objId === fieldId || !takenIds.includes(entry.objId))
         }
         value={fieldId}
-        onChange={(next) => next && onChange(next)}
+        onChange={(next) => {
+          if (next != null && next !== "") onChange(next);
+        }}
       />
       <Button
         variant="ghost"

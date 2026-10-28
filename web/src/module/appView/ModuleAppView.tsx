@@ -1,10 +1,10 @@
 import type { ModuleAppViewProps } from "./moduleAppView.types";
 import { GridView } from "./GridView/GridView";
 
+/** The records in the page's view; the grid is the only view so far. */
 export function ModuleAppView<T>({
-  appView = "grid",
+  appView: _appView,
   ...view
 }: ModuleAppViewProps<T>) {
-  if (appView === "grid") return <GridView {...view} />;
-  return null;
+  return <GridView {...view} />;
 }

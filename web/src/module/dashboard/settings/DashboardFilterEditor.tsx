@@ -19,6 +19,7 @@ import {
 } from "../moduleDashboard.utils";
 import type { DashboardFilterEditorProps } from "../moduleDashboard.types";
 import { DashboardFieldSelect } from "./DashboardControls";
+import { nonEmpty } from "@/lib/stringHelper";
 
 const MATCH_OPTIONS = [
   { value: "all", label: "all conditions" },
@@ -143,7 +144,7 @@ export function DashboardFilterEditor({
               startIcon={<X size={14} />}
               onClick={() => removeCondition(index)}
             />
-            {field && operator?.input && (
+            {field !== undefined && operator?.input !== undefined && (
               <div className="col-span-2">
                 <ConditionValue
                   field={field}
@@ -165,7 +166,7 @@ export function DashboardFilterEditor({
         className="w-fit text-primary"
         startIcon={<Plus size={13} />}
         onClick={addCondition}
-        disabled={!filterFields.length}
+        disabled={filterFields.length === 0}
       >
         Add condition
       </Button>
@@ -217,7 +218,7 @@ function ConditionValue({
       );
     case "period":
       return (
-        <Select value={value || "today"} onValueChange={onChange}>
+        <Select value={nonEmpty(value) ?? "today"} onValueChange={onChange}>
           <SelectTrigger className="w-full" aria-label="Period">
             <SelectValue />
           </SelectTrigger>

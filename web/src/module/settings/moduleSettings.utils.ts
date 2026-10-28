@@ -22,11 +22,20 @@ const listeners = new Set<() => void>();
 
 function load(storageKey: string): IModuleSettings {
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) ?? "null") as Partial<IModuleSettings> | null;
+    const saved = JSON.parse(
+      localStorage.getItem(storageKey) ?? "null",
+    ) as Partial<IModuleSettings> | null;
+    const savedPrimary = saved?.primary;
     return {
       mode: "light",
-      primary: HEX_PATTERN.test(saved?.primary ?? "") ? saved!.primary! : DEFAULT_PRIMARY,
-      background: saved?.background?.startsWith("linear-gradient(") ? saved.background : DEFAULT_BACKGROUND,
+      primary:
+        savedPrimary !== undefined && HEX_PATTERN.test(savedPrimary)
+          ? savedPrimary
+          : DEFAULT_PRIMARY,
+      background:
+        saved?.background?.startsWith("linear-gradient(") === true
+          ? saved.background
+          : DEFAULT_BACKGROUND,
     };
   } catch {
     return DEFAULT_MODULE_SETTINGS;
@@ -66,7 +75,10 @@ export function useModuleSettings(storageKey: string): IModuleSettings {
   );
 }
 
-export function updateModuleSettings(storageKey: string, patch: Partial<IModuleSettings>) {
+export function updateModuleSettings(
+  storageKey: string,
+  patch: Partial<IModuleSettings>,
+) {
   write(storageKey, { ...readModuleSettings(storageKey), ...patch });
 }
 
@@ -77,27 +89,31 @@ export function resetModuleSettings(storageKey: string) {
 /** theme.css stays the default; only a different choice is set inline on <html>. */
 export function applyModuleTheme(settings: IModuleSettings) {
   const style = document.documentElement.style;
-  if (settings?.primary?.toLowerCase() === DEFAULT_PRIMARY) {
+  if (settings.primary.toLowerCase() === DEFAULT_PRIMARY) {
     style.removeProperty("--primary");
     style.removeProperty("--primary-foreground");
   } else {
     style.setProperty("--primary", settings.primary);
-    style.setProperty("--primary-foreground", readableForeground(settings.primary));
+    style.setProperty(
+      "--primary-foreground",
+      readableForeground(settings.primary),
+    );
   }
-  if (settings?.background === DEFAULT_BACKGROUND) style.removeProperty("--module-backdrop");
+  if (settings.background === DEFAULT_BACKGROUND)
+    style.removeProperty("--module-backdrop");
   else style.setProperty("--module-backdrop", settings.background);
 }
 
 export function isDefaultModuleSettings(settings: IModuleSettings) {
   return (
-    settings?.primary?.toLowerCase() === DEFAULT_PRIMARY &&
-    settings?.background === DEFAULT_BACKGROUND
+    settings.primary.toLowerCase() === DEFAULT_PRIMARY &&
+    settings.background === DEFAULT_BACKGROUND
   );
 }
 
 /** The same variables theme.css derives from --primary, for scoping an unsaved theme to one element. */
 export function themeScopeStyle(settings: IModuleSettings): CSSProperties {
-  const primary = settings?.primary ?? DEFAULT_PRIMARY;
+  const primary = settings.primary;
   return {
     "--primary": primary,
     "--primary-foreground": readableForeground(primary),
@@ -106,7 +122,6 @@ export function themeScopeStyle(settings: IModuleSettings): CSSProperties {
     "--sidebar-ring": primary,
     "--sidebar-accent": `color-mix(in oklab, ${primary} 10%, var(--background))`,
     "--sidebar-accent-foreground": primary,
-    "--module-backdrop": settings?.background ?? DEFAULT_BACKGROUND,
+    "--module-backdrop": settings.background,
   } as CSSProperties;
 }
-

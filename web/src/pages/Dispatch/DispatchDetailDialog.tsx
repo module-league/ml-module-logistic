@@ -31,7 +31,7 @@ import {
   Textarea,
   toast,
 } from "@moduleleague/ui";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { errorParser } from "@/hooks/useErrorParser";
 import { findMember } from "@/lib/memberHelper";
 import { parseAttachments, toAttachmentValue } from "@/lib/attachmentHelper";
@@ -52,6 +52,7 @@ import {
 } from "./dispatchBoard.utils";
 import type { DispatchDetailData } from "./useDispatchDetail";
 import { ExceptionReportDialog } from "../Exception/ExceptionReportDialog";
+import { nonEmpty } from "@/lib/stringHelper";
 
 type DispatchDetailDialogProps = {
   /** The shipment of the open dispatch. */
@@ -77,10 +78,10 @@ export function DispatchDetailDialog({
   members,
   now,
 }: DispatchDetailDialogProps) {
-  const onClose = detail?.onClose;
+  const onClose = detail.onClose;
   return (
     <Dialog
-      open={!!detail?.dispatchId}
+      open={detail.dispatchId != null && detail.dispatchId !== ""}
       onOpenChange={(open) => !open && onClose()}
     >
       <DialogContent
@@ -97,7 +98,7 @@ export function DispatchDetailDialog({
             now={now}
           />
         ) : (
-          detail?.dispatchId && (
+          detail.dispatchId !== undefined && (
             <DialogTitle className="p-6">Dispatch not found</DialogTitle>
           )
         )}
@@ -117,21 +118,20 @@ function DispatchDetail({
   dispatch: IDispatch;
 }) {
   const stage = useMemo(
-    () => DISPATCH_STAGES.find((entry) => entry.value === shipment?.stage),
-    [shipment?.stage],
+    () => DISPATCH_STAGES.find((entry) => entry.value === shipment.stage),
+    [shipment.stage],
   );
   const late = lateText(dispatch, now);
   const labelSuggestions = useMemo(
     () =>
       [
         ...new Set(
-          detail?.checkpoints?.flatMap(
-            (log) =>
-              log?.attachments?.flatMap((file) => file?.label ?? []) ?? [],
+          detail.checkpoints.flatMap((log) =>
+            log.attachments.flatMap((file) => file.label ?? []),
           ),
         ),
       ].sort((a, b) => a.localeCompare(b)),
-    [detail?.checkpoints],
+    [detail.checkpoints],
   );
 
   return (
@@ -140,12 +140,12 @@ function DispatchDetail({
         <div className="flex min-w-0 flex-col gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <DialogTitle className="truncate text-lg">
-              {shipment?.title}
+              {shipment.title}
             </DialogTitle>
             <span
               className={cn(
                 "shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium",
-                STAGE_CLASS[shipment?.stage],
+                STAGE_CLASS[shipment.stage],
               )}
             >
               {stage?.label}
@@ -155,12 +155,12 @@ function DispatchDetail({
             <span className="rounded-md border px-2 py-0.5 font-medium">
               {jobNumber(dispatch)}
             </span>
-            {shipment?.badge && (
+            {shipment.badge != null && shipment.badge !== "" && (
               <span className="rounded-md bg-primary px-2 py-0.5 font-medium text-primary-foreground">
                 {shipment.badge}
               </span>
             )}
-            {shipment?.details?.map((text) => (
+            {shipment.details.map((text) => (
               <span key={text} className="rounded-md bg-muted px-2 py-0.5">
                 {text}
               </span>
@@ -168,11 +168,11 @@ function DispatchDetail({
           </div>
         </div>
         <dl className="flex flex-wrap items-start gap-x-6 gap-y-2 text-xs">
-          <HeaderFact label="From" value={shipment?.origin?.title} />
-          <HeaderFact label="To" value={shipment?.destination?.title} />
+          <HeaderFact label="From" value={shipment.origin?.title} />
+          <HeaderFact label="To" value={shipment.destination?.title} />
           <HeaderFact
             label="ETA"
-            value={shortTime(dispatch?.plannedDeliveryAt, now) || "—"}
+            value={nonEmpty(shortTime(dispatch.plannedDeliveryAt, now)) ?? "—"}
             note={late}
           />
         </dl>
@@ -182,7 +182,7 @@ function DispatchDetail({
         <DispatchStepper
           shipment={shipment}
           dispatch={dispatch}
-          checkpoints={detail?.checkpoints}
+          checkpoints={detail.checkpoints}
           now={now}
         />
         <DispatchActions
@@ -202,13 +202,13 @@ function DispatchDetail({
           />
           <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2">
             <QueryWrapper
-              isLoading={detail?.isLoading}
-              error={detail?.error}
-              onRetry={detail?.onRetry}
+              isLoading={detail.isLoading}
+              error={detail.error}
+              onRetry={detail.onRetry}
               renderLoader={<CheckpointSkeleton />}
             >
               <ol className="flex flex-col">
-                {detail?.checkpoints?.map((log) => {
+                {detail.checkpoints.map((log) => {
                   const author =
                     findMember(members, log.createdBy)?.displayName ??
                     "Team member";
@@ -216,29 +216,29 @@ function DispatchDetail({
                     <CheckpointEntry
                       key={log.objId}
                       dotClassName={
-                        !log.status
+                        log.status === undefined
                           ? "bg-primary"
                           : log.status === "cancelled"
                             ? "bg-destructive"
                             : "bg-emerald-600"
                       }
                       title={
-                        log.status
+                        log.status !== undefined
                           ? statusLabel(log.status)
                           : `Note from ${author}`
                       }
                       when={whenText(log.createTime, now)}
                       meta={[
-                        log.status && `By ${author}`,
+                        log.status !== undefined && `By ${author}`,
                         log.internalOnly && "Internal, team only",
                       ]}
                       note={log.note}
                     >
-                      {!!log.attachments?.length && (
+                      {log.attachments.length > 0 && (
                         <CheckpointFiles
                           log={log}
                           labelSuggestions={labelSuggestions}
-                          onLabel={detail?.onLabel}
+                          onLabel={detail.onLabel}
                         />
                       )}
                     </CheckpointEntry>
@@ -246,13 +246,13 @@ function DispatchDetail({
                 })}
                 <CheckpointEntry
                   dotClassName="bg-emerald-600"
-                  title={`Assigned to ${shipment?.driver?.title ?? "a driver"}`}
-                  when={whenText(dispatch?.createTime, now)}
+                  title={`Assigned to ${shipment.driver?.title ?? "a driver"}`}
+                  when={whenText(dispatch.createTime, now)}
                   meta={[
-                    shipment?.vehicle && `Vehicle ${shipment.vehicle.title}`,
-                    `Pickup planned ${shortTime(dispatch?.plannedPickupAt, now)}`,
+                    shipment.vehicle && `Vehicle ${shipment.vehicle.title}`,
+                    `Pickup planned ${shortTime(dispatch.plannedPickupAt, now)}`,
                   ]}
-                  note={dispatch?.notes}
+                  note={dispatch.notes}
                 />
               </ol>
             </QueryWrapper>
@@ -268,10 +268,11 @@ function DispatchDetail({
             <DispatchStop
               kind="Pickup"
               dotClassName="bg-blue-600"
-              place={shipment?.origin}
+              place={shipment.origin}
               lines={[
-                `Planned ${shortTime(dispatch?.plannedPickupAt, now)}`,
-                dispatch?.actualPickupAt
+                `Planned ${shortTime(dispatch.plannedPickupAt, now)}`,
+                dispatch.actualPickupAt != null &&
+                dispatch.actualPickupAt !== ""
                   ? `Picked up ${shortTime(dispatch.actualPickupAt, now)}`
                   : "Not picked up yet",
               ]}
@@ -279,12 +280,14 @@ function DispatchDetail({
             <DispatchStop
               kind="Drop-off"
               dotClassName="bg-orange-600"
-              place={shipment?.destination}
+              place={shipment.destination}
               lines={[
-                dispatch?.plannedDeliveryAt
+                dispatch.plannedDeliveryAt != null &&
+                dispatch.plannedDeliveryAt !== ""
                   ? `Planned ${shortTime(dispatch.plannedDeliveryAt, now)}`
                   : "No delivery time planned",
-                dispatch?.actualDeliveryAt
+                dispatch.actualDeliveryAt != null &&
+                dispatch.actualDeliveryAt !== ""
                   ? `Delivered ${shortTime(dispatch.actualDeliveryAt, now)}`
                   : "Not delivered yet",
               ]}
@@ -298,7 +301,7 @@ function DispatchDetail({
 
 /** "Just now" within a minute, else a short time. */
 function whenText(value: string | undefined, now: Date) {
-  if (!value) return "";
+  if (value == null || value === "") return "";
   return Math.abs(Date.now() - new Date(value).getTime()) < 60_000
     ? "Just now"
     : shortTime(value, now);
@@ -319,7 +322,9 @@ function HeaderFact({
       <dd className="max-w-52 truncate text-sm font-semibold">
         {value ?? "Not set"}
       </dd>
-      {note && <dd className="text-amber-700 dark:text-amber-400">{note}</dd>}
+      {note != null && note !== "" && (
+        <dd className="text-amber-700 dark:text-amber-400">{note}</dd>
+      )}
     </div>
   );
 }
@@ -340,23 +345,26 @@ function DispatchStepper({
   now: Date;
 }) {
   const billedAt = useMemo(
-    () => checkpoints?.find((log) => log?.status === "billed")?.createTime,
+    () => checkpoints.find((log) => log.status === "billed")?.createTime,
     [checkpoints],
   );
-  const done = billedAt ? DISPATCH_STEPS.length : stepsDone(dispatch);
+  const done =
+    billedAt != null && billedAt !== ""
+      ? DISPATCH_STEPS.length
+      : stepsDone(dispatch);
   const times = useMemo(() => {
     const loggedAt = (status: ICheckpointStatus) =>
-      checkpoints?.find((log) => log?.status === status)?.createTime;
+      checkpoints.find((log) => log.status === status)?.createTime;
     return [
-      shipment?.bookedAt,
-      dispatch?.createTime,
-      dispatch?.actualPickupAt,
+      shipment.bookedAt,
+      dispatch.createTime,
+      dispatch.actualPickupAt,
       loggedAt("in_transit"),
       loggedAt("arrived"),
-      dispatch?.actualDeliveryAt,
+      dispatch.actualDeliveryAt,
       billedAt,
     ];
-  }, [shipment?.bookedAt, dispatch, checkpoints, billedAt]);
+  }, [shipment.bookedAt, dispatch, checkpoints, billedAt]);
   return (
     <ol className="flex min-w-0 flex-1 gap-2 overflow-x-auto pl-4">
       {DISPATCH_STEPS.map((step, index) => {
@@ -398,7 +406,7 @@ function DispatchStepper({
               >
                 {step}
               </span>
-              {time && (
+              {time !== "" && (
                 <span className="shrink-0 text-[11px] text-muted-foreground">
                   {time}
                 </span>
@@ -436,10 +444,11 @@ function DispatchActions({
     (status: IDispatchMove["status"]) =>
       status === "picked_up"
         ? setPickingUp(true)
-        : onMove(dispatch, { status, internalOnly: false }).catch((error) =>
-            toast.error("Couldn't update the dispatch", {
-              description: errorParser(error)?.message,
-            }),
+        : onMove(dispatch, { status, internalOnly: false }).catch(
+            (error: unknown) =>
+              toast.error("Couldn't update the dispatch", {
+                description: errorParser(error)?.message,
+              }),
           ),
     [onMove, dispatch],
   );
@@ -461,15 +470,15 @@ function DispatchActions({
     <>
       <ExceptionReportDialog
         key={reporting}
-        open={!!reporting}
+        open={reporting != null && reporting !== ""}
         onOpenChange={(open) => !open && setReporting(undefined)}
         shipments={shipments}
-        rules={detail?.rules}
+        rules={detail.rules}
         members={members}
         fixed={{ shipmentId: shipment.id, dispatchId: dispatch.objId }}
         ruleKey={reporting}
-        isSaving={detail?.isReporting}
-        onCreate={detail?.onReportException}
+        isSaving={detail.isReporting}
+        onCreate={detail.onReportException}
       />
       <PickupDialog
         open={pickingUp}
@@ -486,7 +495,7 @@ function DispatchActions({
     </>
   );
 
-  if (!first) {
+  if (first === undefined) {
     return (
       <>
         <DropdownMenu>
@@ -511,7 +520,7 @@ function DispatchActions({
   return (
     <>
       <ButtonGroup className="shrink-0">
-        <Button size="sm" isLoading={isMoving} onClick={() => move(first)}>
+        <Button size="sm" isLoading={isMoving} onClick={() => void move(first)}>
           Mark as {statusLabel(first).toLowerCase()}
         </Button>
         <DropdownMenu>
@@ -526,13 +535,16 @@ function DispatchActions({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            {!!later.length && (
+            {later.length > 0 && (
               <>
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
                   Skip ahead
                 </DropdownMenuLabel>
                 {later.map((status) => (
-                  <DropdownMenuItem key={status} onSelect={() => move(status)}>
+                  <DropdownMenuItem
+                    key={status}
+                    onSelect={() => void move(status)}
+                  >
                     Mark as {statusLabel(status).toLowerCase()}
                   </DropdownMenuItem>
                 ))}
@@ -570,7 +582,7 @@ function PickupDialog({
   const { onMove, isMoving } = detail;
   const [weight, setWeight] = useState("");
   const value = Number(weight);
-  const weighed = !!weight.trim();
+  const weighed = weight.trim() !== "";
   const valid = !weighed || (Number.isFinite(value) && value > 0);
   const changeOpen = useCallback(
     (next: boolean) => {
@@ -589,7 +601,7 @@ function PickupDialog({
         note: weighed ? `Weighed ${value} kg at pickup.` : undefined,
       });
       changeOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Couldn't update the dispatch", {
         description: errorParser(error)?.message,
       });
@@ -632,7 +644,7 @@ function PickupDialog({
             size="xs"
             disabled={!valid}
             isLoading={isMoving}
-            onClick={confirm}
+            onClick={() => void confirm()}
           >
             Mark as picked up
           </Button>
@@ -668,13 +680,13 @@ function CancelDispatchDialog({
     try {
       await onMove(dispatch, {
         status: "cancelled",
-        note: reason.trim() || undefined,
+        note: nonEmpty(reason.trim()),
         internalOnly: true,
       });
       toast.success(`${jobNumber(dispatch)} cancelled`, {
         description: "The shipment is back in Unassigned.",
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Couldn't cancel the dispatch", {
         description: errorParser(error)?.message,
       });
@@ -712,7 +724,7 @@ function CancelDispatchDialog({
             variant="destructive"
             size="xs"
             isLoading={isMoving}
-            onClick={cancel}
+            onClick={() => void cancel()}
           >
             Cancel dispatch
           </Button>
@@ -733,18 +745,18 @@ function CheckpointFiles({
   onLabel: DispatchDetailData["onLabel"];
 }) {
   const value = useMemo(
-    () => toAttachmentValue(log?.attachments),
-    [log?.attachments],
+    () => toAttachmentValue(log.attachments),
+    [log.attachments],
   );
   const change = useCallback(
     (next: string) => {
       const changed = parseAttachments(next).find(
         (file) =>
-          file?.label !==
-          log?.attachments?.find((saved) => saved?.id === file?.id)?.label,
+          file.label !==
+          log.attachments.find((saved) => saved.id === file.id)?.label,
       );
       if (!changed) return;
-      onLabel(log.objId, changed.id, changed.label).catch((error) =>
+      onLabel(log.objId, changed.id, changed.label).catch((error: unknown) =>
         toast.error("Couldn't change the label", {
           description: errorParser(error)?.message,
         }),
@@ -778,18 +790,18 @@ function CheckpointComposer({
   const [filesValue, setFilesValue] = useState("");
   const files = useMemo(() => parseAttachments(filesValue), [filesValue]);
 
-  const canPost = (!!note.trim() || !!files.length) && !isPosting;
+  const canPost = (note.trim() !== "" || files.length > 0) && !isPosting;
   const post = useCallback(async () => {
     if (!canPost) return;
     try {
       await onAddCheckpoint({
-        note: note.trim() || undefined,
+        note: nonEmpty(note.trim()),
         internalOnly,
         attachments: files.map(({ id, label }) => ({ id, label })),
       });
       setNote("");
       setFilesValue("");
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Couldn't post to the log", {
         description: errorParser(error)?.message,
       });
@@ -830,7 +842,7 @@ function CheckpointComposer({
           size="xs"
           className="shrink-0"
           disabled={!canPost}
-          onClick={post}
+          onClick={() => void post()}
         >
           {isPosting ? "Posting…" : "Post"}
         </Button>
@@ -866,10 +878,10 @@ function CheckpointEntry({
           <span className="min-w-0 truncate text-sm font-medium">{title}</span>
           <span className="shrink-0 text-xs text-muted-foreground">{when}</span>
         </div>
-        {metaText && (
+        {metaText !== "" && (
           <span className="text-xs text-muted-foreground">{metaText}</span>
         )}
-        {note && (
+        {note != null && note !== "" && (
           <p className="rounded-md bg-muted/60 px-2.5 py-1.5 text-sm break-words whitespace-pre-wrap">
             {note}
           </p>

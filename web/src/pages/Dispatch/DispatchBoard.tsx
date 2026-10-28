@@ -84,11 +84,11 @@ export function DispatchShipmentCard({
   now: Date;
   onSelect?: () => void;
 }) {
-  const dispatch = shipment?.dispatch;
+  const dispatch = shipment.dispatch;
   const done = stepsDone(dispatch);
   const time = cardTime(dispatch, now);
   const late = lateText(dispatch, now);
-  const summary = [dispatch && shipment?.title, ...(shipment?.details ?? [])]
+  const summary = [dispatch && shipment.title, ...shipment.details]
     .filter(Boolean)
     .join(" · ");
   const Root = onSelect ? "button" : "div";
@@ -104,15 +104,16 @@ export function DispatchShipmentCard({
     >
       <span className="flex items-baseline justify-between gap-2">
         <span className="min-w-0 truncate text-sm font-semibold">
-          {dispatch ? jobNumber(dispatch) : shipment?.title}
+          {dispatch ? jobNumber(dispatch) : shipment.title}
         </span>
-        {time && (
+        {time !== "" && (
           <span className="shrink-0 text-xs text-muted-foreground">{time}</span>
         )}
       </span>
-      {(shipment?.badge || summary) && (
+      {((shipment.badge != null && shipment.badge !== "") ||
+        summary !== "") && (
         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-          {shipment?.badge && (
+          {shipment.badge != null && shipment.badge !== "" && (
             <span className="shrink-0 rounded-md bg-primary px-1.5 font-medium text-primary-foreground">
               {shipment.badge}
             </span>
@@ -122,8 +123,8 @@ export function DispatchShipmentCard({
       )}
       {(showRoute || dispatch) && (
         <span className="truncate text-xs text-muted-foreground">
-          {shipment?.origin?.title ?? "No origin"} →{" "}
-          {shipment?.destination?.title ?? "No destination"}
+          {shipment.origin?.title ?? "No origin"} →{" "}
+          {shipment.destination?.title ?? "No destination"}
         </span>
       )}
       <span className="flex flex-col gap-1">
@@ -148,22 +149,22 @@ export function DispatchShipmentCard({
           aria-hidden
           className={cn(
             "flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white",
-            shipment?.driver ? "bg-emerald-700" : "bg-muted-foreground/40",
+            shipment.driver ? "bg-emerald-700" : "bg-muted-foreground/40",
           )}
         >
-          {shipment?.driver?.initials ?? "?"}
+          {shipment.driver?.initials ?? "?"}
         </span>
         <span
           className={cn(
             "truncate",
-            !shipment?.driver && "text-muted-foreground",
+            !shipment.driver && "text-muted-foreground",
           )}
         >
-          {shipment?.driver?.title ??
+          {shipment.driver?.title ??
             (dispatch ? "Unknown driver" : "No driver yet")}
         </span>
       </span>
-      {late && (
+      {late !== "" && (
         <span
           className={cn(
             "w-fit rounded-md border px-2 py-0.5 text-[11px] font-medium",

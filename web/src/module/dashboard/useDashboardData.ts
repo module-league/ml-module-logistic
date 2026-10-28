@@ -49,7 +49,7 @@ export function useDashboardData(
   const dashboardQuery = useQuery({
     queryKey: dashboardKeys.detail(id),
     queryFn: () => api.getDashboard(id),
-    enabled: !!sidebarId,
+    enabled: sidebarId != null && sidebarId !== "",
   });
   const membersQuery = useQuery({
     queryKey: memberKeys.all,
@@ -68,7 +68,7 @@ export function useDashboardData(
   const sources = useMemo(
     () =>
       lookupSources.filter(
-        (source) => source?.sidebarId !== id && source?.fields?.length,
+        (source) => source.sidebarId !== id && source.fields.length > 0,
       ),
     [lookupSources, id],
   );
@@ -83,7 +83,7 @@ export function useDashboardData(
   } = useSidebarLookups(api.getRecords, loadIds, fieldsBySidebar);
   const onRetryLookup = useCallback(
     (lookupId: string) => {
-      retryLookup(lookupId);
+      void retryLookup(lookupId);
     },
     [retryLookup],
   );
@@ -93,7 +93,10 @@ export function useDashboardData(
     () =>
       draft
         ? sources.map((source) => source.sidebarId)
-        : layout.newRecordFormId && layout.newRecordSidebarId
+        : layout.newRecordFormId != null &&
+            layout.newRecordFormId !== "" &&
+            layout.newRecordSidebarId != null &&
+            layout.newRecordSidebarId !== ""
           ? [layout.newRecordSidebarId]
           : [],
     [draft, sources, layout.newRecordFormId, layout.newRecordSidebarId],
@@ -110,7 +113,10 @@ export function useDashboardData(
       isLoading: formsQueryState.isLoading,
       error: formsQueryState.error,
       onRetry: () => {
-        queryClient.refetchQueries({ queryKey: formKeys.all, type: "active" });
+        void queryClient.refetchQueries({
+          queryKey: formKeys.all,
+          type: "active",
+        });
       },
     }),
     [formsQueryState.isLoading, formsQueryState.error, queryClient],
@@ -151,7 +157,7 @@ export function useDashboardData(
     }) => {
       const latest = queryClient
         .getQueryData<ISidebarRecord[]>(recordKeys.list(recordSidebarId))
-        ?.find((record) => record?.objId === objId);
+        ?.find((record) => record.objId === objId);
       if (!latest)
         return Promise.reject(new Error("The record no longer exists."));
       return api.updateRecord(recordSidebarId, objId, {
@@ -166,7 +172,7 @@ export function useDashboardData(
       const previous = queryClient.getQueryData<ISidebarRecord[]>(key);
       queryClient.setQueryData<ISidebarRecord[]>(key, (current) =>
         current?.map((record) =>
-          record?.objId === objId
+          record.objId === objId
             ? { ...record, values: { ...record.values, ...values } }
             : record,
         ),
@@ -183,7 +189,7 @@ export function useDashboardData(
         recordKeys.list(recordSidebarId),
         (current) =>
           current?.map((record) =>
-            record?.objId === updated.objId ? updated : record,
+            record.objId === updated.objId ? updated : record,
           ),
       );
       queryClient.setQueryData(
@@ -210,7 +216,7 @@ export function useDashboardData(
       isLoading: dashboardQuery.isLoading,
       error: dashboardQuery.error,
       onRetry: () => {
-        refetchDashboard();
+        void refetchDashboard();
       },
     }),
     [dashboardQuery.isLoading, dashboardQuery.error, refetchDashboard],
@@ -221,7 +227,7 @@ export function useDashboardData(
       sidebarId: id,
       dashboardState,
       layout,
-      isNew: !saved.objId,
+      isNew: saved.objId == null || saved.objId === "",
       customizing: !!draft,
       onCustomize,
       onCancelCustomize,

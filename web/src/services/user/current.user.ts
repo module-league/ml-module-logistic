@@ -22,7 +22,7 @@ export function useCurrentUser(): IUserInfo {
 
 /** Who did something the API logged: "system" without an actor, else the member's name; "Team member" until sign-in is wired up. */
 export const actorName = (members: IUserInfo[], actorId?: string) =>
-  !actorId
+  actorId == null || actorId === ""
     ? "system"
-    : (members.find((member) => member?.id === actorId)?.displayName ??
+    : (members.find((member) => member.id === actorId)?.displayName ??
       "Team member");

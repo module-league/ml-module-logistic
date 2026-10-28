@@ -22,6 +22,7 @@ import {
   DashboardSegmented,
   SettingsField,
 } from "./DashboardControls";
+import { nonEmpty } from "@/lib/stringHelper";
 
 const MAX_LIST_COLUMNS = 6;
 const SPANS: Record<IDashboardTrend["bucket"], number[]> = {
@@ -214,11 +215,15 @@ function BoardData({ widget, fields, onChange }: DashboardTypeSettingsProps) {
   const set = (patch: Partial<IDashboardBoard>) =>
     onChange({ board: { ...board, ...patch } });
   const groupField = fields.find((field) => field.objId === board.groupFieldId);
-  const [firstSubtitle, secondSubtitle] = board.subtitleFieldIds ?? [];
+  const [firstSubtitle, secondSubtitle] = board.subtitleFieldIds;
   const setSubtitle = (index: number, fieldId?: string) => {
     const next: (string | undefined)[] = [firstSubtitle, secondSubtitle];
     next[index] = fieldId;
-    set({ subtitleFieldIds: next.filter((id): id is string => !!id) });
+    set({
+      subtitleFieldIds: next.filter(
+        (id): id is string => id != null && id !== "",
+      ),
+    });
   };
   return (
     <>
@@ -280,16 +285,18 @@ function BoardData({ widget, fields, onChange }: DashboardTypeSettingsProps) {
           />
         </SettingsField>
       </div>
-      {board.dateFieldId && (
+      {board.dateFieldId != null && board.dateFieldId !== "" && (
         <SettingsSwitch
           label="Mark cards late once the date has passed"
           checked={board.showLate}
           onChange={(showLate) => set({ showLate })}
         />
       )}
-      {board.dateFieldId &&
+      {board.dateFieldId != null &&
+        board.dateFieldId !== "" &&
         board.showLate &&
-        !!groupField?.dropDownValues?.length && (
+        groupField?.dropDownValues.length != null &&
+        groupField.dropDownValues.length > 0 && (
           <SettingsField label="Never late in">
             <div className="flex flex-wrap gap-1">
               {groupField.dropDownValues.map((option) => {
@@ -375,7 +382,10 @@ function ListColumnRow({
           (entry.objId === column.fieldId || !takenIds.includes(entry.objId))
         }
         value={column.fieldId}
-        onChange={(fieldId) => fieldId && onChange({ ...column, fieldId })}
+        onChange={(fieldId) => {
+          if (fieldId != null && fieldId !== "")
+            onChange({ ...column, fieldId });
+        }}
       />
       <DashboardFieldSelect
         fields={fields}
@@ -597,7 +607,7 @@ function MapPointSettings({
         label={label}
         value={point ? sourceKey(point.linkFieldId) : "none"}
         options={[
-          ...(optional ? [{ value: "none", label: "No route" }] : []),
+          ...(optional === true ? [{ value: "none", label: "No route" }] : []),
           ...options.map((option) => ({
             value: sourceKey(option.linkFieldId),
             label: option.label,
@@ -649,7 +659,7 @@ function MapData({
   );
   const set = (patch: Partial<IDashboardMap>) =>
     onChange({ map: { ...map, ...patch } });
-  if (!options.length) {
+  if (options.length === 0) {
     return (
       <p className="text-xs text-muted-foreground">
         This table has no pair of number fields for latitude and longitude, and
@@ -736,7 +746,7 @@ function AttentionData({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label={`Remove rule ${rule.name || index + 1}`}
+              aria-label={`Remove rule ${nonEmpty(rule.name) ?? index + 1}`}
               className="text-muted-foreground hover:text-foreground"
               startIcon={<X size={14} />}
               onClick={() =>
@@ -825,7 +835,11 @@ export function SortSettings({
       >
         <DashboardSegmented
           label="Show at most"
-          value={widget.maxCount ? String(widget.maxCount) : "all"}
+          value={
+            widget.maxCount != null && widget.maxCount !== 0
+              ? String(widget.maxCount)
+              : "all"
+          }
           options={MAX_COUNTS}
           onChange={(value) =>
             onChange({ maxCount: value === "all" ? undefined : Number(value) })

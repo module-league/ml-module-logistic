@@ -53,24 +53,24 @@ const MODES: {
 ];
 
 export function ModuleSettings({ config, children }: ModuleSettingsProps) {
-  const storageKey = useMemo(() => settingsKey(config?.code), [config?.code]);
+  const storageKey = useMemo(() => settingsKey(config.code), [config.code]);
   const settings = useModuleSettings(storageKey);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<IModuleSettings>(settings);
 
   const isLightPrimary = useMemo(
-    () => readableForeground(draft?.primary) !== "oklch(0.985 0 0)",
-    [draft?.primary],
+    () => readableForeground(draft.primary) !== "oklch(0.985 0 0)",
+    [draft.primary],
   );
   const scopeStyle = useMemo(() => themeScopeStyle(draft), [draft]);
   const activePreset = useMemo(
     () =>
       PRIMARY_PRESETS.find(
         (preset) =>
-          preset?.primary === draft?.primary?.toLowerCase() &&
-          preset?.background === draft?.background,
+          preset.primary === draft.primary.toLowerCase() &&
+          preset.background === draft.background,
       ),
-    [draft?.primary, draft?.background],
+    [draft.primary, draft.background],
   );
 
   const changeOpen = useCallback(
@@ -84,8 +84,8 @@ export function ModuleSettings({ config, children }: ModuleSettingsProps) {
     (preset: PrimaryPreset) =>
       setDraft((current) => ({
         ...current,
-        primary: preset?.primary,
-        background: preset?.background,
+        primary: preset.primary,
+        background: preset.background,
       })),
     [],
   );
@@ -93,9 +93,9 @@ export function ModuleSettings({ config, children }: ModuleSettingsProps) {
   const save = useCallback(() => {
     updateModuleSettings(storageKey, draft);
     toast.success("Settings saved", {
-      description: `${activePreset?.name ?? "Custom"} theme is applied to ${config?.title}.`,
+      description: `${activePreset?.name ?? "Custom"} theme is applied to ${config.title}.`,
     });
-  }, [storageKey, draft, activePreset?.name, config?.title]);
+  }, [storageKey, draft, activePreset?.name, config.title]);
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
@@ -104,7 +104,7 @@ export function ModuleSettings({ config, children }: ModuleSettingsProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Palette className="size-6 text-primary" />
-            {config?.title} settings
+            {config.title} settings
           </DialogTitle>
           <DialogDescription>
             Preview your choice here; it is applied when you click Done and
@@ -123,7 +123,7 @@ export function ModuleSettings({ config, children }: ModuleSettingsProps) {
               <ModeCard
                 key={mode.value}
                 mode={mode}
-                selected={draft?.mode === mode.value}
+                selected={draft.mode === mode.value}
               />
             ))}
           </div>
@@ -144,8 +144,8 @@ export function ModuleSettings({ config, children }: ModuleSettingsProps) {
                 key={preset.name}
                 preset={preset}
                 selected={
-                  draft?.primary?.toLowerCase() === preset.primary &&
-                  draft?.background === preset.background
+                  draft.primary.toLowerCase() === preset.primary &&
+                  draft.background === preset.background
                 }
                 onSelect={setPreset}
               />
@@ -189,7 +189,9 @@ function SectionTitle({ title, hint }: { title: string; hint?: string }) {
   return (
     <div className="flex flex-col gap-0.5">
       <h3 className="text-sm font-medium">{title}</h3>
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {hint != null && hint !== "" && (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      )}
     </div>
   );
 }
@@ -201,15 +203,15 @@ function ModeCard({
   mode: (typeof MODES)[number];
   selected: boolean;
 }) {
-  const Icon = mode?.icon;
-  const dark = mode?.value === "dark";
+  const Icon = mode.icon;
+  const dark = mode.value === "dark";
 
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
-      disabled={!mode?.available}
+      disabled={!mode.available}
       className={cn(
         "flex flex-col gap-2 rounded-lg border p-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60",
         selected ? "border-primary ring-2 ring-primary/20" : "hover:bg-muted",
@@ -245,8 +247,8 @@ function ModeCard({
       </div>
       <div className="flex items-center gap-1.5 px-0.5 text-sm font-medium">
         <Icon className="size-3.5" />
-        {mode?.label}
-        {!mode?.available && (
+        {mode.label}
+        {!mode.available && (
           <span className="ml-auto text-xs font-normal text-muted-foreground">
             Coming soon
           </span>
@@ -267,8 +269,8 @@ function Swatch({
   onSelect: (preset: PrimaryPreset) => void;
 }) {
   const foreground = useMemo(
-    () => readableForeground(preset?.primary),
-    [preset?.primary],
+    () => readableForeground(preset.primary),
+    [preset.primary],
   );
 
   return (
@@ -276,8 +278,8 @@ function Swatch({
       type="button"
       role="radio"
       aria-checked={selected}
-      aria-label={preset?.name}
-      title={preset?.name}
+      aria-label={preset.name}
+      title={preset.name}
       onClick={() => onSelect(preset)}
       className="group flex flex-col items-center gap-1"
     >
@@ -290,8 +292,8 @@ function Swatch({
         )}
         style={
           {
-            backgroundImage: preset?.background,
-            "--swatch-primary": preset?.primary,
+            backgroundImage: preset.background,
+            "--swatch-primary": preset.primary,
           } as CSSProperties
         }
       >
@@ -300,7 +302,7 @@ function Swatch({
             "flex items-center justify-center rounded-full shadow-sm ring-2 ring-white transition-all",
             selected ? "size-5" : "size-3.5",
           )}
-          style={{ backgroundColor: preset?.primary, color: foreground }}
+          style={{ backgroundColor: preset.primary, color: foreground }}
         >
           {selected && <Check className="size-3" />}
         </span>
@@ -311,7 +313,7 @@ function Swatch({
           selected ? "font-medium text-foreground" : "text-muted-foreground",
         )}
       >
-        {preset?.name}
+        {preset.name}
       </span>
     </button>
   );
@@ -331,7 +333,7 @@ function PreviewBone({ className }: { className?: string }) {
 }
 
 function ThemePreview({ config }: { config: IModuleConfig }) {
-  const ModuleIcon = config?.icon;
+  const ModuleIcon = config.icon;
 
   return (
     <div
@@ -340,9 +342,9 @@ function ThemePreview({ config }: { config: IModuleConfig }) {
     >
       <aside className="flex w-32 shrink-0 flex-col gap-2 bg-linear-to-b from-sidebar/90 to-transparent p-2">
         <div className="flex items-center gap-1.5 px-0.5">
-          {ModuleIcon && <ModuleIcon className="size-3.5 text-primary" />}
+          <ModuleIcon className="size-3.5 text-primary" />
           <span className="truncate text-[11px] font-semibold">
-            {config?.title}
+            {config.title}
           </span>
         </div>
         <PreviewBone className="h-4 bg-background/70" />

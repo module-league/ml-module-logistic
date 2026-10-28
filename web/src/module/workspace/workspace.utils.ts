@@ -21,6 +21,17 @@ export function listPanes(node: LayoutNode): PaneNode[] {
   return node.type === "pane" ? [node] : node.children.flatMap(listPanes);
 }
 
+/**
+ * The first pane in reading order. Every layout has one: splits are only made from panes,
+ * collapse when emptied, and `isNode` rejects saved splits without children.
+ * @throws Error when the layout breaks that rule.
+ */
+export function firstPane(node: LayoutNode): PaneNode {
+  const [pane] = listPanes(node);
+  if (!pane) throw new Error("Workspace layout has no panes.");
+  return pane;
+}
+
 export function findPane(node: LayoutNode, id: string): PaneNode | undefined {
   return listPanes(node).find((pane) => pane.id === id);
 }
@@ -36,7 +47,10 @@ function newId(prefix: string) {
 
 function replacePane(node: LayoutNode, id: string, pane: PaneNode): LayoutNode {
   if (node.type === "pane") return node.id === id ? pane : node;
-  return { ...node, children: node.children.map((child) => replacePane(child, id, pane)) };
+  return {
+    ...node,
+    children: node.children.map((child) => replacePane(child, id, pane)),
+  };
 }
 
 /** Removes a pane; a split left with one child is replaced by that child. Null if nothing remains. */
@@ -45,27 +59,46 @@ function removePane(node: LayoutNode, id: string): LayoutNode | null {
   const children = node.children
     .map((child) => removePane(child, id))
     .filter((child): child is LayoutNode => child !== null);
-  if (children.length === 0) return null;
-  if (children.length === 1) return children[0];
+  const [only, ...others] = children;
+  if (!only) return null;
+  if (others.length === 0) return only;
   return { ...node, children };
 }
 
 /** Puts newPane on one edge of the target pane. Joins an existing split that runs the same way. */
-function splitPane(node: LayoutNode, targetId: string, edge: SplitEdge, newPane: PaneNode): LayoutNode {
-  const orientation = edge === "left" || edge === "right" ? "horizontal" : "vertical";
+function splitPane(
+  node: LayoutNode,
+  targetId: string,
+  edge: SplitEdge,
+  newPane: PaneNode,
+): LayoutNode {
+  const orientation =
+    edge === "left" || edge === "right" ? "horizontal" : "vertical";
   const before = edge === "left" || edge === "top";
 
   if (node.type === "split") {
-    const index = node.children.findIndex((child) => child.type === "pane" && child.id === targetId);
+    const index = node.children.findIndex(
+      (child) => child.type === "pane" && child.id === targetId,
+    );
     if (index >= 0 && node.orientation === orientation) {
       const children = [...node.children];
       children.splice(before ? index : index + 1, 0, newPane);
       return { ...node, children };
     }
-    return { ...node, children: node.children.map((child) => splitPane(child, targetId, edge, newPane)) };
+    return {
+      ...node,
+      children: node.children.map((child) =>
+        splitPane(child, targetId, edge, newPane),
+      ),
+    };
   }
   if (node.id !== targetId) return node;
-  return { type: "split", id: newId("s"), orientation, children: before ? [newPane, node] : [node, newPane] };
+  return {
+    type: "split",
+    id: newId("s"),
+    orientation,
+    children: before ? [newPane, node] : [node, newPane],
+  };
 }
 
 function withTab(pane: PaneNode, key: string): PaneNode {
@@ -79,7 +112,10 @@ function withoutTab(pane: PaneNode, key: string): PaneNode {
   const index = pane.tabs.indexOf(key);
   if (index < 0) return pane;
   const tabs = pane.tabs.filter((tab) => tab !== key);
-  const activeKey = pane.activeKey === key ? (tabs[index] ?? tabs[index - 1] ?? null) : pane.activeKey;
+  const activeKey =
+    pane.activeKey === key
+      ? (tabs[index] ?? tabs[index - 1] ?? null)
+      : pane.activeKey;
   return { ...pane, tabs, activeKey };
 }
 
@@ -95,24 +131,48 @@ function emptyWorkspace(tabs: string[] = []): IWorkspace {
 }
 
 function isNode(value: unknown): value is LayoutNode {
-  if (!value || typeof value !== "object") return false;
-  const node = value as LayoutNode;
-  if (node.type === "pane") return typeof node.id === "string" && Array.isArray(node.tabs);
-  if (node.type === "split") return typeof node.id === "string" && Array.isArray(node.children) && node.children.every(isNode);
+  if (typeof value !== "object" || value === null) return false;
+  if (!("id" in value) || typeof value.id !== "string" || !("type" in value))
+    return false;
+  if (value.type === "pane")
+    return "tabs" in value && Array.isArray(value.tabs);
+  if (value.type === "split") {
+    return (
+      "children" in value &&
+      Array.isArray(value.children) &&
+      value.children.length > 0 &&
+      value.children.every(isNode)
+    );
+  }
   return false;
 }
 
 function load(storageKey: string): IWorkspace {
   try {
-    const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? "null");
-    if (saved && typeof saved === "object" && isNode((saved as IWorkspace).root)) {
+    const saved: unknown = JSON.parse(
+      localStorage.getItem(storageKey) ?? "null",
+    );
+    if (
+      typeof saved === "object" &&
+      saved !== null &&
+      "root" in saved &&
+      isNode(saved.root)
+    ) {
       const workspace = saved as IWorkspace;
       const focusedExists = findPane(workspace.root, workspace.currentViewerId);
-      return focusedExists ? workspace : { ...workspace, currentViewerId: listPanes(workspace.root)[0].id };
+      return focusedExists
+        ? workspace
+        : { ...workspace, currentViewerId: firstPane(workspace.root).id };
     }
     // First run after the split feature: carry over the old single tab list
-    const legacy: unknown = JSON.parse(localStorage.getItem(storageKey.replace(/:workspace$/, ":recent-tabs")) ?? "null");
-    if (Array.isArray(legacy)) return emptyWorkspace(legacy.filter((k): k is string => typeof k === "string"));
+    const legacy: unknown = JSON.parse(
+      localStorage.getItem(storageKey.replace(/:workspace$/, ":recent-tabs")) ??
+        "null",
+    );
+    if (Array.isArray(legacy))
+      return emptyWorkspace(
+        legacy.filter((k): k is string => typeof k === "string"),
+      );
   } catch {
     // storage blocked or corrupt: start fresh
   }
@@ -144,31 +204,50 @@ function subscribe(notify: () => void) {
 }
 
 export function useWorkspace(storageKey: string): IWorkspace {
-  return useSyncExternalStore(subscribe, () => read(storageKey), () => read(storageKey));
+  return useSyncExternalStore(
+    subscribe,
+    () => read(storageKey),
+    () => read(storageKey),
+  );
 }
 
 // ---- Actions ----
 
 export function openTab(storageKey: string, key: string) {
   const workspace = read(storageKey);
-  const isVisited = listPanes(workspace?.root).find((pane) => pane?.tabs.includes(key));
+  const isVisited = listPanes(workspace.root).find((pane) =>
+    pane.tabs.includes(key),
+  );
 
   if (isVisited) {
-    if (isVisited?.activeKey === key && workspace?.currentViewerId === isVisited?.id) return;
+    if (
+      isVisited.activeKey === key &&
+      workspace.currentViewerId === isVisited.id
+    )
+      return;
     write(storageKey, {
-      root: replacePane(workspace.root, isVisited?.id, { ...isVisited, activeKey: key }),
-      currentViewerId: isVisited?.id,
+      root: replacePane(workspace.root, isVisited.id, {
+        ...isVisited,
+        activeKey: key,
+      }),
+      currentViewerId: isVisited.id,
     });
     return;
   }
-  const focused = findPane(workspace?.root, workspace?.currentViewerId) ?? listPanes(workspace.root)[0];
+  const focused =
+    findPane(workspace.root, workspace.currentViewerId) ??
+    firstPane(workspace.root);
   write(storageKey, {
-    root: replacePane(workspace?.root, focused?.id, withTab(focused, key)),
-    currentViewerId: focused?.id,
+    root: replacePane(workspace.root, focused.id, withTab(focused, key)),
+    currentViewerId: focused.id,
   });
 }
 
-export function closeTab(storageKey: string, paneId: string, key: string): IWorkspace {
+export function closeTab(
+  storageKey: string,
+  paneId: string,
+  key: string,
+): IWorkspace {
   const workspace = read(storageKey);
   const pane = findPane(workspace.root, paneId);
   if (!pane) return workspace;
@@ -180,7 +259,10 @@ export function closeTab(storageKey: string, paneId: string, key: string): IWork
   } else {
     const root = removePane(workspace.root, paneId);
     if (!root) return workspace;
-    const currentViewerId = paneId === workspace.currentViewerId ? listPanes(root)[0].id : workspace.currentViewerId;
+    const currentViewerId =
+      paneId === workspace.currentViewerId
+        ? firstPane(root).id
+        : workspace.currentViewerId;
     next = { root, currentViewerId };
   }
   write(storageKey, next);
@@ -194,7 +276,11 @@ export function closeAllTabs(storageKey: string, homeKey: string): IWorkspace {
   return next;
 }
 
-export function canDrop(workspace: IWorkspace, fromPaneId: string, target: DropTarget): boolean {
+export function canDrop(
+  workspace: IWorkspace,
+  fromPaneId: string,
+  target: DropTarget,
+): boolean {
   const from = findPane(workspace.root, fromPaneId);
   if (!from || !findPane(workspace.root, target.paneId)) return false;
   if (target.zone === "center") return target.paneId !== fromPaneId;
@@ -204,60 +290,98 @@ export function canDrop(workspace: IWorkspace, fromPaneId: string, target: DropT
 }
 
 /** Moves a tab to where overKey sits in the same pane, and makes it the active tab. */
-export function reorderTab(storageKey: string, paneId: string, key: string, overKey: string): IWorkspace {
+export function reorderTab(
+  storageKey: string,
+  paneId: string,
+  key: string,
+  overKey: string,
+): IWorkspace {
   const workspace = read(storageKey);
-  const pane = findPane(workspace?.root, paneId);
-  const from = pane?.tabs?.indexOf(key) ?? -1;
-  const to = pane?.tabs?.indexOf(overKey) ?? -1;
+  const pane = findPane(workspace.root, paneId);
+  const from = pane?.tabs.indexOf(key) ?? -1;
+  const to = pane?.tabs.indexOf(overKey) ?? -1;
   if (!pane || from < 0 || to < 0) return workspace;
 
   const tabs = [...pane.tabs];
   tabs.splice(to, 0, ...tabs.splice(from, 1));
   const next = {
-    root: replacePane(workspace.root, paneId, { ...pane, tabs, activeKey: key }),
+    root: replacePane(workspace.root, paneId, {
+      ...pane,
+      tabs,
+      activeKey: key,
+    }),
     currentViewerId: paneId,
   };
   write(storageKey, next);
   return next;
 }
 
-export function moveTab(storageKey: string, key: string, fromPaneId: string, target: DropTarget): IWorkspace {
+export function moveTab(
+  storageKey: string,
+  key: string,
+  fromPaneId: string,
+  target: DropTarget,
+): IWorkspace {
   const workspace = read(storageKey);
-  if (!canDrop(workspace, fromPaneId, target)) return workspace;
+  const from = findPane(workspace.root, fromPaneId);
+  if (!from || !canDrop(workspace, fromPaneId, target)) return workspace;
 
-  const from = findPane(workspace.root, fromPaneId)!;
   let root = replacePane(workspace.root, fromPaneId, withoutTab(from, key));
   let currentViewerId: string;
 
   if (target.zone === "center") {
-    root = replacePane(root, target.paneId, withTab(findPane(root, target.paneId)!, key));
+    // canDrop checked the target pane exists, and a center drop never removes it
+    const to = findPane(root, target.paneId);
+    if (!to) return workspace;
+    root = replacePane(root, target.paneId, withTab(to, key));
     currentViewerId = target.paneId;
   } else {
-    const pane: PaneNode = { type: "pane", id: newId("p"), tabs: [key], activeKey: key };
+    const pane: PaneNode = {
+      type: "pane",
+      id: newId("p"),
+      tabs: [key],
+      activeKey: key,
+    };
     root = splitPane(root, target.paneId, target.zone, pane);
     currentViewerId = pane.id;
   }
 
   // The source pane disappears if that was its last tab
-  if (findPane(root, fromPaneId)?.tabs.length === 0) root = removePane(root, fromPaneId) ?? root;
+  if (findPane(root, fromPaneId)?.tabs.length === 0)
+    root = removePane(root, fromPaneId) ?? root;
 
   const next = { root, currentViewerId };
   write(storageKey, next);
   return next;
 }
 
-function mergePanes(node: LayoutNode, preferredActiveKey: string | null): PaneNode {
+function mergePanes(
+  node: LayoutNode,
+  preferredActiveKey: string | null,
+): PaneNode {
   const panes = listPanes(node);
-  const tabs = [...new Set(panes.flatMap((pane) => pane.tabs))].slice(-MAX_TABS_PER_PANE);
-  const activeKey = preferredActiveKey && tabs.includes(preferredActiveKey) ? preferredActiveKey : (tabs.at(-1) ?? null);
-  return { type: "pane", id: panes[0].id, tabs, activeKey };
+  const tabs = [...new Set(panes.flatMap((pane) => pane.tabs))].slice(
+    -MAX_TABS_PER_PANE,
+  );
+  const activeKey =
+    preferredActiveKey != null &&
+    preferredActiveKey !== "" &&
+    tabs.includes(preferredActiveKey)
+      ? preferredActiveKey
+      : (tabs.at(-1) ?? null);
+  return { type: "pane", id: firstPane(node).id, tabs, activeKey };
 }
 
 /** Puts the tab alone on one half of the workspace; everything else stays on the other half. */
-export function snapTab(storageKey: string, key: string, fromPaneId: string, edge: SplitEdge): IWorkspace {
+export function snapTab(
+  storageKey: string,
+  key: string,
+  fromPaneId: string,
+  edge: SplitEdge,
+): IWorkspace {
   const workspace = read(storageKey);
   const from = findPane(workspace.root, fromPaneId);
-  if (!from?.tabs.includes(key)) return workspace;
+  if (from?.tabs.includes(key) !== true) return workspace;
 
   const remaining = withoutTab(from, key);
   let rest =
@@ -266,12 +390,21 @@ export function snapTab(storageKey: string, key: string, fromPaneId: string, edg
       : removePane(workspace.root, fromPaneId);
   if (!rest) return workspace;
   if (listPanes(rest).length >= MAX_PANES) {
-    rest = mergePanes(rest, findPane(rest, workspace.currentViewerId)?.activeKey ?? null);
+    rest = mergePanes(
+      rest,
+      findPane(rest, workspace.currentViewerId)?.activeKey ?? null,
+    );
   }
 
-  const orientation = edge === "left" || edge === "right" ? "horizontal" : "vertical";
+  const orientation =
+    edge === "left" || edge === "right" ? "horizontal" : "vertical";
   const before = edge === "left" || edge === "top";
-  const pane: PaneNode = { type: "pane", id: newId("p"), tabs: [key], activeKey: key };
+  const pane: PaneNode = {
+    type: "pane",
+    id: newId("p"),
+    tabs: [key],
+    activeKey: key,
+  };
   const joinsRest = rest.type === "split" && rest.orientation === orientation;
   const others = joinsRest && rest.type === "split" ? rest.children : [rest];
   const root: LayoutNode = {

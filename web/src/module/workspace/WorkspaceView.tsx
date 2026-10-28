@@ -29,8 +29,8 @@ import {
 import {
   canDrop,
   findPane,
+  firstPane,
   focusedKey,
-  listPanes,
   moveTab,
   reorderTab,
   snapTab,
@@ -79,9 +79,17 @@ const collisionDetection: CollisionDetection = (args) => {
   if (snapCells.length > 0) return snapCells;
   const panel = hits.filter((hit) => hit.id === SNAP_PANEL_ID);
   if (panel.length > 0) return panel;
-  const tabs = hits.filter(
-    (hit) => "key" in (hit.data?.droppableContainer?.data?.current ?? {}),
-  );
+  const tabs = hits.filter((hit) => {
+    const container: unknown = hit.data?.droppableContainer;
+    return (
+      container instanceof Object &&
+      "data" in container &&
+      container.data instanceof Object &&
+      "current" in container.data &&
+      container.data.current instanceof Object &&
+      "key" in container.data.current
+    );
+  });
   return tabs.length > 0 ? tabs : hits;
 };
 
@@ -101,7 +109,7 @@ export function WorkspaceView({ config }: { config: IModuleConfig }) {
   const items = useMemo(() => flattenNavItems(config), [config]);
   const goTo = useCallback(
     (key: string | null) => {
-      if (key) navigate(`/${key}`);
+      if (key != null && key !== "") void navigate(`/${key}`);
     },
     [navigate],
   );
@@ -122,10 +130,7 @@ export function WorkspaceView({ config }: { config: IModuleConfig }) {
     setDragging(null);
     const tab = event.active.data.current as DraggedTab | undefined;
     const target = event.over?.data.current as
-      | DropTarget
-      | SnapTarget
-      | DraggedTab
-      | undefined;
+      DropTarget | SnapTarget | DraggedTab | undefined;
     if (!tab || !target) return;
     if ("key" in target) {
       if (target.key === tab.key && target.fromPaneId === tab.fromPaneId)
@@ -153,7 +158,7 @@ export function WorkspaceView({ config }: { config: IModuleConfig }) {
   // Phones show only the focused pane, full size
   const root: LayoutNode = isMobile
     ? (findPane(workspace.root, workspace.currentViewerId) ??
-      listPanes(workspace.root)[0])
+      firstPane(workspace.root))
     : workspace.root;
 
   return (
@@ -340,7 +345,7 @@ function DraggedTabChip({ tab }: { tab: DraggedTab }) {
     // Fills the drag overlay, which takes the size of the dragged tab
     <div className="flex h-7 w-full cursor-grabbing items-center gap-1.5 rounded-md border bg-background px-2.5 text-sm font-medium text-primary shadow-lg">
       {Icon && <Icon className="size-5" />}
-      <span>{item?.sidebarText}</span>
+      <span>{item.sidebarText}</span>
     </div>
   );
 }

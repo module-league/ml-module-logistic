@@ -41,7 +41,7 @@ export function KanbanBoard<T>({
             </span>
           </header>
           <div className="-mr-1 flex max-h-[70dvh] flex-col gap-2 overflow-y-auto overscroll-contain pr-1">
-            {column.items.length ? (
+            {column.items.length > 0 ? (
               column.items.map((item) => (
                 <div key={getKey(item)}>{renderItem(item)}</div>
               ))

@@ -25,6 +25,7 @@ import {
   DashboardWidgetFrame,
   DashboardWidgetMessage,
 } from "./DashboardWidgetFrame";
+import { nonEmpty } from "@/lib/stringHelper";
 
 const BUCKET_TEXT: Record<IDashboardTrend["bucket"], string> = {
   day: "days",
@@ -35,7 +36,7 @@ const BUCKET_TEXT: Record<IDashboardTrend["bucket"], string> = {
 /** One series over time, by a date field: a bar per day, week or month, ending with the current one. */
 export function TrendWidget({ widget, view }: DashboardWidgetBodyProps) {
   const { now } = useDashboard();
-  const trend = widget?.trend;
+  const trend = widget.trend;
   const dateField = view.fieldById.get(trend?.dateFieldId ?? "");
   const valueField = view.fieldById.get(trend?.fieldId ?? "");
   const series = useMemo(
@@ -84,9 +85,9 @@ export function TrendWidget({ widget, view }: DashboardWidgetBodyProps) {
 
   return (
     <DashboardWidgetFrame
-      title={widget?.label}
+      title={widget.label}
       aside={
-        widget?.caption ||
+        nonEmpty(widget.caption) ??
         (dateField && trend
           ? `By ${dateField.name}, last ${trend.span} ${BUCKET_TEXT[trend.bucket]}`
           : undefined)

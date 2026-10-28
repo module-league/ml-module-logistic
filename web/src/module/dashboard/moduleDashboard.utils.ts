@@ -45,6 +45,7 @@ import type {
   DashboardRecordGroup,
   DashboardWidgetType,
 } from "./moduleDashboard.types";
+import { nonEmpty } from "@/lib/stringHelper";
 
 export const DATE_RANGES: {
   value: IDashboardDateRange;
@@ -128,7 +129,7 @@ export const isNumberField = (field?: Pick<IField, "type">) =>
   field?.type === "formula";
 
 export const isDateField = (field?: Pick<IField, "type" | "isDateField">) =>
-  !!field?.isDateField ||
+  field?.isDateField === true ||
   field?.type === "date" ||
   field?.type === "ds_create_time";
 
@@ -155,7 +156,7 @@ export const isFilterField = (field?: Pick<IField, "type">) =>
 export function tableFields(source?: Pick<LookupSource, "fields">) {
   return [
     ...[...(source?.fields ?? [])].sort(
-      (a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0),
+      (a, b) => a.displayOrder - b.displayOrder,
     ),
     ...SYSTEM_FIELDS,
   ];
@@ -163,9 +164,9 @@ export function tableFields(source?: Pick<LookupSource, "fields">) {
 
 /** A field's type as the Add field dialog names it, e.g. "Number". */
 export const fieldTypeLabel = (field: ISidebarField) =>
-  SHORT_TYPE_LABELS[field?.type] ??
-  fieldTypeOption(field?.type)?.label ??
-  (field?.isSystemField ? "Created time" : field?.type);
+  SHORT_TYPE_LABELS[field.type] ??
+  fieldTypeOption(field.type)?.label ??
+  (field.isSystemField ? "Created time" : field.type);
 
 const SHORT_TYPE_LABELS: Partial<Record<IField["type"], string>> = {
   link_table: "Link",
@@ -184,14 +185,12 @@ function notDoneCondition(fields: ISidebarField[]): IDashboardCondition[] {
   const field = fields.find(
     (entry) =>
       isSelectField(entry) &&
-      entry.dropDownValues?.some((option) =>
-        DONE_OPTION.test(option?.value ?? ""),
-      ),
+      entry.dropDownValues.some((option) => DONE_OPTION.test(option.value)),
   );
   const doneIds = field?.dropDownValues
-    ?.filter((option) => DONE_OPTION.test(option?.value ?? ""))
+    .filter((option) => DONE_OPTION.test(option.value))
     .map((option) => option.id);
-  return field && doneIds?.length
+  return field && doneIds !== undefined && doneIds.length > 0
     ? [
         {
           fieldId: field.objId,
@@ -209,9 +208,9 @@ export const singular = (text: string) =>
 /** The field a widget names its records by: the picked one, else the primary or first showable field. */
 export function titleFieldOf(fields: ISidebarField[], fieldId?: string) {
   return (
-    fields?.find((field) => field?.objId === fieldId) ??
-    fields?.find((field) => field?.isPrimaryField && canShowInLookup(field)) ??
-    fields?.find(canShowInLookup)
+    fields.find((field) => field.objId === fieldId) ??
+    fields.find((field) => field.isPrimaryField && canShowInLookup(field)) ??
+    fields.find(canShowInLookup)
   );
 }
 
@@ -223,7 +222,9 @@ export function recordTitle(
 ) {
   return (
     (field &&
-      toRecordText(field, recordFieldValue(field, record), members, lookups)) ||
+      nonEmpty(
+        toRecordText(field, recordFieldValue(field, record), members, lookups),
+      )) ??
     "Untitled record"
   );
 }
@@ -309,9 +310,9 @@ export function newCondition(field: ISidebarField): IDashboardCondition {
 }
 
 const isBlank = (field: ISidebarField, value: string) =>
-  field?.type === "link_table"
-    ? !parseRecordIds(value).length
-    : !value.trim() || value.trim() === "[]";
+  field.type === "link_table"
+    ? parseRecordIds(value).length === 0
+    : value.trim() === "" || value.trim() === "[]";
 
 function matchesCondition(
   field: ISidebarField,
@@ -320,11 +321,11 @@ function matchesCondition(
   now: Date,
 ) {
   const value = recordFieldValue(field, record) ?? "";
-  const wanted = condition?.value ?? "";
+  const wanted = condition.value ?? "";
   const text = value.trim().toLowerCase();
   const wantedText = wanted.trim().toLowerCase();
-  const amount = value.trim() ? Number(value) : Number.NaN;
-  const wantedAmount = wanted.trim() ? Number(wanted) : Number.NaN;
+  const amount = value.trim() !== "" ? Number(value) : Number.NaN;
+  const wantedAmount = wanted.trim() !== "" ? Number(wanted) : Number.NaN;
   const compare = (test: (a: number, b: number) => boolean) =>
     Number.isFinite(amount) &&
     Number.isFinite(wantedAmount) &&
@@ -334,9 +335,10 @@ function matchesCondition(
     return parseOptionIds(wanted).filter((id) => ids.includes(id));
   };
   const date = () => parseFieldDate(value);
-  const range = () => periodRange((wanted || "today") as IDashboardPeriod, now);
+  const range = () =>
+    periodRange((nonEmpty(wanted) ?? "today") as IDashboardPeriod, now);
 
-  switch (condition?.operator) {
+  switch (condition.operator) {
     case "empty":
       return isBlank(field, value);
     case "not_empty":
@@ -397,11 +399,11 @@ export function filterRecords(
   now: Date,
 ) {
   const conditions =
-    filter?.conditions?.flatMap((condition) => {
-      const field = fieldById.get(condition?.fieldId);
+    filter?.conditions.flatMap((condition) => {
+      const field = fieldById.get(condition.fieldId);
       return field ? [{ field, condition }] : [];
     }) ?? [];
-  if (!conditions.length) return records;
+  if (conditions.length === 0) return records;
   const test = (record: ISidebarRecord) =>
     filter?.match === "any"
       ? conditions.some(({ field, condition }) =>
@@ -421,35 +423,37 @@ export function describeCondition(
 ) {
   if (!field) return "a deleted field";
   const operator = operatorsFor(field).find(
-    (option) => option.value === condition?.operator,
+    (option) => option.value === condition.operator,
   );
   const value = (() => {
     switch (operator?.input) {
       case "options":
-        return parseOptionIds(condition?.value)
+        return parseOptionIds(condition.value)
           .map(
             (id) =>
-              field?.dropDownValues?.find((option) => option?.id === id)?.value,
+              field.dropDownValues.find((option) => option.id === id)?.value,
           )
           .filter(Boolean)
           .join(", ");
       case "members":
-        return parseOptionIds(condition?.value)
+        return parseOptionIds(condition.value)
           .map(
             (id) =>
-              members?.find((member) => member?.id === id)?.displayName ??
+              members?.find((member) => member.id === id)?.displayName ??
               "someone",
           )
           .join(", ");
       case "period":
         return (
-          PERIODS.find((period) => period.value === condition?.value)?.label ??
+          PERIODS.find((period) => period.value === condition.value)?.label ??
           "today"
         );
       case undefined:
         return "";
-      default:
-        return condition?.value?.trim() ? `“${condition.value.trim()}”` : "…";
+      default: {
+        const text = condition.value?.trim() ?? "";
+        return text !== "" ? `“${text}”` : "…";
+      }
     }
   })();
   return [field.name, operator?.label ?? "", value].filter(Boolean).join(" ");
@@ -462,14 +466,10 @@ export function describeFilter(
 ) {
   return (
     filter?.conditions
-      ?.map((condition) =>
-        describeCondition(
-          condition,
-          fieldById.get(condition?.fieldId),
-          members,
-        ),
+      .map((condition) =>
+        describeCondition(condition, fieldById.get(condition.fieldId), members),
       )
-      .join(filter?.match === "any" ? " or " : " · ") ?? ""
+      .join(filter.match === "any" ? " or " : " · ") ?? ""
   );
 }
 
@@ -478,7 +478,7 @@ function numbersOf(records: ISidebarRecord[], field?: ISidebarField) {
   if (!field) return [];
   return records.flatMap((record) => {
     const value = recordFieldValue(field, record)?.trim();
-    const amount = value ? Number(value) : Number.NaN;
+    const amount = value != null && value !== "" ? Number(value) : Number.NaN;
     return Number.isFinite(amount) ? [amount] : [];
   });
 }
@@ -495,7 +495,7 @@ export function measureRecords(
   if (measure.calculation === "sum") {
     return numbers.reduce((total, amount) => total + amount, 0);
   }
-  if (!numbers.length) return undefined;
+  if (numbers.length === 0) return undefined;
   if (measure.calculation === "average") {
     return (
       numbers.reduce((total, amount) => total + amount, 0) / numbers.length
@@ -576,8 +576,8 @@ export function groupRecords(
         .get(key)) as DashboardRecordGroup;
 
   if (field.type === "single_select" || field.type === "multi_select") {
-    [...(field.dropDownValues ?? [])]
-      .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
+    [...field.dropDownValues]
+      .sort((a, b) => a.displayOrder - b.displayOrder)
       .forEach((option) =>
         add(option.id, () => ({
           key: option.id,
@@ -592,7 +592,7 @@ export function groupRecords(
       : undefined;
   const linked =
     field.type === "link_table" ? lookupRecordsOf(field, lookups) : undefined;
-  const linkedById = new Map(linked?.map((record) => [record?.objId, record]));
+  const linkedById = new Map(linked?.map((record) => [record.objId, record]));
   const captionFields =
     field.type === "link_table"
       ? linkCardFields(field, lookups).slice(0, 2)
@@ -612,7 +612,7 @@ export function groupRecords(
       return {
         key,
         label:
-          members?.find((member) => member?.id === key)?.displayName ??
+          members?.find((member) => member.id === key)?.displayName ??
           "Unknown user",
       };
     }
@@ -625,7 +625,7 @@ export function groupRecords(
           .map((captionField) =>
             toRecordText(
               captionField,
-              record?.values?.[captionField.objId],
+              record?.values[captionField.objId],
               members,
             ),
           )
@@ -639,11 +639,11 @@ export function groupRecords(
   const empty: ISidebarRecord[] = [];
   records.forEach((record) => {
     const keys = keysOf(record);
-    if (!keys.length) empty.push(record);
+    if (keys.length === 0) empty.push(record);
     keys.forEach((key) => add(key, () => labelOf(key)).records.push(record));
   });
   const list = [...groups.values()];
-  return empty.length
+  return empty.length > 0
     ? [...list, { key: "", label: `No ${field.name}`, records: empty }]
     : list;
 }
@@ -669,7 +669,7 @@ export function trendSeries(
       : trend.bucket === "week"
         ? addWeeks(date, count)
         : addDays(date, count);
-  const span = Math.max(2, Math.min(trend.span || 12, 60));
+  const span = Math.max(2, Math.min(trend.span !== 0 ? trend.span : 12, 60));
   const current = startOf(now);
   const buckets = Array.from({ length: span }, (_, index) =>
     step(current, index - span + 1),
@@ -727,19 +727,27 @@ export function pointOf(
   fieldById: Map<string, ISidebarField>,
   lookups?: RecordLookups,
 ): [number, number] | undefined {
-  if (!point?.latFieldId || !point?.lngFieldId) return undefined;
-  let values: ISidebarRecordValues | undefined = record?.values;
-  if (point.linkFieldId) {
+  if (
+    point?.latFieldId == null ||
+    point.latFieldId === "" ||
+    point.lngFieldId == null ||
+    point.lngFieldId === ""
+  )
+    return undefined;
+  let values: ISidebarRecordValues | undefined = record.values;
+  if (point.linkFieldId != null && point.linkFieldId !== "") {
     const linkField = fieldById.get(point.linkFieldId);
-    const [linkedId] = parseRecordIds(record?.values?.[point.linkFieldId]);
+    const [linkedId] = parseRecordIds(record.values[point.linkFieldId]);
     values = lookupRecordsOf(linkField as IField, lookups)?.find(
-      (linked) => linked?.objId === linkedId,
+      (linked) => linked.objId === linkedId,
     )?.values;
   }
   const lat = Number(values?.[point.latFieldId]);
   const lng = Number(values?.[point.lngFieldId]);
-  return values?.[point.latFieldId] &&
-    values?.[point.lngFieldId] &&
+  return values?.[point.latFieldId] != null &&
+    values[point.latFieldId] !== "" &&
+    values[point.lngFieldId] != null &&
+    values[point.lngFieldId] !== "" &&
     Math.abs(lat) <= 85 &&
     Math.abs(lng) <= 180
     ? [lat, lng]
@@ -754,15 +762,14 @@ export function pointSources(fields: ISidebarField[], sources: LookupSource[]) {
       ? [{ linkFieldId: undefined, label: "This table", fields: own }]
       : []),
     ...fields
-      .filter((field) => field?.type === "link_table")
+      .filter((field) => field.type === "link_table")
       .flatMap((field) => {
         const linkedFields =
           sources
-            ?.find(
-              (source) =>
-                source?.sidebarId === field?.lookupSettings?.categoryId,
+            .find(
+              (source) => source.sidebarId === field.lookupSettings?.categoryId,
             )
-            ?.fields?.filter(isNumberField) ?? [];
+            ?.fields.filter(isNumberField) ?? [];
         return linkedFields.length >= 2
           ? [
               {
@@ -781,8 +788,11 @@ const hasField = (
   test: (field: ISidebarField) => boolean,
 ) => tableFields(source).some(test);
 
-/** The widgets the Add widget panel offers, what each needs and what it starts with. */
-export const WIDGET_TYPES: DashboardWidgetType[] = [
+/** The widgets the Add widget panel offers, what each needs and what it starts with. The first is the fallback type. */
+export const WIDGET_TYPES: readonly [
+  DashboardWidgetType,
+  ...DashboardWidgetType[],
+] = [
   {
     type: "metric",
     label: "Metric",
@@ -790,7 +800,7 @@ export const WIDGET_TYPES: DashboardWidgetType[] = [
     requirement: "Any table · number field for sums",
     icon: Hash,
     width: "s",
-    accepts: (source) => !!source?.fields?.length,
+    accepts: (source) => source.fields.length > 0,
   },
   {
     type: "board",
@@ -808,7 +818,7 @@ export const WIDGET_TYPES: DashboardWidgetType[] = [
     requirement: "Any table",
     icon: List,
     width: "l",
-    accepts: (source) => !!source?.fields?.length,
+    accepts: (source) => source.fields.length > 0,
   },
   {
     type: "breakdown",
@@ -846,7 +856,7 @@ export const WIDGET_TYPES: DashboardWidgetType[] = [
     requirement: "Any table",
     icon: TriangleAlert,
     width: "m",
-    accepts: (source) => !!source?.fields?.length,
+    accepts: (source) => source.fields.length > 0,
   },
 ];
 
@@ -933,7 +943,7 @@ function typeSettings(
           showLate: true,
           doneOptionIds:
             groupBy?.dropDownValues
-              ?.filter((option) => DONE_OPTION.test(option?.value ?? ""))
+              .filter((option) => DONE_OPTION.test(option.value))
               .map((option) => option.id) ?? [],
           cardsPerColumn: 3,
           draggable: true,
@@ -1069,8 +1079,8 @@ export function suggestedLayout(
   sources: LookupSource[],
 ): ISidebarDashboard {
   const main =
-    sources.find((source) => WIDGET_TYPES[1].accepts(source, sources)) ??
-    sources.find((source) => source.fields.length);
+    sources.find((source) => widgetTypeOf("board").accepts(source, sources)) ??
+    sources.find((source) => source.fields.length > 0);
   if (!main) return layout;
   const fields = tableFields(main);
   const dateField = fields.find(ownDateField);
@@ -1113,9 +1123,10 @@ export function suggestedLayout(
             metric: {
               calculation: "count",
               caption: "custom",
-              captionText: notDoneCondition(fields).length
-                ? `${dateField.name} passed, not finished`
-                : `${dateField.name} has passed`,
+              captionText:
+                notDoneCondition(fields).length > 0
+                  ? `${dateField.name} passed, not finished`
+                  : `${dateField.name} has passed`,
               tone: "red",
             },
           }),
@@ -1176,7 +1187,7 @@ export function normalizeDashboard(
     newRecordSidebarId: dashboard?.newRecordSidebarId ?? undefined,
     newRecordLabel: dashboard?.newRecordLabel ?? undefined,
     newRecordFormId: dashboard?.newRecordFormId ?? undefined,
-    widgets: dashboard?.widgets?.map(withListSort) ?? [],
+    widgets: dashboard?.widgets.map(withListSort) ?? [],
     versionNo: dashboard?.versionNo ?? 0,
     updateTime: dashboard?.updateTime ?? undefined,
   };
@@ -1184,10 +1195,10 @@ export function normalizeDashboard(
 
 /** Lists saved before every widget could sort and limit kept their sort and row count in list. */
 function withListSort(widget: IDashboardWidget): IDashboardWidget {
-  const saved = widget?.list as
+  const saved = widget.list as
     | { sortFieldId?: string; sortDirection?: "asc" | "desc"; rows?: number }
     | undefined;
-  if (!saved?.rows) return widget;
+  if (saved?.rows == null || saved.rows === 0) return widget;
   return {
     ...widget,
     list: { columns: widget.list?.columns ?? [] },
@@ -1203,10 +1214,13 @@ export function describeWidget(
   source?: LookupSource,
 ) {
   const fields = tableFields(source);
-  const name = (fieldId?: string) =>
-    fields.find((field) => field.objId === fieldId)?.name;
+  /** "Grouped by Status", or undefined while no field is picked. */
+  const describeField = (prefix: string, fieldId?: string) => {
+    const name = fields.find((field) => field.objId === fieldId)?.name;
+    return name === undefined ? undefined : `${prefix} ${name}`;
+  };
   const detail = (() => {
-    switch (widget?.type) {
+    switch (widget.type) {
       case "metric":
         return describeMeasure(
           widget.metric,
@@ -1214,26 +1228,15 @@ export function describeWidget(
           source?.sidebarText ?? "records",
         );
       case "board":
-        return (
-          name(widget.board?.groupFieldId) &&
-          `Grouped by ${name(widget.board?.groupFieldId)}`
-        );
+        return describeField("Grouped by", widget.board?.groupFieldId);
       case "list":
-        return (
-          name(widget.sortFieldId) && `Sorted by ${name(widget.sortFieldId)}`
-        );
+        return describeField("Sorted by", widget.sortFieldId);
       case "breakdown":
-        return (
-          name(widget.breakdown?.groupFieldId) &&
-          `By ${name(widget.breakdown?.groupFieldId)}`
-        );
+        return describeField("By", widget.breakdown?.groupFieldId);
       case "trend":
-        return (
-          name(widget.trend?.dateFieldId) &&
-          `By ${name(widget.trend?.dateFieldId)}`
-        );
+        return describeField("By", widget.trend?.dateFieldId);
       case "attention": {
-        const count = widget.attention?.rules?.length ?? 0;
+        const count = widget.attention?.rules.length ?? 0;
         return `${count} ${count === 1 ? "rule" : "rules"}`;
       }
       default:
@@ -1241,7 +1244,7 @@ export function describeWidget(
     }
   })();
   return [
-    widgetTypeOf(widget?.type).label,
+    widgetTypeOf(widget.type).label,
     source?.sidebarText ?? "No table",
     detail,
   ]
@@ -1255,16 +1258,23 @@ export function toDashboardInput(
   versionNo: number,
 ): ISidebarDashboardInput {
   return {
-    title: layout.title?.trim() || undefined,
-    description: layout.description?.trim() || undefined,
+    title: nonEmpty(layout.title?.trim()),
+    description: nonEmpty(layout.description?.trim()),
     dateRange: layout.dateRange,
-    rangeSidebarId: layout.rangeFieldId ? layout.rangeSidebarId : undefined,
-    rangeFieldId: layout.rangeSidebarId ? layout.rangeFieldId : undefined,
+    rangeSidebarId:
+      layout.rangeFieldId != null && layout.rangeFieldId !== ""
+        ? layout.rangeSidebarId
+        : undefined,
+    rangeFieldId:
+      layout.rangeSidebarId != null && layout.rangeSidebarId !== ""
+        ? layout.rangeFieldId
+        : undefined,
     newRecordSidebarId: layout.newRecordSidebarId,
-    newRecordLabel: layout.newRecordLabel?.trim() || undefined,
-    newRecordFormId: layout.newRecordSidebarId
-      ? layout.newRecordFormId
-      : undefined,
+    newRecordLabel: nonEmpty(layout.newRecordLabel?.trim()),
+    newRecordFormId:
+      layout.newRecordSidebarId != null && layout.newRecordSidebarId !== ""
+        ? layout.newRecordFormId
+        : undefined,
     widgets: layout.widgets,
     versionNo,
   };
@@ -1277,17 +1287,17 @@ export function sidebarsToLoad(
 ) {
   const ids = new Set(
     [
-      ...layout.widgets.map((widget) => widget?.sidebarId),
+      ...layout.widgets.map((widget) => widget.sidebarId),
       layout.newRecordSidebarId,
-    ].filter((id): id is string => !!id),
+    ].filter((id): id is string => id != null && id !== ""),
   );
   [...ids].forEach((id) =>
     fieldsBySidebar
       .get(id)
       ?.filter(isLinkingField)
       .forEach((field) => {
-        const linked = field?.lookupSettings?.categoryId;
-        if (linked) ids.add(linked);
+        const linked = field.lookupSettings?.categoryId;
+        if (linked != null && linked !== "") ids.add(linked);
       }),
   );
   return [...ids].sort();
@@ -1304,15 +1314,13 @@ export function sortRecords(
   if (!field) return records;
   const keyOf = (record: ISidebarRecord): number | string | undefined => {
     const value = recordFieldValue(field, record) ?? "";
-    if (!value.trim()) return undefined;
+    if (value.trim() === "") return undefined;
     if (isDateField(field)) return parseFieldDate(value)?.getTime();
     if (isNumberField(field)) {
       const amount = Number(value);
       return Number.isFinite(amount) ? amount : undefined;
     }
-    return (
-      toRecordText(field, value, members, lookups).toLowerCase() || undefined
-    );
+    return nonEmpty(toRecordText(field, value, members, lookups).toLowerCase());
   };
   const sign = direction === "desc" ? -1 : 1;
   return records

@@ -5,6 +5,7 @@ import {
   statusLabel,
   type DispatchShipment,
 } from "../Dispatch/dispatchBoard.utils";
+import { nonEmpty } from "@/lib/stringHelper";
 
 /** What each status chip says. */
 export const DOCUMENT_STATUSES: { value: IDocumentStatus; label: string }[] = [
@@ -48,7 +49,7 @@ const GATE_NAME: Partial<Record<IDocumentStep, string>> = {
 
 /** "Booked", "Picked up", "Billed". */
 export const stepLabel = (step?: IDocumentStep) =>
-  !step
+  step === undefined
     ? ""
     : step === "booked"
       ? "Booked"
@@ -82,7 +83,7 @@ export const buildDocumentRows = (
 
 /** "Air · FCA", leaving out what isn't set. */
 export const basisText = (checklist: IShipmentChecklist) =>
-  [checklist.mode, checklist.incoterm].filter(Boolean).join(" · ") ||
+  nonEmpty([checklist.mode, checklist.incoterm].filter(Boolean).join(" · ")) ??
   "No mode or Incoterm";
 
 /** "Required because Shipment Mode = Air, Incoterm = FCA, stage = In transit." */
@@ -92,8 +93,12 @@ export function reasonText(
   incotermName = "Incoterm",
 ) {
   const parts = [
-    checklist.mode && `${modeName} = ${checklist.mode}`,
-    checklist.incoterm && `${incotermName} = ${checklist.incoterm}`,
+    checklist.mode != null &&
+      checklist.mode !== "" &&
+      `${modeName} = ${checklist.mode}`,
+    checklist.incoterm != null &&
+      checklist.incoterm !== "" &&
+      `${incotermName} = ${checklist.incoterm}`,
     `stage = ${stepLabel(checklist.stage)}`,
   ].filter(Boolean);
   return `Required because ${parts.join(", ")}.`;
@@ -115,7 +120,7 @@ export const typeTitle = (
 ) =>
   docType === "other"
     ? "Other"
-    : (rules?.types?.find((type) => type.docType === docType)?.title ??
+    : (rules?.types.find((type) => type.docType === docType)?.title ??
       docType ??
       "");
 

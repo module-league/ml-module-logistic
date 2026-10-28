@@ -56,7 +56,7 @@ export function parseDate(
   format = "yyyy-MM-dd'T'HH:mm:ss'Z'",
   referenceDate = new Date(),
 ): Date {
-  if (!date) {
+  if (date == null || date === "") {
     return new Date();
   } else {
     return fnsParse(date, format, referenceDate);
@@ -71,14 +71,14 @@ export function formatDate(
     includeTime?: boolean;
   },
 ) {
-  if (options?.omitSameYear && isThisYear(date)) {
-    if (options.includeTime) {
+  if (options?.omitSameYear === true && isThisYear(date)) {
+    if (options.includeTime === true) {
       return fnsFormat(date, "dd MMM, hh:mm a");
     } else {
       return fnsFormat(date, "dd MMM");
     }
   } else {
-    if (options?.includeTime) {
+    if (options?.includeTime === true) {
       return fnsFormat(date, "dd MMM yyyy, hh:mm a");
     } else {
       return fnsFormat(date, "dd MMM yyyy");
@@ -90,7 +90,7 @@ export function formatDateDistance(
   dateStart: Date | string | undefined,
   dateEnd: Date | string | undefined = new Date(),
 ) {
-  if (!dateStart) return;
+  if (dateStart === undefined || dateStart === "") return;
 
   const _dateStart = new Date(dateStart);
   const _dateEnd = new Date(dateEnd);
@@ -123,14 +123,14 @@ type FieldDateSettings = Partial<
 /** The date-fns pattern a date field shows its values in, e.g. "dd/MM/yyyy hh:mm a". */
 export function fieldDateFormat(field?: FieldDateSettings) {
   const date = field?.dateFormat ?? "dd/MM/yyyy";
-  return field?.displayTime
-    ? `${date} ${field?.timeFormat ?? "hh:mm a"}`
+  return field?.displayTime === true
+    ? `${date} ${field.timeFormat ?? "hh:mm a"}`
     : date;
 }
 
 /** A stored date value ("yyyy-MM-dd" or an ISO date-time) as a local Date. */
 export function parseFieldDate(value?: string | null) {
-  if (!value) return undefined;
+  if (value == null || value === "") return undefined;
   const date = parseISO(value);
   return isValid(date) ? date : undefined;
 }
@@ -141,7 +141,7 @@ export function toFieldDateValue(
   date?: Date,
 ) {
   if (!date) return "";
-  return field?.displayTime
+  return field?.displayTime === true
     ? date.toISOString()
     : fnsFormat(date, "yyyy-MM-dd");
 }
@@ -150,7 +150,7 @@ export function toFieldDateValue(
 export function parseFieldTime(value?: string | null) {
   const [, hours, minutes] =
     /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value ?? "") ?? [];
-  if (!hours) return undefined;
+  if (hours == null || hours === "") return undefined;
   const date = new Date();
   date.setHours(Number(hours), Number(minutes), 0, 0);
   return date;

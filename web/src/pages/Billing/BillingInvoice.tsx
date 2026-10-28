@@ -20,6 +20,7 @@ import { labelOf, stamp } from "../Exception/exception.utils";
 import { BillingLines, BillingTotals, RateBar } from "./BillingQuote";
 import { day, INVOICE_STATUS_CLASS, INVOICE_STATUSES } from "./billing.utils";
 import type { BillingData } from "./useBillingData";
+import { nonEmpty } from "@/lib/stringHelper";
 
 type Action = "pay" | "void";
 
@@ -52,10 +53,18 @@ export function BillingInvoice({
   );
   const dates = [
     `Created ${stamp(invoice.createdAt)}`,
-    invoice.sentAt && `sent ${stamp(invoice.sentAt)}`,
-    invoice.dueDate && `due ${day(invoice.dueDate)}`,
-    invoice.paidAt && `paid ${stamp(invoice.paidAt)}`,
-    invoice.voidedAt && `voided ${stamp(invoice.voidedAt)}`,
+    invoice.sentAt != null &&
+      invoice.sentAt !== "" &&
+      `sent ${stamp(invoice.sentAt)}`,
+    invoice.dueDate != null &&
+      invoice.dueDate !== "" &&
+      `due ${day(invoice.dueDate)}`,
+    invoice.paidAt != null &&
+      invoice.paidAt !== "" &&
+      `paid ${stamp(invoice.paidAt)}`,
+    invoice.voidedAt != null &&
+      invoice.voidedAt !== "" &&
+      `voided ${stamp(invoice.voidedAt)}`,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -82,7 +91,9 @@ export function BillingInvoice({
           <span className="text-sm font-semibold text-foreground">
             {invoice.partyName}
           </span>
-          {invoice.partyAddress && <span>{invoice.partyAddress}</span>}
+          {invoice.partyAddress != null && invoice.partyAddress !== "" && (
+            <span>{invoice.partyAddress}</span>
+          )}
           <span>
             {[invoice.partyEmail, `${invoice.creditTermsDays} days credit`]
               .filter(Boolean)
@@ -90,14 +101,14 @@ export function BillingInvoice({
           </span>
         </div>
       </header>
-      {invoice.voidReason && (
+      {invoice.voidReason != null && invoice.voidReason !== "" && (
         <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">
           Voided: {invoice.voidReason}
         </p>
       )}
       <RateBar
-        card={invoice.pricing?.rateCard}
-        weight={invoice.pricing?.weight}
+        card={invoice.pricing.rateCard}
+        weight={invoice.pricing.weight}
         symbol={symbol}
       />
       <BillingLines lines={invoice.lines} symbol={symbol} />
@@ -141,7 +152,7 @@ export function BillingInvoice({
           <Button
             startIcon={<Send size={14} />}
             isLoading={isSaving}
-            onClick={send}
+            onClick={() => void send()}
           >
             Send invoice
           </Button>
@@ -156,7 +167,7 @@ export function BillingInvoice({
           </Button>
         )}
       </BillingTotals>
-      {action && (
+      {action !== undefined && (
         <InvoiceActionDialog
           key={action}
           action={action}
@@ -193,7 +204,7 @@ function InvoiceActionDialog({
       paying ? "Couldn't record the payment" : "Couldn't void the invoice",
       async () => {
         const changed = paying
-          ? await onPay(invoice, text.trim(), reference.trim() || undefined)
+          ? await onPay(invoice, text.trim(), nonEmpty(reference.trim()))
           : await onVoid(invoice, text.trim());
         toast.success(
           paying
@@ -249,9 +260,9 @@ function InvoiceActionDialog({
           <Button
             size="sm"
             variant={paying ? "default" : "destructive"}
-            disabled={!text.trim()}
+            disabled={text.trim() === ""}
             isLoading={isSaving}
-            onClick={confirm}
+            onClick={() => void confirm()}
           >
             {paying ? "Mark paid" : "Void invoice"}
           </Button>

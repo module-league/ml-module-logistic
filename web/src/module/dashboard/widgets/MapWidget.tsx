@@ -6,6 +6,7 @@ import {
   DashboardWidgetFrame,
   DashboardWidgetMessage,
 } from "./DashboardWidgetFrame";
+import { nonEmpty } from "@/lib/stringHelper";
 
 const TILE = 256;
 const PADDING = 32;
@@ -43,7 +44,7 @@ function fitZoom(points: [number, number][], width: number, height: number) {
 /** Records as pins on an OpenStreetMap, with a route from each record's from point to its to point. */
 export function MapWidget({ widget, view, preview }: DashboardWidgetBodyProps) {
   const { members, lookups, onOpenRecord } = useDashboard();
-  const map = widget?.map;
+  const map = widget.map;
   const titleField = titleFieldOf(view.fields, map?.titleFieldId);
   const height = 280;
   const [width, setWidth] = useState(0);
@@ -51,7 +52,7 @@ export function MapWidget({ widget, view, preview }: DashboardWidgetBodyProps) {
   const measure = useCallback((node: HTMLDivElement | null) => {
     if (!node) return;
     const observer = new ResizeObserver(([entry]) =>
-      setWidth(entry.contentRect.width),
+      setWidth(entry?.contentRect.width ?? 0),
     );
     observer.observe(node);
     return () => observer.disconnect();
@@ -83,7 +84,7 @@ export function MapWidget({ widget, view, preview }: DashboardWidgetBodyProps) {
   );
 
   const scene = useMemo(() => {
-    if (!width || !placed.length) return undefined;
+    if (width === 0 || placed.length === 0) return undefined;
     const points = placed.flatMap((entry) =>
       entry.to ? [entry.from, entry.to] : [entry.from],
     );
@@ -130,13 +131,16 @@ export function MapWidget({ widget, view, preview }: DashboardWidgetBodyProps) {
 
   return (
     <DashboardWidgetFrame
-      title={widget?.label}
+      title={widget.label}
       aside={
-        widget?.caption ||
+        nonEmpty(widget.caption) ??
         `${placed.length} of ${view.records.length} on the map`
       }
     >
-      {!map?.from?.latFieldId || !map?.from?.lngFieldId ? (
+      {map?.from.latFieldId == null ||
+      map.from.latFieldId === "" ||
+      map.from.lngFieldId == null ||
+      map.from.lngFieldId === "" ? (
         <DashboardWidgetMessage>
           Pick the latitude and longitude fields in this widget's settings.
         </DashboardWidgetMessage>
@@ -146,7 +150,7 @@ export function MapWidget({ widget, view, preview }: DashboardWidgetBodyProps) {
           className="relative w-full overflow-hidden rounded-lg border bg-muted"
           style={{ height }}
         >
-          {!placed.length && (
+          {placed.length === 0 && (
             <DashboardWidgetMessage>
               No records have a location yet.
             </DashboardWidgetMessage>
@@ -187,17 +191,17 @@ export function MapWidget({ widget, view, preview }: DashboardWidgetBodyProps) {
                 <g
                   key={pin.record.objId}
                   role="button"
-                  tabIndex={preview ? undefined : 0}
+                  tabIndex={preview === true ? undefined : 0}
                   aria-label={pin.title}
-                  className={preview ? undefined : "cursor-pointer"}
+                  className={preview === true ? undefined : "cursor-pointer"}
                   onClick={
-                    preview
+                    preview === true
                       ? undefined
                       : () => onOpenRecord(widget.sidebarId, pin.record.objId)
                   }
                   onKeyDown={(event) =>
                     event.key === "Enter" &&
-                    !preview &&
+                    preview !== true &&
                     onOpenRecord(widget.sidebarId, pin.record.objId)
                   }
                 >

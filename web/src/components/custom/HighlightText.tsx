@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /** Splits text around every case-insensitive match of term. */
 function splitByTerm(text: string, term: string) {
-  if (!term) return [{ text, match: false }];
+  if (term === "") return [{ text, match: false }];
   const lower = text.toLowerCase();
   const parts: { text: string; match: boolean }[] = [];
   let from = 0;
@@ -28,7 +28,7 @@ export const HighlightText = memo(function HighlightText({
   term: string;
   className?: string;
 }) {
-  const parts = useMemo(() => splitByTerm(text ?? "", term), [text, term]);
+  const parts = useMemo(() => splitByTerm(text, term), [text, term]);
   return (
     <span className={className}>
       {parts.map((part, index) =>

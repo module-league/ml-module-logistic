@@ -14,7 +14,7 @@ export function UserAvatar(props: UserAvatarProps) {
   return (
     <Avatar className={avatarClassName} {...others}>
       <AvatarImage src={userInfo?.avatarURI} alt="User avatar" />
-      {!!_displayName ? (
+      {_displayName !== "" ? (
         <AvatarFallback
           style={{
             textTransform: "uppercase",
@@ -50,7 +50,7 @@ function colorFromString(str: string) {
   return colorCodes[colorChoice];
 
   function hashString(str: string) {
-    if (!str) return 0;
+    if (str === "") return 0;
     return str.split("").reduce(function (a, b) {
       a = (a << 5) - a + b.charCodeAt(0);
       return a & a;

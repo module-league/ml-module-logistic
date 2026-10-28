@@ -18,9 +18,7 @@ export const AttachmentChip = memo(function AttachmentChip({
   return (
     <button
       type="button"
-      title={
-        option ? `${option.value} · ${attachment?.name}` : attachment?.name
-      }
+      title={option ? `${option.value} · ${attachment.name}` : attachment.name}
       onClick={onOpen}
       disabled={!onOpen}
       className="inline-flex max-w-40 min-w-0 shrink-0 cursor-pointer items-center gap-1 rounded-md border bg-background py-0.5 pr-1.5 pl-0.5 text-xs hover:bg-muted disabled:cursor-default"
@@ -38,7 +36,7 @@ export const AttachmentChip = memo(function AttachmentChip({
           {option.value}
         </SelectionNode>
       )}
-      <span className="truncate">{attachment?.name}</span>
+      <span className="truncate">{attachment.name}</span>
     </button>
   );
 });
@@ -53,7 +51,7 @@ export function AttachmentChipList({
   return (
     <>
       <span className="flex min-w-0 items-center gap-1 overflow-hidden">
-        {attachments?.map((attachment, index) => (
+        {attachments.map((attachment, index) => (
           <AttachmentChip
             key={attachment.id}
             attachment={attachment}

@@ -1,7 +1,7 @@
 import React from "react";
 import clsx from "clsx";
 import { LoadingSpinner } from "../ui/progress";
-import LoadingIcon from "./LoadingIcon";
+import { LoadingIcon } from "./LoadingIcon";
 
 interface LoadingPlaceholderProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Adjust circular progress size (Eg. 1rem, 20px). Default `24px` */
@@ -26,7 +26,7 @@ interface LoadingPlaceholderProps extends React.HTMLAttributes<HTMLDivElement> {
   loadingText?: string;
 }
 
-export default React.memo(function LoadingPlaceholder(
+export const LoadingPlaceholder = React.memo(function LoadingPlaceholder(
   props: LoadingPlaceholderProps,
 ) {
   const {
@@ -55,7 +55,7 @@ export default React.memo(function LoadingPlaceholder(
       {...others}
       style={{ padding: paddingCss, ...others.style }}
     >
-      {!fancy ? (
+      {fancy !== true ? (
         <>
           <LoadingSpinner height={loadingIconSize} width={loadingIconSize} />
           <span>{loadingText ?? "Loading..."}</span>

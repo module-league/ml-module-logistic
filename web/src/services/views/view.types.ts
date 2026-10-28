@@ -1,7 +1,7 @@
 declare global {
-  type IView = 
-  // IEntityAuditable &
-  //   IPremiumEntity & 
+  type IView =
+    // IEntityAuditable &
+    //   IPremiumEntity &
     {
       name: string;
       description?: string;

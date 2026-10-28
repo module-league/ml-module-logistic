@@ -162,9 +162,10 @@ function WorkspaceViewerTab({
     [goTo, storageKey, pane.id, item.sidebarId],
   );
 
-  const homeKey = config?.homeKey ?? items?.[0]?.sidebarId;
+  const homeKey = config.homeKey ?? items[0]?.sidebarId;
   const closeAll = useCallback(() => {
-    if (homeKey) goTo(focusedKey(closeAllTabs(storageKey, homeKey)));
+    if (homeKey != null && homeKey !== "")
+      goTo(focusedKey(closeAllTabs(storageKey, homeKey)));
   }, [goTo, storageKey, homeKey]);
 
   return (

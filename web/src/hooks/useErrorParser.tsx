@@ -33,10 +33,14 @@ interface ServiceErrorResponse {
   detail?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function errorParser(error: any) {
+/**
+ * Turns anything thrown (an axios error, an `Error`, a string) into one shape the UI can show.
+ * @param error What was caught.
+ * @returns The parsed error, or `undefined` when there was no error.
+ */
+export function errorParser(error: unknown): ServiceErrorResponse | undefined {
   let _err: ServiceErrorResponse = {
-    message: `${error}`,
+    message: String(error),
     exceptionName: "",
     errors: {},
     isKnownError: false,

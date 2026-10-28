@@ -19,7 +19,7 @@ export function DashboardWidgetFrame({
     >
       <header className="flex min-w-0 items-center justify-between gap-3">
         <h2 className="truncate text-sm font-semibold">{title}</h2>
-        {aside && (
+        {Boolean(aside) && (
           <div className="shrink-0 truncate text-xs text-muted-foreground">
             {aside}
           </div>
@@ -37,7 +37,7 @@ export function DashboardWidgetSkeleton({ rows = 3 }: { rows?: number }) {
       {Array.from({ length: rows }, (_, index) => (
         <Skeleton
           key={index}
-          className={cn("h-4", index % 2 ? "w-2/3" : "w-full")}
+          className={cn("h-4", index % 2 !== 0 ? "w-2/3" : "w-full")}
         />
       ))}
     </div>

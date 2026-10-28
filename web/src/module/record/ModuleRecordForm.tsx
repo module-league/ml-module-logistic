@@ -12,6 +12,7 @@ import type {
   ModuleRecordFormValues,
 } from "./moduleRecord.types";
 import { FieldTypeIcon } from "@/components/custom/fieldTypeIcon";
+import { nonEmpty } from "@/lib/stringHelper";
 
 export function ModuleRecordForm({
   fields,
@@ -34,11 +35,9 @@ export function ModuleRecordForm({
 }: ModuleRecordFormProps) {
   const defaultValues = useMemo<ModuleRecordFormValues>(
     () => ({
-      values:
-        fields?.map(
-          (field) =>
-            values?.[field?.objId] ?? initialValues?.[field?.objId] ?? "",
-        ) ?? [],
+      values: fields.map(
+        (field) => values?.[field.objId] ?? initialValues?.[field.objId] ?? "",
+      ),
     }),
     [fields, values, initialValues],
   );
@@ -48,18 +47,18 @@ export function ModuleRecordForm({
     resolver: zodResolver(schema),
   });
   const indexById = useMemo(
-    () => new Map(fields?.map((field, index) => [field?.objId, index])),
+    () => new Map(fields.map((field, index) => [field.objId, index])),
     [fields],
   );
   // Lookups and formulas store nothing; they're worked out from other fields
   const toRecordValues = useCallback(
     (data: ModuleRecordFormValues): ISidebarRecordValues =>
       Object.fromEntries(
-        fields?.flatMap((field, i) =>
-          field?.type === "lookup" || field?.type === "formula"
+        fields.flatMap((field, i) =>
+          field.type === "lookup" || field.type === "formula"
             ? []
-            : [[field?.objId, data?.values?.[i] ?? ""]],
-        ) ?? [],
+            : [[field.objId, data.values[i] ?? ""]],
+        ),
       ),
     [fields],
   );
@@ -82,7 +81,7 @@ export function ModuleRecordForm({
   const unchanged = !!values && !form.formState.isDirty;
   const isForm = variant === "form";
 
-  if (!fields?.length) {
+  if (fields.length === 0) {
     return (
       <p className="m-auto max-w-64 text-center text-sm text-muted-foreground">
         {isForm
@@ -95,7 +94,7 @@ export function ModuleRecordForm({
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(submit)}
+        onSubmit={(event) => void form.handleSubmit(submit)(event)}
         className={
           isForm ? "flex flex-col gap-3" : "flex min-h-0 flex-1 flex-col"
         }
@@ -114,8 +113,8 @@ export function ModuleRecordForm({
               name={`values.${index}`}
               label={
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <FieldTypeIcon type={field?.type} />
-                  <span className="truncate">{field?.name}</span>
+                  <FieldTypeIcon type={field.type} />
+                  <span className="truncate">{field.name}</span>
                 </span>
               }
               labelProps={{ size: "sm" }}
@@ -125,24 +124,24 @@ export function ModuleRecordForm({
                   : "grid grid-cols-[minmax(0,12rem)_1fr] items-start gap-x-4 [&>[data-slot=form-field-message]]:col-start-2 [&>[data-slot=form-field-message]]:row-start-2 [&>[data-slot=form-field-message]]:pt-1 [&>[data-slot=form-field-message]]:pb-0"
               }
               render={({ field: input }) =>
-                field?.type === "lookup" ? (
+                field.type === "lookup" ? (
                   <LookupFormInput
                     control={form.control}
                     linkIndex={indexById.get(
-                      field?.lookupSettings?.linkFieldId ?? "",
+                      field.lookupSettings?.linkFieldId ?? "",
                     )}
                     field={field}
                     members={members}
                     onPreview={
                       onPreviewLookup &&
-                      field?.lookupSettings?.previewEnabled !== false
+                      field.lookupSettings?.previewEnabled !== false
                         ? () => onPreviewLookup(field)
                         : undefined
                     }
-                    previewActive={previewFieldId === field?.objId}
+                    previewActive={previewFieldId === field.objId}
                     className="w-full"
                   />
-                ) : field?.type === "formula" ? (
+                ) : field.type === "formula" ? (
                   <FormulaFormInput
                     control={form.control}
                     fields={fields}
@@ -155,12 +154,12 @@ export function ModuleRecordForm({
                     members={members}
                     onUploadAttachment={onUploadAttachment}
                     name={input.name}
-                    value={input.value ?? ""}
-                    placeholder={placeholders?.[field.objId] || undefined}
+                    value={input.value}
+                    placeholder={nonEmpty(placeholders?.[field.objId])}
                     disabled={saving || readOnly}
                     onChange={(next) => {
                       input.onChange(next);
-                      emitChange();
+                      void emitChange();
                     }}
                     onBlur={input.onBlur}
                     className="w-full"
@@ -172,7 +171,7 @@ export function ModuleRecordForm({
         </div>
         {onSave && !readOnly && isForm && (
           <div className="mt-5 flex items-center justify-between gap-3 border-t pt-6">
-            {clearLabel ? (
+            {clearLabel != null && clearLabel !== "" ? (
               <Button
                 variant="ghost"
                 size="sm"
@@ -217,7 +216,7 @@ function FormulaFormInput({
       formulaValue(
         props.field,
         Object.fromEntries(
-          fields.map((field, index) => [field?.objId, values?.[index]]),
+          fields.map((field, index) => [field.objId, values[index]]),
         ),
       ),
     [props.field, fields, values],
@@ -235,7 +234,7 @@ function LookupFormInput({
   return (
     <RecordInputControl
       {...props}
-      value={linkIndex === undefined ? "" : (linked ?? "")}
+      value={linkIndex === undefined ? "" : linked}
     />
   );
 }

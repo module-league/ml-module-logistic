@@ -31,10 +31,10 @@ export function RecordMemberInput({
   onBlur,
 }: RecordMemberInputProps) {
   const anchor = useComboboxAnchor();
-  const multiple = !!field?.memberSettings?.multiple;
+  const multiple = field.memberSettings?.multiple === true;
   const selectedIds = useMemo(() => parseMemberIds(value), [value]);
   const memberIds = useMemo(
-    () => members?.map((member) => member?.id) ?? [],
+    () => members?.map((member) => member.id) ?? [],
     [members],
   );
 

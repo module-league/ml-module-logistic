@@ -45,7 +45,7 @@ const pageApi: ModuleDataApi = {
 };
 
 export default function ShipmentLocation() {
-  const sidebarId = useCurrentNavItem()?.sidebarId;
+  const sidebarId = useCurrentNavItem().sidebarId;
   const data = useModuleData(sidebarId, pageApi);
   return <ModulePage data={data} />;
 }

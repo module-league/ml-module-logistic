@@ -77,7 +77,8 @@ export interface ModuleAppEmptyState {
 
 /** Pinned rows come first in records, then the rows of the current page. */
 export interface RecordGridProps<T>
-  extends ModuleAppColumnLayout,
+  extends
+    ModuleAppColumnLayout,
     ModuleAppColumnMenu,
     ModuleAppAddAction,
     ModuleAppSelection,
@@ -94,8 +95,7 @@ export interface RecordGridProps<T>
 }
 
 export interface ModuleAppViewProps<T>
-  extends RecordGridProps<T>,
-    ModuleQueryState {
+  extends RecordGridProps<T>, ModuleQueryState {
   /** @default "grid" */
   appView?: ModuleAppViewMode;
   /** 1-based page to show; pinned rows sit above every page. @default 1 */
@@ -105,7 +105,8 @@ export interface ModuleAppViewProps<T>
 export type GridViewProps<T> = Omit<ModuleAppViewProps<T>, "appView">;
 
 export interface RecordGridHeaderCellProps<T>
-  extends Pick<ModuleAppColumnLayout, "onColumnPinToggle">,
+  extends
+    Pick<ModuleAppColumnLayout, "onColumnPinToggle">,
     ModuleAppColumnMenu {
   header: Header<T, unknown>;
   column?: ModuleAppColumn<T>;
@@ -126,18 +127,19 @@ export interface RecordGridHeaderContextMenuProps extends ModuleAppColumnMenu {
   children: ReactElement;
 }
 
-export interface RecordGridRowContextMenuProps
-  extends Pick<
-    RecordGridRowProps,
-    "rowKey" | "selected" | "onRowPinToggle" | "onRowDelete" | "onSelectToggle"
-  > {
+export interface RecordGridRowContextMenuProps extends Pick<
+  RecordGridRowProps,
+  "rowKey" | "selected" | "onRowPinToggle" | "onRowDelete" | "onSelectToggle"
+> {
   pinned: boolean;
   /** The row the menu opens on. */
   children: ReactElement;
 }
 
-export interface RecordGridRowProps
-  extends Pick<ModuleAppRowMenu, "onRowPinToggle" | "onRowDelete"> {
+export interface RecordGridRowProps extends Pick<
+  ModuleAppRowMenu,
+  "onRowPinToggle" | "onRowDelete"
+> {
   rowId: string;
   rowKey: string;
   sortable: boolean;

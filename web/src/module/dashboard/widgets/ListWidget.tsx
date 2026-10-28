@@ -12,6 +12,7 @@ import {
   DashboardWidgetFrame,
   DashboardWidgetMessage,
 } from "./DashboardWidgetFrame";
+import { nonEmpty } from "@/lib/stringHelper";
 
 /** The top records in a table, in the widget's sort order; a row opens its record. Dates show as chips, red once passed. */
 export function ListWidget({
@@ -20,39 +21,40 @@ export function ListWidget({
   preview,
 }: DashboardWidgetBodyProps) {
   const { members, lookups, now, onOpenRecord } = useDashboard();
-  const list = widget?.list;
+  const list = widget.list;
   const columns = useMemo(
     () =>
-      list?.columns?.flatMap((column) => {
-        const field = view.fieldById.get(column?.fieldId);
+      list?.columns.flatMap((column) => {
+        const field = view.fieldById.get(column.fieldId);
         return field
-          ? [{ field, toField: view.fieldById.get(column?.toFieldId ?? "") }]
+          ? [{ field, toField: view.fieldById.get(column.toFieldId ?? "") }]
           : [];
       }) ?? [],
     [list?.columns, view.fieldById],
   );
-  const sortField = view.fieldById.get(widget?.sortFieldId ?? "");
+  const sortField = view.fieldById.get(widget.sortFieldId ?? "");
   const rows = view.records;
   const today = startOfDay(now);
   const textOf = (field: ISidebarField, record: ISidebarRecord) =>
-    toRecordText(field, recordFieldValue(field, record), members, lookups) ||
-    "—";
+    nonEmpty(
+      toRecordText(field, recordFieldValue(field, record), members, lookups),
+    ) ?? "—";
 
   return (
     <DashboardWidgetFrame
-      title={widget?.label}
+      title={widget.label}
       aside={
-        widget?.caption ||
+        nonEmpty(widget.caption) ??
         (sortField
           ? `Sorted by ${sortField.name}`
           : `${view.matching.length} records`)
       }
     >
-      {!columns.length ? (
+      {columns.length === 0 ? (
         <DashboardWidgetMessage>
           Add columns in this widget's settings.
         </DashboardWidgetMessage>
-      ) : !rows.length ? (
+      ) : rows.length === 0 ? (
         <DashboardWidgetMessage>
           No records match this list.
         </DashboardWidgetMessage>
@@ -75,20 +77,20 @@ export function ListWidget({
               {rows.map((record) => (
                 <tr
                   key={record.objId}
-                  tabIndex={preview ? undefined : 0}
+                  tabIndex={preview === true ? undefined : 0}
                   onClick={
-                    preview
+                    preview === true
                       ? undefined
                       : () => onOpenRecord(widget.sidebarId, record.objId)
                   }
                   onKeyDown={(event) =>
                     event.key === "Enter" &&
-                    !preview &&
+                    preview !== true &&
                     onOpenRecord(widget.sidebarId, record.objId)
                   }
                   className={cn(
                     "border-b last:border-0",
-                    !preview &&
+                    preview !== true &&
                       "cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
                   )}
                 >

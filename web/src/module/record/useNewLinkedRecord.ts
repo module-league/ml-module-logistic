@@ -35,11 +35,11 @@ export function useNewLinkedRecord(
   );
   const sourceText = useMemo(
     () =>
-      sources?.find((source) => source?.sidebarId === draft?.sidebarId)
+      sources.find((source) => source.sidebarId === draft?.sidebarId)
         ?.sidebarText ?? "linked",
     [sources, draft?.sidebarId],
   );
-  const allFields = lookups?.[draft?.sidebarId ?? ""]?.fields;
+  const allFields = lookups[draft?.sidebarId ?? ""]?.fields;
   const fields = useMemo(() => previewableLookupFields(allFields), [allFields]);
   const description = useMemo(
     () =>
@@ -60,7 +60,7 @@ export function useNewLinkedRecord(
 
   const dialog = useMemo(
     () => ({
-      open: !!draft?.open,
+      open: draft?.open === true,
       onOpenChange,
       title: `New ${sourceText} record`,
       description,

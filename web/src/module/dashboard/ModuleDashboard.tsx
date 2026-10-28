@@ -12,7 +12,7 @@ import {
   toast,
 } from "@moduleleague/ui";
 import { errorParser } from "@/hooks/useErrorParser";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { RecordLookupContext } from "@/components/custom/RecordLookup.context";
 import { useCurrentNavItem } from "@/module/shell/navItem.context";
 import { useWorkspaceContext } from "@/module/workspace/workspace.context";
@@ -37,6 +37,7 @@ import type {
   ModuleDashboardEmptyStateProps,
   ModuleDashboardProps,
 } from "./moduleDashboard.types";
+import { nonEmpty } from "@/lib/stringHelper";
 import "./moduleDashboard.css";
 
 /** A record opened from a widget, by its table. */
@@ -72,8 +73,8 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
   );
   const newForm = data.forms.find(
     (form) =>
-      form?.objId === layout.newRecordFormId &&
-      form?.sidebarId === layout.newRecordSidebarId,
+      form.objId === layout.newRecordFormId &&
+      form.sidebarId === layout.newRecordSidebarId,
   );
 
   const onUpdateRecord = data.onUpdateRecord;
@@ -87,7 +88,7 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
       onUpdateRecord(sidebarId, record.objId, {
         ...record.values,
         [fieldId]: value,
-      }).catch((error) =>
+      }).catch((error: unknown) =>
         toast.error("Couldn't move the record", {
           description: errorParser(error)?.message,
         }),
@@ -133,9 +134,8 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
   // Lookup inputs of an opened record find their link field among every loaded table's fields
   const linkFields = useMemo(
     () =>
-      Object.values(lookups).flatMap(
-        (lookup) =>
-          lookup?.fields?.filter((field) => field?.type === "link_table") ?? [],
+      Object.values(lookups).flatMap((lookup) =>
+        lookup.fields.filter((field) => field.type === "link_table"),
       ),
     [lookups],
   );
@@ -150,9 +150,9 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
     [opened?.sidebarId, sources, linkFields, lookups, onNewLinkedRecord],
   );
 
-  const openedFields = lookups?.[opened?.sidebarId ?? ""]?.fields ?? [];
-  const openedRecord = lookups?.[opened?.sidebarId ?? ""]?.records?.find(
-    (record) => record?.objId === opened?.objId,
+  const openedFields = lookups[opened?.sidebarId ?? ""]?.fields ?? [];
+  const openedRecord = lookups[opened?.sidebarId ?? ""]?.records.find(
+    (record) => record.objId === opened?.objId,
   );
   const onUploadAttachment = data.onUploadAttachment;
   const saveOpenedRecord = useCallback(
@@ -175,7 +175,8 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
   const onAddRecord = data.onAddRecord;
   const addNewRecord = useCallback(
     async (values: ISidebarRecordValues) => {
-      if (!layout.newRecordSidebarId) return;
+      if (layout.newRecordSidebarId == null || layout.newRecordSidebarId === "")
+        return;
       await onAddRecord(layout.newRecordSidebarId, values);
       toast.success(`Added to ${newSource?.sidebarText ?? "the table"}`);
     },
@@ -184,13 +185,16 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
 
   // A picked form opens as itself; one that was deleted falls back to every field
   const opensForm =
-    !!layout.newRecordFormId &&
-    (!!newForm || data.formsState.isLoading || !!data.formsState.error);
+    layout.newRecordFormId != null &&
+    layout.newRecordFormId !== "" &&
+    (newForm !== undefined ||
+      data.formsState.isLoading === true ||
+      data.formsState.error != null);
   const newRecordProps = {
     open: newRecordOpen,
     onOpenChange: setNewRecordOpen,
     title:
-      layout.newRecordLabel ||
+      nonEmpty(layout.newRecordLabel) ??
       `New ${newSource ? singular(newSource.sidebarText) : "record"}`,
     fields: newSource?.fields ?? [],
     members,
@@ -223,8 +227,8 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
   );
   const startEmpty = useCallback(() => onCustomize(), [onCustomize]);
 
-  const title = layout.title || item?.sidebarText;
-  const description = layout.description || item?.sidebarDesc;
+  const title = nonEmpty(layout.title) ?? item.sidebarText;
+  const description = nonEmpty(layout.description) ?? item.sidebarDesc;
 
   return (
     <DashboardContext.Provider value={context}>
@@ -232,7 +236,7 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
         <div className="flex min-h-0 flex-1 flex-col">
           <QueryWrapper
             {...data.dashboardState}
-            isLoading={!!data.dashboardState.isLoading}
+            isLoading={data.dashboardState.isLoading === true}
             error={data.dashboardState.error}
             renderLoader={<DashboardSkeleton />}
           >
@@ -249,7 +253,7 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
                     <h1 className="truncate text-2xl font-semibold tracking-tight">
                       {title}
                     </h1>
-                    {description && (
+                    {description !== "" && (
                       <p className="mt-1 truncate text-sm text-muted-foreground">
                         {description}
                       </p>
@@ -282,19 +286,22 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
                         startIcon={<Plus size={14} />}
                         onClick={() => setNewRecordOpen(true)}
                       >
-                        {layout.newRecordLabel ||
+                        {nonEmpty(layout.newRecordLabel) ??
                           `New ${singular(newSource.sidebarText)}`}
                       </Button>
                     )}
                   </div>
                 </header>
                 <main className="min-h-0 flex-1 overflow-y-auto p-4">
-                  {layout.widgets.length ? (
+                  {layout.widgets.length > 0 ? (
                     <div className="grid grid-cols-12 gap-4">
                       {layout.widgets.map((widget) => (
                         <div
                           key={widget.id}
-                          className={WIDTH_CLASS[widget.width] ?? WIDTH_CLASS.m}
+                          className={
+                            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- saved dashboards may hold a width this build doesn't know
+                            WIDTH_CLASS[widget.width] ?? WIDTH_CLASS.m
+                          }
                         >
                           <DashboardWidget widget={widget} />
                         </div>
@@ -303,7 +310,7 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
                   ) : (
                     <ModuleDashboardEmptyState
                       title={title}
-                      canSuggest={!!sources.length}
+                      canSuggest={sources.length > 0}
                       onStartSuggested={startSuggested}
                       onStartEmpty={startEmpty}
                     />
@@ -321,7 +328,9 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
           sources={sources}
           members={members}
           rangeSidebarId={
-            layout.rangeFieldId ? layout.rangeSidebarId : undefined
+            layout.rangeFieldId != null && layout.rangeFieldId !== ""
+              ? layout.rangeSidebarId
+              : undefined
           }
           onChange={changeWidget}
         />

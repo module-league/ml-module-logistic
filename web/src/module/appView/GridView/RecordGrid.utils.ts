@@ -34,7 +34,7 @@ export const lockToDragAxis: Modifier = ({
   draggingNodeRect,
   containerNodeRect,
 }) => {
-  const isRow = active?.data?.current?.type === "row";
+  const isRow = active?.data.current?.type === "row";
   if (!draggingNodeRect || !containerNodeRect) {
     return isRow ? { ...transform, x: 0 } : { ...transform, y: 0 };
   }
@@ -65,7 +65,7 @@ export const sameKindCollision: CollisionDetection = (args) =>
     ...args,
     droppableContainers: args.droppableContainers.filter(
       (container) =>
-        container?.data?.current?.type === args.active?.data?.current?.type,
+        container.data.current?.type === args.active.data.current?.type,
     ),
   });
 
@@ -79,8 +79,13 @@ export function pinClass(pin: ModuleColumnPin | undefined) {
 }
 
 /** The text a header reads as, for aria labels and the taken-name check. */
-export function columnLabel<T>(column: ModuleAppColumn<T> | undefined, fallback = "") {
-  return typeof column?.header === "string" ? column.header : (column?.key ?? fallback);
+export function columnLabel<T>(
+  column: ModuleAppColumn<T> | undefined,
+  fallback = "",
+) {
+  return typeof column?.header === "string"
+    ? column.header
+    : (column?.key ?? fallback);
 }
 
 /** Every column can be resized, except the last one when no + column follows it to absorb the spare width. */
@@ -90,10 +95,10 @@ export function toColumnDefs<T>(
 ): ColumnDef<T>[] {
   return (
     columns?.map((column, index) => ({
-      id: column?.key,
-      header: () => column?.header,
-      cell: ({ row }) => column?.cell(row.original),
-      size: column?.width ?? COLUMN_WIDTH.default,
+      id: column.key,
+      header: () => column.header,
+      cell: ({ row }) => column.cell(row.original),
+      size: column.width ?? COLUMN_WIDTH.default,
       minSize: COLUMN_WIDTH.min,
       enableResizing: hasAddField || index < columns.length - 1,
     })) ?? []
@@ -105,7 +110,7 @@ export function toRowSelection(keys: string[] | undefined): RowSelectionState {
 }
 
 export function selectedKeysOf(selection: RowSelectionState) {
-  return Object.keys(selection).filter((key) => selection[key]);
+  return Object.keys(selection).filter((key) => selection[key] === true);
 }
 
 export function pageSelectionState<T>(table: Table<T>): CheckedState {
@@ -114,7 +119,10 @@ export function pageSelectionState<T>(table: Table<T>): CheckedState {
 }
 
 /** Position of each pinned row that is on this page, by row key. */
-export function pinnedRowIndex(pinnedRows: string[] | undefined, pageKeys: string[]) {
+export function pinnedRowIndex(
+  pinnedRows: string[] | undefined,
+  pageKeys: string[],
+) {
   return new Map(
     pinnedRows
       ?.filter((key) => pageKeys.includes(key))
@@ -123,8 +131,12 @@ export function pinnedRowIndex(pinnedRows: string[] | undefined, pageKeys: strin
 }
 
 /** Empty rows that fill the page up to pageSize; none while there are no records, so the empty state shows. */
-export function fillerRowKeys(rowCount: number, pinnedCount: number, pageSize: number) {
-  if (!rowCount) return [];
+export function fillerRowKeys(
+  rowCount: number,
+  pinnedCount: number,
+  pageSize: number,
+) {
+  if (rowCount === 0) return [];
   return Array.from(
     { length: Math.max(0, pageSize - (rowCount - pinnedCount)) },
     (_, index) => index,
@@ -152,7 +164,7 @@ export function columnPinsOf<T>(
 ) {
   let left = startLeft;
   return headers.map((header, index): ModuleColumnPin | undefined => {
-    if (!header.column.getIsPinned()) return undefined;
+    if (header.column.getIsPinned() === false) return undefined;
     const pin = { left, last: header.column.getIsLastColumn("left") };
     left += widths[index] ?? COLUMN_WIDTH.last;
     return pin;
@@ -166,13 +178,18 @@ export function tableMinWidth(
 ) {
   return widths.reduce<number>(
     (sum, width) => sum + (width ?? COLUMN_WIDTH.last),
-    (selectable ? COLUMN_WIDTH.select : 0) + (hasAddField ? COLUMN_WIDTH.addField : 0),
+    (selectable ? COLUMN_WIDTH.select : 0) +
+      (hasAddField ? COLUMN_WIDTH.addField : 0),
   );
 }
 
 type DragOffset = { x: number; y: number } | null;
 
-export function rowDragStyle(transform: DragOffset, transition?: string, top?: number) {
+export function rowDragStyle(
+  transform: DragOffset,
+  transition?: string,
+  top?: number,
+) {
   return {
     top,
     transform: transform ? `translate3d(0, ${transform.y}px, 0)` : undefined,

@@ -92,7 +92,7 @@ export function useExceptionData(api: ExceptionApi) {
   const putChange = useCallback(
     ({ exception, activity }: IExceptionChange) => {
       queryClient.setQueryData<IException[]>(exceptionKeys.list(), (current) =>
-        current?.some((entry) => entry.objId === exception.objId)
+        current?.some((entry) => entry.objId === exception.objId) === true
           ? current.map((entry) =>
               entry.objId === exception.objId ? exception : entry,
             )
@@ -244,9 +244,9 @@ export function useExceptionData(api: ExceptionApi) {
   const refetchSettings = settingsQuery.refetch;
   const onRetry = useCallback(() => {
     recordsRetry();
-    refetchExceptions();
-    refetchRules();
-    refetchSettings();
+    void refetchExceptions();
+    void refetchRules();
+    void refetchSettings();
   }, [recordsRetry, refetchExceptions, refetchRules, refetchSettings]);
   return useMemo(
     () => ({
@@ -325,11 +325,11 @@ export function useExceptionActivity(
   const query = useQuery({
     queryKey: exceptionKeys.activity(exceptionId ?? ""),
     queryFn: () => getActivity(exceptionId ?? ""),
-    enabled: !!exceptionId,
+    enabled: exceptionId != null && exceptionId !== "",
   });
   const refetch = query.refetch;
   const onRetry = useCallback(() => {
-    refetch();
+    void refetch();
   }, [refetch]);
   return useMemo(
     () => ({

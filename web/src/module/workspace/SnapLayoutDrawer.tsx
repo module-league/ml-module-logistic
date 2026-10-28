@@ -2,10 +2,7 @@ import { useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@moduleleague/ui";
 import { useWorkspaceContext } from "./workspace.context";
-import type {
-  SnapTarget,
-  SplitEdge,
-} from "./workspace.types";
+import type { SnapTarget, SplitEdge } from "./workspace.types";
 
 export const SNAP_PANEL_ID = "snap:panel";
 
@@ -58,10 +55,9 @@ function SnapCell({ edge }: { edge: SplitEdge }) {
     id: `snap:${edge}`,
     data: target,
   });
-  const Icon = useMemo(
-    () => items?.find((item) => item?.sidebarId === dragging?.key)?.sidebarIcon,
-    [items, dragging?.key],
-  );
+  const Icon = items.find(
+    (item) => item.sidebarId === dragging?.key,
+  )?.sidebarIcon;
 
   return (
     <div

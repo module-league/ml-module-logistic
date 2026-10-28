@@ -21,6 +21,7 @@ import {
   type DispatchErrors,
 } from "./DispatchJobDialog";
 import { jobNumber } from "./dispatchBoard.utils";
+import { nonEmpty } from "@/lib/stringHelper";
 
 export type DispatchPlanDialogProps = {
   open: boolean;
@@ -37,12 +38,17 @@ export type DispatchPlanDialogProps = {
 
 function planErrors(draft: DispatchDraft): DispatchErrors {
   const errors: DispatchErrors = {};
-  if (!draft.driverId) errors.driverId = "Pick a driver.";
-  if (!draft.vehicleId) errors.vehicleId = "Pick a vehicle.";
-  if (!draft.plannedPickupAt) errors.plannedPickupAt = "Plan the pickup.";
+  if (draft.driverId == null || draft.driverId === "")
+    errors.driverId = "Pick a driver.";
+  if (draft.vehicleId == null || draft.vehicleId === "")
+    errors.vehicleId = "Pick a vehicle.";
+  if (draft.plannedPickupAt == null || draft.plannedPickupAt === "")
+    errors.plannedPickupAt = "Plan the pickup.";
   if (
-    draft.plannedPickupAt &&
-    draft.plannedDeliveryAt &&
+    draft.plannedPickupAt != null &&
+    draft.plannedPickupAt !== "" &&
+    draft.plannedDeliveryAt != null &&
+    draft.plannedDeliveryAt !== "" &&
     draft.plannedDeliveryAt < draft.plannedPickupAt
   ) {
     errors.plannedDeliveryAt = "Plan the delivery on or after the pickup.";
@@ -103,25 +109,25 @@ function PlanForm({
   );
   const change = useCallback(
     (key: keyof IDispatchCreate, value?: string) =>
-      setDraft((current) => ({ ...current, [key]: value || undefined })),
+      setDraft((current) => ({ ...current, [key]: nonEmpty(value) })),
     [],
   );
   const submit = useCallback(
     async (event: FormEvent) => {
       event.preventDefault();
       setSubmitted(true);
-      if (Object.keys(planErrors(draft)).length) return;
+      if (Object.keys(planErrors(draft)).length > 0) return;
       try {
         await onSave({
           driverId: draft.driverId ?? "",
           vehicleId: draft.vehicleId ?? "",
           plannedPickupAt: draft.plannedPickupAt ?? "",
           plannedDeliveryAt: draft.plannedDeliveryAt,
-          note: note.trim() || undefined,
+          note: nonEmpty(note.trim()),
         });
         toast.success(`${jobNumber(dispatch)} updated`);
         onOpenChange(false);
-      } catch (error) {
+      } catch (error: unknown) {
         toast.error("Couldn't change the dispatch", {
           description: errorParser(error)?.message,
         });
@@ -133,7 +139,10 @@ function PlanForm({
   const fieldProps = { draft, errors, members, onChange: change };
   return (
     <RecordLookupContext.Provider value={lookupContext}>
-      <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+      <form
+        onSubmit={(event) => void submit(event)}
+        className="flex min-h-0 flex-1 flex-col"
+      >
         <div className="grid min-h-0 flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-4 sm:grid-cols-2">
           <DispatchLinkField
             {...fieldProps}

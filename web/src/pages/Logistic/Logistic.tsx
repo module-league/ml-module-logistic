@@ -30,7 +30,7 @@ const dashboardApi: ModuleDashboardApi = {
 
 /** The Logistic overview: widgets over shipments, parties, locations and every other table of the module. */
 export default function Logistic() {
-  const sidebarId = useCurrentNavItem()?.sidebarId;
+  const sidebarId = useCurrentNavItem().sidebarId;
   const data = useDashboardData(sidebarId, dashboardApi);
   return <ModuleDashboard data={data} />;
 }

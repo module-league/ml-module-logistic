@@ -8,6 +8,7 @@ import {
   type DispatchResource,
   type DispatchShipment,
 } from "../Dispatch/dispatchBoard.utils";
+import { nonEmpty } from "@/lib/stringHelper";
 
 export const EXCEPTION_TABS: { value: IExceptionStatus; label: string }[] = [
   { value: "open", label: "Open" },
@@ -63,6 +64,9 @@ export type FixAction =
   | "reschedule"
   | "open_documents";
 
+/** What any exception, including one raised by hand, can be fixed with. */
+export const MANUAL_FIX_ACTIONS: FixAction[] = ["open_timeline"];
+
 export const FIX_ACTIONS: Record<string, FixAction[]> = {
   delayed: ["update_due", "notify_consignee", "reassign", "open_timeline"],
   late_pickup: ["call_driver", "reassign", "open_timeline"],
@@ -72,7 +76,7 @@ export const FIX_ACTIONS: Record<string, FixAction[]> = {
   arrived_before_opening: ["wait_until_opening", "call_receiver"],
   delivery_attempt_failed: ["reschedule", "call_receiver", "open_timeline"],
   pod_not_verified: ["open_documents"],
-  manual: ["open_timeline"],
+  manual: MANUAL_FIX_ACTIONS,
 };
 
 /** An exception with what it is about, as the list and the detail show it. */
@@ -92,15 +96,15 @@ export const labelOf = <T extends string>(
 
 /** "19 Oct, 16:00". */
 export const stamp = (value?: string) =>
-  value ? format(new Date(value), "d MMM, HH:mm") : "";
+  value != null && value !== "" ? format(new Date(value), "d MMM, HH:mm") : "";
 
 /** "2 d", "1 h 40 m", "5 m". */
 export function span(ms: number) {
   const minutes = Math.max(1, Math.round(Math.abs(ms) / 60_000));
   const days = Math.floor(minutes / 1440);
-  if (days) return `${days} d`;
+  if (days !== 0) return `${days} d`;
   const hours = Math.floor(minutes / 60);
-  return hours ? `${hours} h ${minutes % 60} m` : `${minutes} m`;
+  return hours !== 0 ? `${hours} h ${minutes % 60} m` : `${minutes} m`;
 }
 
 export const isOverdue = (exception: IException, now: Date) =>
@@ -126,7 +130,7 @@ export function deadlineText(exception: IException, now: Date) {
 }
 
 const statusText = (status?: IExceptionFacts["status"]) =>
-  !status
+  status === undefined
     ? ""
     : status === "not_dispatched"
       ? "Not dispatched"
@@ -140,9 +144,9 @@ const listText = (items: string[] = []) =>
 
 /** One sentence on what tripped the rule, from the facts when it opened. */
 export function whyText(exception: IException) {
-  const facts = exception.facts ?? {};
+  const { facts } = exception;
   const after = (from?: string) =>
-    from
+    from != null && from !== ""
       ? span(new Date(exception.openedAt).getTime() - new Date(from).getTime())
       : "";
   switch (exception.ruleKey) {
@@ -161,7 +165,7 @@ export function whyText(exception: IException) {
     case "pod_not_verified":
       return `Delivered, but ${listText(facts.missing)} ${facts.missing?.length === 1 ? "isn't" : "aren't"} verified, so it can't be billed.`;
     case "delivery_attempt_failed":
-      return `Delivery failed: ${labelOf(ATTEMPT_REASONS, facts.reason).toLowerCase() || "no reason given"}.`;
+      return `Delivery failed: ${nonEmpty(labelOf(ATTEMPT_REASONS, facts.reason).toLowerCase()) ?? "no reason given"}.`;
     default:
       return "Raised by hand.";
   }
@@ -169,7 +173,7 @@ export function whyText(exception: IException) {
 
 /** The facts as cards: what triggered it, then the status, mode and last checkpoint when it opened. */
 export function factCards(exception: IException) {
-  const facts = exception.facts ?? {};
+  const { facts } = exception;
   type Card = [string, string | undefined];
   const byRule: Record<string, Card[]> = {
     delayed: [
@@ -203,13 +207,18 @@ export function factCards(exception: IException) {
     [
       "Last checkpoint",
       last
-        ? [last.status ? statusLabel(last.status) : last.note, stamp(last.at)]
+        ? [
+            last.status !== undefined ? statusLabel(last.status) : last.note,
+            stamp(last.at),
+          ]
             .filter(Boolean)
             .join(" · ")
         : undefined,
     ],
   ];
-  return cards.filter((card): card is [string, string] => !!card[1]);
+  return cards.filter(
+    (card): card is [string, string] => card[1] != null && card[1] !== "",
+  );
 }
 
 const SEVERITY_RANK: Record<IExceptionSeverity, number> = {
@@ -237,7 +246,7 @@ export function buildRows(
       shipment: shipmentById.get(exception.shipmentId),
       dispatch,
       driver: drivers.get(dispatch?.driverId ?? ""),
-      owner: members.find((member) => member?.id === exception.ownerId),
+      owner: members.find((member) => member.id === exception.ownerId),
     };
   });
 }
@@ -249,7 +258,16 @@ export function tabRows(
   filter: ExceptionFilter,
   meId: string,
 ) {
-  const time = (value?: string) => (value ? new Date(value).getTime() : 0);
+  const time = (value?: string) =>
+    value != null && value !== "" ? new Date(value).getTime() : 0;
+  const byDeadlineThenSeverity = (a: ExceptionRow, b: ExceptionRow) => {
+    const byDeadline =
+      time(a.exception.respondBy) - time(b.exception.respondBy);
+    return byDeadline !== 0
+      ? byDeadline
+      : SEVERITY_RANK[a.exception.severity] -
+          SEVERITY_RANK[b.exception.severity];
+  };
   return rows
     .filter(
       ({ exception }) =>
@@ -264,9 +282,7 @@ export function tabRows(
         ? time(b.exception.resolvedAt) - time(a.exception.resolvedAt)
         : tab === "snoozed"
           ? time(a.exception.snoozedUntil) - time(b.exception.snoozedUntil)
-          : time(a.exception.respondBy) - time(b.exception.respondBy) ||
-            SEVERITY_RANK[a.exception.severity] -
-              SEVERITY_RANK[b.exception.severity],
+          : byDeadlineThenSeverity(a, b),
     );
 }
 
@@ -287,9 +303,9 @@ export const openedLine = (row: ExceptionRow) =>
 /** One hour from now, then the next of 09:00, 14:00 or 18:00 at least an hour away (or the opening time for an early arrival). */
 export function snoozeTimes(exception: IException, now: Date) {
   const hour = new Date(now.getTime() + 3_600_000);
-  const opensAt = exception.facts?.opensAt;
+  const opensAt = exception.facts.opensAt;
   const later =
-    opensAt && new Date(opensAt) > hour
+    opensAt != null && opensAt !== "" && new Date(opensAt) > hour
       ? new Date(opensAt)
       : ([9, 14, 18]
           .map((h) =>
@@ -322,13 +338,13 @@ export function recordUpdate(
   fieldId: string,
   value: string | null,
 ): ISidebarRecordUpdate | undefined {
-  const lookup = lookups?.[sidebarId];
-  const record = lookup?.records?.find((entry) => entry?.objId === recordId);
+  const lookup = lookups[sidebarId];
+  const record = lookup?.records.find((entry) => entry.objId === recordId);
   if (!record) return undefined;
   const values = Object.fromEntries(
     tableFields(lookup)
-      .filter((field) => !field?.isSystemField)
-      .map((field) => [field.objId, record.values?.[field.objId] ?? null]),
+      .filter((field) => !field.isSystemField)
+      .map((field) => [field.objId, record.values[field.objId] ?? null]),
   );
   return {
     values: { ...values, [fieldId]: value },

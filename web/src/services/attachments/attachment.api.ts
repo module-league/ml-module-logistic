@@ -8,11 +8,9 @@ export async function uploadAttachment(refId: string, file: File) {
   const body = new FormData();
   body.append("refId", refId);
   body.append("file", file);
-  const { data } = await apiClient.post<IAttachment>(
-    "/attachments",
-    body,
-    { headers: { "Content-Type": "multipart/form-data" } },
-  );
+  const { data } = await apiClient.post<IAttachment>("/attachments", body, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return data;
 }
 

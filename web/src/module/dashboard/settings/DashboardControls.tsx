@@ -58,7 +58,9 @@ export function SettingsField({
         className="text-xs font-medium text-muted-foreground"
       >
         {label}
-        {hint && <span className="font-normal"> · {hint}</span>}
+        {hint != null && hint !== "" && (
+          <span className="font-normal"> · {hint}</span>
+        )}
       </label>
       {children}
     </div>
@@ -114,7 +116,13 @@ export function DashboardFieldSelect({
   const picked = fields.find((field) => field.objId === value);
   return (
     <Select
-      value={picked ? picked.objId : noneLabel ? NONE : ""}
+      value={
+        picked
+          ? picked.objId
+          : noneLabel != null && noneLabel !== ""
+            ? NONE
+            : ""
+      }
       onValueChange={(next) => onChange(next === NONE ? undefined : next)}
     >
       <SelectTrigger id={id} className={cn("w-full min-w-0", className)}>
@@ -130,7 +138,7 @@ export function DashboardFieldSelect({
         </SelectValue>
       </SelectTrigger>
       <SelectContent position="popper" searchable={offered.length > 8}>
-        {noneLabel && (
+        {noneLabel != null && noneLabel !== "" && (
           <SelectItem value={NONE} textValue={noneLabel}>
             <span className="text-muted-foreground">{noneLabel}</span>
           </SelectItem>
@@ -173,11 +181,13 @@ export function DashboardFieldList({
             type="button"
             role="radio"
             aria-checked={selected}
-            aria-disabled={!!reason}
-            onClick={() => !reason && onChange(field.objId)}
+            aria-disabled={reason != null && reason !== ""}
+            onClick={() =>
+              (reason == null || reason === "") && onChange(field.objId)
+            }
             className={cn(
               "flex min-w-0 items-center gap-2.5 border-b px-3 py-2 text-left text-sm last:border-0 focus-visible:bg-muted focus-visible:outline-none",
-              reason
+              reason != null && reason !== ""
                 ? "cursor-not-allowed text-muted-foreground/70"
                 : "cursor-pointer hover:bg-muted/60",
               selected && "bg-primary-10 font-medium hover:bg-primary-10",
@@ -190,11 +200,13 @@ export function DashboardFieldList({
             <span
               className={cn(
                 "shrink-0 text-xs",
-                reason ? "text-muted-foreground/70" : "text-muted-foreground",
+                reason != null && reason !== ""
+                  ? "text-muted-foreground/70"
+                  : "text-muted-foreground",
               )}
             >
               {fieldTypeLabel(field)}
-              {reason && ` · ${reason}`}
+              {reason != null && reason !== "" && ` · ${reason}`}
             </span>
           </button>
         );

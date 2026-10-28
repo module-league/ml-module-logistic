@@ -39,11 +39,12 @@ export function RecordLinkCard({
         )}
         {action}
       </span>
-      {!!fields?.length && (
+      {fields.length > 0 && (
         <span className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
           {fields.map((field) => (
             <CardRow key={field.objId} field={field}>
-              {record?.values?.[field.objId] ? (
+              {record?.values[field.objId] != null &&
+              record.values[field.objId] !== "" ? (
                 <RecordValueNode
                   field={field}
                   value={record.values[field.objId]}

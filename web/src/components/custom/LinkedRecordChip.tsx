@@ -44,9 +44,7 @@ export function LinkedRecordChipList({
           key={record.id}
           label={record.label}
           className={
-            field?.type === "link_table"
-              ? "bg-secondary text-black"
-              : undefined
+            field.type === "link_table" ? "bg-secondary text-black" : undefined
           }
         />
       ))}

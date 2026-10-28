@@ -49,13 +49,13 @@ export type RecordInputControlProps = {
   /** Custom placeholder text where applicable */
   placeholder?: string;
   forceRender?: boolean;
-  onBlur?(): void;
+  onBlur?: () => void;
   field: IField;
   required?: boolean;
   name?: string;
   value?: string;
   disabled?: boolean;
-  onChange?(value: string): void;
+  onChange?: (value: string) => void;
   autoFocus?: boolean;
   /** For text field only. True to render as `<textarea/>`. @default false */
   multiline?: boolean;
@@ -63,11 +63,6 @@ export type RecordInputControlProps = {
   style?: CSSProperties;
   /** @default true */
   clearable?: boolean | "inline";
-  /**
-   * By default this would reflect the mirror field's actual input.
-   * Set this to false to disable it, and render a disabled text instead
-   */
-  disableMirrorField?: boolean;
   /** For multi select field only. Adjust max display count of selected item */
   multiSelectDisplayCount?: number;
   /** For multi select field only. True to wrap input tags to one line only */
@@ -94,7 +89,6 @@ export function RecordInputControl(props: RecordInputControlProps) {
     multiline,
     placeholder,
     clearable = true,
-    disableMirrorField = false,
   } = props;
 
   if (field.isSystemField && !forceRender) {
@@ -369,7 +363,7 @@ export function RecordInputControl(props: RecordInputControlProps) {
         className={cn(RECORD_INPUT_CLASS, props.className)}
         style={props.style}
       >
-        {!!symbol && (
+        {symbol !== false && symbol !== undefined && symbol !== "" && (
           <InputGroupAddon>
             <InputGroupText>{symbol}</InputGroupText>
           </InputGroupAddon>
@@ -393,7 +387,7 @@ export function RecordInputControl(props: RecordInputControlProps) {
     );
   }
 
-  if (field.type === "text" && multiline) {
+  if (field.type === "text" && multiline === true) {
     return (
       <AutosizeTextarea
         id={id}

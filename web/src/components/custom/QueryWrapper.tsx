@@ -1,20 +1,20 @@
 import React, { isValidElement, type JSX } from "react";
 import { errorParser } from "@/hooks/useErrorParser";
 import { Button } from "../ui/button";
-import LoadingPlaceholder from "./LoadingPlaceholder";
-import ErrorResult from "./ErrorResult";
+import { LoadingPlaceholder } from "./LoadingPlaceholder";
+import { ErrorResult } from "./ErrorResult";
 
 type QueryWrapperProps = {
   isLoading: boolean;
   error: unknown;
   children: React.ReactNode;
-  onRetry?(): void;
+  onRetry?: () => void;
   /** Render custom loading component. Default to {@link LoadingPlaceholder} */
   renderLoader?: React.ReactNode | (() => JSX.Element);
   /** Render custom error component. Default to {@link ErrorResponsePlaceholder} */
-  renderError?(
+  renderError?: (
     error: ReturnType<typeof errorParser> | undefined,
-  ): React.ReactNode;
+  ) => React.ReactNode;
   fancy?: boolean;
   loadingText?: string;
 };
@@ -59,7 +59,7 @@ type QueryWrapperProps = {
  * </div>
  * ```
  */
-export default function QueryWrapper(props: QueryWrapperProps) {
+export function QueryWrapper(props: QueryWrapperProps) {
   const { onRetry } = props;
 
   if (props.isLoading) {
@@ -78,7 +78,7 @@ export default function QueryWrapper(props: QueryWrapperProps) {
     }
   }
 
-  if (props.error) {
+  if (props.error != null) {
     if (props.renderError) {
       return props.renderError(errorParser(props.error));
     } else {

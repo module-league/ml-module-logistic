@@ -8,7 +8,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControls";
 import { useCurrentUser } from "@/services/user/current.user";
 import { buildDispatchBoard } from "../Dispatch/dispatchBoard.utils";
@@ -29,7 +29,7 @@ import {
   type ExceptionData,
 } from "./useExceptionData";
 
-export default function ExceptionPage({
+export function ExceptionPage({
   data,
   getActivity,
 }: {
@@ -54,7 +54,10 @@ export default function ExceptionPage({
   const [filter, setFilter] = useState<ExceptionFilter>("all");
   const [rulesOpen, setRulesOpen] = useState(false);
   const [reporting, setReporting] = useState(false);
-  const picks = settings?.versionNo ? settings : undefined;
+  const picks =
+    settings?.versionNo != null && settings.versionNo !== 0
+      ? settings
+      : undefined;
 
   const board = useMemo(
     () => buildDispatchBoard(sources, lookups, dispatches, members, picks),
@@ -106,7 +109,7 @@ export default function ExceptionPage({
             variant="outline"
             size="sm"
             startIcon={<TriangleAlert size={14} />}
-            disabled={!board.shipments.length}
+            disabled={board.shipments.length === 0}
             onClick={() => setReporting(true)}
           >
             Report exception
@@ -135,12 +138,12 @@ export default function ExceptionPage({
         />
       </div>
       <QueryWrapper
-        isLoading={data?.isLoading}
-        error={data?.error}
-        onRetry={data?.onRetry}
+        isLoading={data.isLoading}
+        error={data.error}
+        onRetry={data.onRetry}
         renderLoader={<ExceptionPageSkeleton />}
       >
-        {visible.length ? (
+        {visible.length > 0 ? (
           <div className="grid items-start gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]">
             <ExceptionList
               rows={visible}
@@ -189,8 +192,8 @@ export default function ExceptionPage({
         shipments={board.shipments}
         rules={rules}
         members={members}
-        isSaving={data?.isSaving}
-        onCreate={data?.onCreate}
+        isSaving={data.isSaving}
+        onCreate={data.onCreate}
       />
     </div>
   );

@@ -8,7 +8,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControls";
 import { buildDispatchBoard } from "../Dispatch/dispatchBoard.utils";
 import { BillingList } from "./BillingList";
@@ -24,7 +24,7 @@ import {
 } from "./billing.utils";
 import type { BillingApi, BillingData } from "./useBillingData";
 
-export default function BillingPage({
+export function BillingPage({
   data,
   getFields,
 }: {
@@ -35,7 +35,10 @@ export default function BillingPage({
   const [tab, setTab] = useState<BillingTab>("ready");
   const [selectedId, setSelectedId] = useState<string>();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const picks = settings?.versionNo ? settings : undefined;
+  const picks =
+    settings?.versionNo != null && settings.versionNo !== 0
+      ? settings
+      : undefined;
   const symbol = overview?.currencySymbol;
 
   const board = useMemo(
@@ -59,7 +62,7 @@ export default function BillingPage({
         value: entry.value,
         label: `${entry.label} · ${
           entry.value === "ready"
-            ? (overview?.ready?.length ?? 0)
+            ? (overview?.ready.length ?? 0)
             : (overview?.invoices ?? []).filter(
                 (invoice) => tabOf(invoice.status) === entry.value,
               ).length
@@ -70,8 +73,8 @@ export default function BillingPage({
   const quote = useMemo(
     () =>
       tab === "ready"
-        ? (overview?.ready?.find((entry) => entry.shipmentId === selectedId) ??
-          overview?.ready?.[0])
+        ? (overview?.ready.find((entry) => entry.shipmentId === selectedId) ??
+          overview?.ready[0])
         : undefined,
     [tab, overview?.ready, selectedId],
   );
@@ -110,7 +113,7 @@ export default function BillingPage({
       label: "Overdue",
       amount: totals?.overdueAmount,
       note: `${countOf(totals?.overdueCount, "invoice")} past due date`,
-      alert: !!totals?.overdueCount,
+      alert: totals?.overdueCount != null && totals.overdueCount !== 0,
     },
     {
       tab: "paid",
@@ -139,9 +142,9 @@ export default function BillingPage({
         </Button>
       </header>
       <QueryWrapper
-        isLoading={data?.isLoading}
-        error={data?.error}
-        onRetry={data?.onRetry}
+        isLoading={data.isLoading}
+        error={data.error}
+        onRetry={data.onRetry}
         renderLoader={<BillingPageSkeleton />}
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -152,14 +155,14 @@ export default function BillingPage({
               onClick={() => open(card.tab)}
               className={cn(
                 "flex cursor-pointer flex-col gap-1 rounded-xl border bg-background p-4 text-left transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                card.alert &&
+                card.alert === true &&
                   "border-red-200 bg-red-50 hover:bg-red-50/70 dark:border-red-900/60 dark:bg-red-950/30",
               )}
             >
               <span
                 className={cn(
                   "text-sm text-muted-foreground",
-                  card.alert && "text-red-700 dark:text-red-300",
+                  card.alert === true && "text-red-700 dark:text-red-300",
                 )}
               >
                 {card.label}
@@ -167,7 +170,7 @@ export default function BillingPage({
               <span
                 className={cn(
                   "text-2xl font-semibold tabular-nums",
-                  card.alert && "text-red-700 dark:text-red-300",
+                  card.alert === true && "text-red-700 dark:text-red-300",
                 )}
               >
                 {card.amount == null
@@ -177,7 +180,7 @@ export default function BillingPage({
               <span
                 className={cn(
                   "text-xs text-muted-foreground",
-                  card.alert && "text-red-700/80 dark:text-red-300/80",
+                  card.alert === true && "text-red-700/80 dark:text-red-300/80",
                 )}
               >
                 {card.note}

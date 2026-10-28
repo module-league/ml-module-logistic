@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
- 
+
 type IconComponent = ComponentType<{ className?: string }>;
- 
+
 interface INavEntryConfig {
   /** Unique across the whole config, sub-sidebars included. Also the URL path, so use kebab-case: "awaiting-task" → /awaiting-task */
   sidebarId: string;
@@ -15,7 +15,7 @@ interface INavEntryConfig {
   className?: string;
   /** Optional hook returning a count for the pill on the right, e.g. items waiting. */
   useBadge?: () => number | undefined;
-  hidePageSeparator? :boolean;
+  hidePageSeparator?: boolean;
 }
 
 /** A sub-sidebar entry: one page = one URL, shown indented under its parent. */
@@ -34,13 +34,13 @@ export interface INavItemConfig extends INavEntryConfig {
 
 /** A sidebar entry that has a page; the only kind that becomes a route and a tab. */
 export type INavPageConfig = INavItemConfig & { page: ComponentType };
- 
+
 /** A titled section of the sidebar, e.g. "Operations". */
 export interface INavGroupConfig {
   label: string;
   sidebarItems: INavItemConfig[];
 }
- 
+
 /** Everything one module needs to build its sidebar, routes and look. */
 export interface IModuleConfig {
   /** App code, the same as Module:AppCode in the API's appsettings.json. */

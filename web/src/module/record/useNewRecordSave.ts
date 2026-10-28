@@ -25,7 +25,7 @@ export function useNewRecordSave(
       try {
         await onSave(values);
         onOpenChange(false);
-      } catch (err) {
+      } catch (err: unknown) {
         toast.error("Couldn't add record", {
           description: errorParser(err)?.message,
         });

@@ -6,7 +6,7 @@ export async function attempt(failure: string, task: () => Promise<unknown>) {
   try {
     await task();
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     toast.error(failure, { description: errorParser(error)?.message });
     return false;
   }

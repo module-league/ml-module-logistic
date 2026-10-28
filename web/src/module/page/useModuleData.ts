@@ -29,12 +29,12 @@ export function useModuleData(
   const fieldsQuery = useQuery({
     queryKey: fieldKeys.list(id),
     queryFn: () => api.getFields(id),
-    enabled: !!sidebarId,
+    enabled: sidebarId != null && sidebarId !== "",
   });
   const recordsQuery = useQuery({
     queryKey: recordKeys.list(id),
     queryFn: () => api.getRecords(id),
-    enabled: !!sidebarId,
+    enabled: sidebarId != null && sidebarId !== "",
   });
 
   const membersQuery = useQuery({
@@ -50,8 +50,11 @@ export function useModuleData(
       ...new Set(
         (fieldsQuery.data ?? NO_FIELDS)
           .filter(isLinkingField)
-          .map((field) => field?.lookupSettings?.categoryId)
-          .filter((categoryId): categoryId is string => !!categoryId),
+          .map((field) => field.lookupSettings?.categoryId)
+          .filter(
+            (categoryId): categoryId is string =>
+              categoryId != null && categoryId !== "",
+          ),
       ),
     ],
     [fieldsQuery.data],
@@ -66,11 +69,15 @@ export function useModuleData(
   const recordQuery = useQuery({
     queryKey: recordKeys.detail(id, openedRecordId ?? ""),
     queryFn: () => api.getRecord(id, openedRecordId ?? ""),
-    enabled: !!sidebarId && !!openedRecordId,
+    enabled:
+      sidebarId != null &&
+      sidebarId !== "" &&
+      openedRecordId != null &&
+      openedRecordId !== "",
     placeholderData: () =>
       queryClient
         .getQueryData<ISidebarRecord[]>(recordKeys.list(id))
-        ?.find((record) => record?.objId === openedRecordId),
+        ?.find((record) => record.objId === openedRecordId),
   });
   const openedRecord = recordQuery.data;
 
@@ -94,7 +101,7 @@ export function useModuleData(
         recordKeys.list(id),
         (current) =>
           current?.map((record) =>
-            record?.objId === updated.objId ? updated : record,
+            record.objId === updated.objId ? updated : record,
           ),
       );
     },
@@ -121,16 +128,18 @@ export function useModuleData(
       const deleted = new Set(ids);
       queryClient.setQueryData<ISidebarRecord[]>(
         recordKeys.list(id),
-        (current) => current?.filter((record) => !deleted.has(record?.objId)),
+        (current) => current?.filter((record) => !deleted.has(record.objId)),
       );
       ids.forEach((objId) =>
         queryClient.removeQueries({ queryKey: recordKeys.detail(id, objId) }),
       );
       setOpenedRecordId((current) =>
-        current && deleted.has(current) ? undefined : current,
+        current != null && current !== "" && deleted.has(current)
+          ? undefined
+          : current,
       );
       // Records that linked to them were changed too, in this sidebar or another
-      queryClient.invalidateQueries({ queryKey: recordKeys.all });
+      void queryClient.invalidateQueries({ queryKey: recordKeys.all });
     },
   });
 
@@ -151,12 +160,12 @@ export function useModuleData(
     onSuccess: (updated) => {
       putInLists(queryClient, id, (fields) =>
         fields.map((field) =>
-          field?.objId === updated.objId ? updated : field,
+          field.objId === updated.objId ? updated : field,
         ),
       );
       // Turning off several links trims the saved records, so they are fetched again
-      if (updated?.type === "link_table") {
-        queryClient.invalidateQueries({ queryKey: recordKeys.list(id) });
+      if (updated.type === "link_table") {
+        void queryClient.invalidateQueries({ queryKey: recordKeys.list(id) });
       }
     },
   });
@@ -164,7 +173,7 @@ export function useModuleData(
     (objId: string, edited: IField) => {
       const saved = queryClient
         .getQueryData<ISidebarField[]>(fieldKeys.list(id))
-        ?.find((field) => field?.objId === objId);
+        ?.find((field) => field.objId === objId);
       if (!saved) return Promise.reject(new Error("Field not found."));
       return updateField({ objId, body: toFieldUpdate(saved, edited) });
     },
@@ -174,7 +183,7 @@ export function useModuleData(
     mutationFn: (objId: string) => api.deleteField(objId),
     onSuccess: (_, objId) =>
       putInLists(queryClient, id, (fields) =>
-        fields.filter((field) => field?.objId !== objId),
+        fields.filter((field) => field.objId !== objId),
       ),
   });
 
@@ -188,13 +197,13 @@ export function useModuleData(
   const refetchRecords = recordsQuery.refetch;
   const refetchRecord = recordQuery.refetch;
   const onRetryRecord = useCallback(() => {
-    refetchRecord();
+    void refetchRecord();
   }, [refetchRecord]);
   const onRefreshFields = useCallback(() => {
-    refetchFields();
+    void refetchFields();
   }, [refetchFields]);
   const onRetryRecords = useCallback(() => {
-    refetchRecords();
+    void refetchRecords();
   }, [refetchRecords]);
 
   const fieldsState = useMemo(
@@ -224,7 +233,7 @@ export function useModuleData(
   const formsQuery = useQuery({
     queryKey: formKeys.list(id),
     queryFn: () => api.getForms(id),
-    enabled: !!sidebarId,
+    enabled: sidebarId != null && sidebarId !== "",
   });
   const setForms = useCallback(
     (update: (forms: ISidebarForm[]) => ISidebarForm[]) =>
@@ -237,14 +246,12 @@ export function useModuleData(
   const putForm = useCallback(
     (saved: ISidebarForm) =>
       setForms((forms) => {
-        const next = forms.some((form) => form?.objId === saved.objId)
-          ? forms.map((form) => (form?.objId === saved.objId ? saved : form))
+        const next = forms.some((form) => form.objId === saved.objId)
+          ? forms.map((form) => (form.objId === saved.objId ? saved : form))
           : [...forms, saved];
         return saved.isDefault
           ? next.map((form) =>
-              form?.objId === saved.objId
-                ? form
-                : { ...form, isDefault: false },
+              form.objId === saved.objId ? form : { ...form, isDefault: false },
             )
           : next;
       }),
@@ -263,7 +270,7 @@ export function useModuleData(
     (objId: string, form: ISidebarFormInput) => {
       const latest = queryClient
         .getQueryData<ISidebarForm[]>(formKeys.list(id))
-        ?.find((saved) => saved?.objId === objId);
+        ?.find((saved) => saved.objId === objId);
       return updateForm({
         objId,
         form: { ...form, versionNo: latest?.versionNo },
@@ -274,14 +281,14 @@ export function useModuleData(
   const { mutateAsync: onDeleteForm } = useMutation({
     mutationFn: (objId: string) => api.deleteForm(objId),
     onSuccess: (_, objId) =>
-      setForms((forms) => forms.filter((form) => form?.objId !== objId)),
+      setForms((forms) => forms.filter((form) => form.objId !== objId)),
   });
   const { mutateAsync: onReorderForms } = useMutation({
     mutationFn: (formIds: string[]) => api.reorderForms(id, formIds),
     onMutate: (formIds) =>
       setForms((forms) =>
         formIds.flatMap((formId) =>
-          forms.filter((form) => form?.objId === formId),
+          forms.filter((form) => form.objId === formId),
         ),
       ),
     onSuccess: (forms) => queryClient.setQueryData(formKeys.list(id), forms),
@@ -290,7 +297,7 @@ export function useModuleData(
   });
   const refetchForms = formsQuery.refetch;
   const onRetryForms = useCallback(() => {
-    refetchForms();
+    void refetchForms();
   }, [refetchForms]);
   const formsState = useMemo(
     () => ({

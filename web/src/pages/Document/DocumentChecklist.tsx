@@ -29,7 +29,7 @@ import {
 } from "@moduleleague/ui";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { attempt } from "@/lib/toastHelper";
-import QueryWrapper from "@/components/custom/QueryWrapper";
+import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { AttachmentChip } from "@/components/custom/AttachmentChip";
 import { AttachmentPreviewDialog } from "@/components/custom/AttachmentPreviewDialog";
 import { useAttachmentPreview } from "@/hooks/useAttachmentPreview";
@@ -85,7 +85,7 @@ export function DocumentChecklist({
   const { openPreview, dialogProps } = useAttachmentPreview();
   const groups = useMemo(() => groupDocuments(checklist), [checklist]);
   const names = useMemo(() => {
-    const fields = tableFields(lookups?.[sources?.shipmentSidebarId ?? ""]);
+    const fields = tableFields(lookups[sources?.shipmentSidebarId ?? ""]);
     const nameOf = (id?: string) =>
       fields.find((field) => field.objId === id)?.name;
     return {
@@ -130,15 +130,17 @@ export function DocumentChecklist({
           className={cn(
             CHIP_CLASS,
             "py-0.5",
-            checklist.blocks ? TONE_CLASS.amber : TONE_CLASS.green,
+            checklist.blocks !== undefined
+              ? TONE_CLASS.amber
+              : TONE_CLASS.green,
           )}
         >
-          {checklist.blocks
+          {checklist.blocks !== undefined
             ? `Blocks ${gateName(checklist.blocks)}`
             : "Nothing blocked"}
         </span>
       </header>
-      {groups.required.length ? (
+      {groups.required.length > 0 ? (
         <ul className="flex flex-col divide-y rounded-lg border">
           {groups.required.map(item)}
         </ul>
@@ -147,12 +149,12 @@ export function DocumentChecklist({
           No papers are required at this stage.
         </p>
       )}
-      {!!groups.upcoming.length && (
+      {groups.upcoming.length > 0 && (
         <DocumentGroup title="Needed later">
           {groups.upcoming.map(item)}
         </DocumentGroup>
       )}
-      {!!groups.extra.length && (
+      {groups.extra.length > 0 && (
         <DocumentGroup title="Other filed papers">
           {groups.extra.map(item)}
         </DocumentGroup>
@@ -218,7 +220,7 @@ function DocumentItem(props: ItemProps) {
   const detail = [
     document.when ?? (isOther ? "Classified as Other" : "Not required now"),
     document.upcoming && `needed from ${stepLabel(document.requiredAtStep)}`,
-    document.blocks && `gates ${gateName(document.blocks)}`,
+    document.blocks !== undefined && `gates ${gateName(document.blocks)}`,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -226,7 +228,9 @@ function DocumentItem(props: ItemProps) {
     document.status === "verified"
       ? [
           `Verified by ${actorName(members, document.verifiedBy)} · ${stamp(document.verifiedAt)}`,
-          document.expiresAt && `valid until ${stamp(document.expiresAt)}`,
+          document.expiresAt != null &&
+            document.expiresAt !== "" &&
+            `valid until ${stamp(document.expiresAt)}`,
         ]
           .filter(Boolean)
           .join(" · ")
@@ -263,7 +267,7 @@ function DocumentItem(props: ItemProps) {
             "No file yet"
           )}
         </span>
-        {state && (
+        {state !== "" && (
           <span
             className={cn(
               "truncate text-xs",
@@ -294,7 +298,7 @@ function DocumentItem(props: ItemProps) {
             variant="secondary"
             size="sm"
             disabled={isSaving}
-            onClick={generate}
+            onClick={() => void generate()}
           >
             Generate from record
           </Button>
@@ -330,7 +334,7 @@ function DocumentItem(props: ItemProps) {
                 </DropdownMenuItem>
               )}
               {hasFile && document.canGenerate && (
-                <DropdownMenuItem onSelect={generate}>
+                <DropdownMenuItem onSelect={() => void generate()}>
                   <FileText />
                   Generate a new draft
                 </DropdownMenuItem>
@@ -341,7 +345,7 @@ function DocumentItem(props: ItemProps) {
                   Reject…
                 </DropdownMenuItem>
               )}
-              {!!document.objId && (
+              {document.objId != null && document.objId !== "" && (
                 <DropdownMenuItem onSelect={() => setHistory(true)}>
                   <History />
                   History
@@ -359,7 +363,7 @@ function DocumentItem(props: ItemProps) {
         onChange={(event) => {
           const file = event.target.files?.[0];
           event.target.value = "";
-          if (file) upload(file);
+          if (file) void upload(file);
         }}
       />
       <RejectDialog
@@ -399,7 +403,7 @@ function VerifyButton({ document, data }: ItemProps) {
       size="sm"
       startIcon={<Check size={14} />}
       disabled={isSaving}
-      onClick={document.expires ? undefined : () => verify()}
+      onClick={document.expires ? undefined : () => void verify()}
     >
       Verify
     </Button>
@@ -416,7 +420,7 @@ function VerifyButton({ document, data }: ItemProps) {
           className="self-end"
           disabled={!until}
           isLoading={isSaving}
-          onClick={() => verify(until)}
+          onClick={() => void verify(until)}
         >
           Verify
         </Button>
@@ -465,9 +469,9 @@ function RejectDialog({
           value={reason}
           maxLength={500}
           onChange={(event) => setReason(event.target.value)}
-          onKeyDown={(event) =>
-            event.key === "Enter" && reason.trim() && reject()
-          }
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && reason.trim() !== "") void reject();
+          }}
         />
         <DialogFooter>
           <Button
@@ -480,9 +484,9 @@ function RejectDialog({
           <Button
             variant="destructive"
             size="sm"
-            disabled={!reason.trim()}
+            disabled={reason.trim() === ""}
             isLoading={isSaving}
-            onClick={reject}
+            onClick={() => void reject()}
           >
             Reject
           </Button>
@@ -541,7 +545,7 @@ function HistoryDialog({
             </div>
           }
         >
-          {entries.length ? (
+          {entries.length > 0 ? (
             <ol className="flex min-h-0 flex-col gap-3 overflow-y-auto">
               {entries.map((entry) => (
                 <li

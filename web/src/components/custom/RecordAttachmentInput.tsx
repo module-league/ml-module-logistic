@@ -36,6 +36,7 @@ import type {
   RecordAttachmentInputProps,
 } from "./RecordAttachmentInput.types";
 import { Button } from "@/ui-kit";
+import { nonEmpty } from "@/lib/stringHelper";
 
 type PendingUpload = Pick<IAttachment, "name" | "fileSize"> & { key: string };
 
@@ -68,7 +69,7 @@ export function RecordAttachmentInput({
 
   const upload = useCallback(
     async (files: File[]) => {
-      if (!onUpload || !files?.length) return;
+      if (!onUpload || files.length === 0) return;
       setPending(
         files.map((file) => ({
           key: window.crypto.randomUUID(),
@@ -85,16 +86,16 @@ export function RecordAttachmentInput({
       );
       const failed = results.flatMap((result, index) =>
         result.status === "rejected"
-          ? [{ file: files[index], reason: result.reason }]
+          ? [{ name: files[index]?.name, reason: result.reason as unknown }]
           : [],
       );
-      if (failed.length) {
+      if (failed.length > 0) {
         toast.error(
-          `Couldn't upload ${failed.map(({ file }) => file.name).join(", ")}`,
+          `Couldn't upload ${failed.map(({ name }) => name).join(", ")}`,
           { description: errorParser(failed[0]?.reason)?.message },
         );
       }
-      if (uploaded.length) {
+      if (uploaded.length > 0) {
         onChange?.(toAttachmentValue([...attachments, ...uploaded]));
       }
       onBlur?.();
@@ -106,7 +107,7 @@ export function RecordAttachmentInput({
       errors.some((error) => error.code === "file-too-large"),
     );
     toast.error(
-      tooLarge.length
+      tooLarge.length > 0
         ? `Files can be up to ${formatFileSize(bytesToKilobytes(ATTACHMENT_MAX_BYTES))}`
         : "Couldn't add these files",
       {
@@ -118,7 +119,7 @@ export function RecordAttachmentInput({
     (attachmentId: string) => {
       onChange?.(
         toAttachmentValue(
-          attachments.filter((attachment) => attachment?.id !== attachmentId),
+          attachments.filter((attachment) => attachment.id !== attachmentId),
         ),
       );
       onBlur?.();
@@ -134,7 +135,7 @@ export function RecordAttachmentInput({
       onChange?.(
         toAttachmentValue(
           attachments.map((attachment) =>
-            attachment?.id === attachmentId
+            attachment.id === attachmentId
               ? { ...attachment, ...patch }
               : attachment,
           ),
@@ -146,12 +147,12 @@ export function RecordAttachmentInput({
   );
 
   const uploading = pending.length > 0;
-  const canUpload = !!onUpload && !disabled;
+  const canUpload = !!onUpload && disabled !== true;
   const hasFiles = attachments.length > 0 || uploading;
   const compact = cardSize === "compact";
   const maxSizeLabel = formatFileSize(bytesToKilobytes(ATTACHMENT_MAX_BYTES));
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
-    onDropAccepted: upload,
+    onDropAccepted: (files) => void upload(files),
     onDropRejected: reject,
     maxSize: ATTACHMENT_MAX_BYTES,
     disabled: !canUpload || uploading,
@@ -213,7 +214,7 @@ export function RecordAttachmentInput({
                 }
                 title={attachment.name}
                 description={[
-                  attachment.fileExtension?.toUpperCase(),
+                  attachment.fileExtension.toUpperCase(),
                   formatFileSize(attachment.fileSize),
                 ]
                   .filter(Boolean)
@@ -229,7 +230,8 @@ export function RecordAttachmentInput({
                     onChange={(text) => label(attachment.id, { label: text })}
                   />
                 ) : (
-                  !!options?.length && (
+                  options !== undefined &&
+                  options.length > 0 && (
                     <AttachmentLabelSelect
                       name={attachment.name}
                       options={options}
@@ -242,7 +244,7 @@ export function RecordAttachmentInput({
                   )
                 )}
                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                  {!disabled && removable && (
+                  {disabled !== true && removable && (
                     <Button
                       variant="outline"
                       size="icon-xs"
@@ -289,8 +291,8 @@ function AttachmentLabelSelect({
   disabled,
   onChange,
 }: AttachmentLabelSelectProps) {
-  const picked = options.find((option) => option?.id === value);
-  if (disabled && !picked) return null;
+  const picked = options.find((option) => option.id === value);
+  if (disabled === true && !picked) return null;
   return (
     <Select
       value={value ?? NO_LABEL}
@@ -365,13 +367,13 @@ function AttachmentTextLabel({
   );
   const save = useCallback(
     (text?: string) => {
-      const next = text?.trim() || undefined;
+      const next = nonEmpty(text?.trim());
       if (next !== value) onChange(next);
       setOpen(false);
     },
     [value, onChange],
   );
-  if (disabled && !value) return null;
+  if (disabled === true && (value == null || value === "")) return null;
   return (
     <Popover open={open} onOpenChange={changeOpen}>
       <PopoverTrigger asChild disabled={disabled}>
@@ -380,7 +382,7 @@ function AttachmentTextLabel({
           aria-label={`Label for ${name}`}
           className="flex h-6 max-w-full min-w-0 cursor-pointer items-center rounded-md text-xs focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none disabled:cursor-default"
         >
-          {value ? (
+          {value != null && value !== "" ? (
             <span className="flex h-6 min-w-0 items-center gap-1 rounded-md bg-primary-10 px-2 font-medium text-primary">
               <Tag className="size-3 shrink-0" />
               <span className="truncate">{value}</span>
@@ -410,7 +412,7 @@ function AttachmentTextLabel({
             className="h-8 text-sm"
           />
         </form>
-        {!!offered.length && (
+        {offered.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {offered.map((suggestion) => (
               <button
@@ -425,7 +427,7 @@ function AttachmentTextLabel({
           </div>
         )}
         <div className="flex items-center justify-between gap-2">
-          {value ? (
+          {value != null && value !== "" ? (
             <Button
               variant="ghost"
               size="xs"
@@ -486,7 +488,7 @@ function AttachmentCard({
           <span className="truncate text-[11px] text-muted-foreground">
             {description}
           </span>
-          {children && (
+          {Boolean(children) && (
             <div className="flex min-h-6 items-center gap-1.5 *:pointer-events-auto">
               {children}
             </div>
@@ -522,7 +524,7 @@ function AttachmentCard({
           </span>
         </span>
       </button>
-      {children && (
+      {Boolean(children) && (
         <div className="flex min-h-6 items-center gap-1.5 px-0.5">
           {children}
         </div>

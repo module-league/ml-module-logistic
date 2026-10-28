@@ -127,9 +127,9 @@ export function useBillingData(api: BillingApi) {
   const refetchSettings = settingsQuery.refetch;
   const onRetry = useCallback(() => {
     recordsRetry();
-    refetchOverview();
-    refetchRates();
-    refetchSettings();
+    void refetchOverview();
+    void refetchRates();
+    void refetchSettings();
   }, [recordsRetry, refetchOverview, refetchRates, refetchSettings]);
 
   return useMemo(

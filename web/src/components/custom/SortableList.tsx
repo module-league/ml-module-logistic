@@ -55,7 +55,7 @@ export function SortableList({
   );
   const dragEnd = useCallback(
     ({ active, over }: DragEndEvent) => {
-      if (!over || active?.id === over?.id) return;
+      if (!over || active.id === over.id) return;
       onReorder(
         arrayMove(
           ids,

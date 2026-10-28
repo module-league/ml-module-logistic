@@ -52,7 +52,7 @@ export function RecordValueNode({
   /** Needed to show member fields as people. */
   members?: IUserInfo[];
 }) {
-  if (field?.type === "checkbox") {
+  if (field.type === "checkbox") {
     return value === "true" ? (
       <SquareCheck
         aria-label="Ticked"
@@ -65,16 +65,17 @@ export function RecordValueNode({
       />
     );
   }
-  if (!value) return <span className="text-muted-foreground">—</span>;
-  if (field?.type === "attachment") {
+  if (value == null || value === "")
+    return <span className="text-muted-foreground">—</span>;
+  if (field.type === "attachment") {
     return (
       <AttachmentChipList
         attachments={parseAttachments(value)}
-        options={field?.dropDownValues}
+        options={field.dropDownValues}
       />
     );
   }
-  if (field?.type === "member") {
+  if (field.type === "member") {
     return (
       <span className="flex min-w-0 items-center gap-1 overflow-hidden">
         {parseMemberIds(value).map((memberId) => (
@@ -83,23 +84,23 @@ export function RecordValueNode({
       </span>
     );
   }
-  if (field?.isNumeric) {
+  if (field.isNumeric === true) {
     return (
       <span className="tabular-nums">{formatFieldNumber(field, value)}</span>
     );
   }
-  if (field?.isDateField) {
+  if (field.isDateField) {
     return (
       <span className="tabular-nums">{formatFieldDate(field, value)}</span>
     );
   }
-  if (field?.type === "time") {
+  if (field.type === "time") {
     return (
       <span className="tabular-nums">{formatFieldTime(field, value)}</span>
     );
   }
-  if (field?.type === "single_select") {
-    const option = field?.dropDownValues?.find((o) => o?.id === value);
+  if (field.type === "single_select") {
+    const option = field.dropDownValues.find((o) => o.id === value);
     return (
       <SelectionNode dropDownValue={option}>
         {option?.value ?? "Unknown"}
@@ -111,7 +112,7 @@ export function RecordValueNode({
       <LinkedRecordChipList field={field} value={value} members={members} />
     );
   }
-  if (field?.type === "multi_select") {
+  if (field.type === "multi_select") {
     return (
       <span className="flex min-w-0 items-center gap-1 overflow-hidden">
         {selectedOptions(field, value).map((option) => (
@@ -126,9 +127,5 @@ export function RecordValueNode({
       </span>
     );
   }
-  return (
-    <span className={field?.isNumeric ? "tabular-nums" : undefined}>
-      {value}
-    </span>
-  );
+  return <span>{value}</span>;
 }

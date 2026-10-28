@@ -15,6 +15,7 @@ import {
   DashboardWidgetFrame,
   DashboardWidgetMessage,
 } from "./DashboardWidgetFrame";
+import { nonEmpty } from "@/lib/stringHelper";
 
 /**
  * The records that break a rule, red rules first; a record matching several rules shows the first.
@@ -26,7 +27,7 @@ export function AttentionWidget({
   preview,
 }: DashboardWidgetBodyProps) {
   const { members, lookups, now, onOpenRecord } = useDashboard();
-  const attention = widget?.attention;
+  const attention = widget.attention;
   const titleField = titleFieldOf(view.fields, attention?.titleFieldId);
   const flagged = useMemo(() => {
     const rules = [...(attention?.rules ?? [])].sort(
@@ -34,7 +35,7 @@ export function AttentionWidget({
     );
     const seen = new Set<string>();
     return rules.flatMap((rule) => {
-      if (!rule?.filter?.conditions?.length) return [];
+      if (rule.filter.conditions.length === 0) return [];
       const lateField = view.fieldById.get(
         rule.filter.conditions.find(
           (condition) => condition.operator === "before",
@@ -55,21 +56,24 @@ export function AttentionWidget({
       });
     });
   }, [attention?.rules, view.matching, view.fieldById, now]);
-  const shown = widget?.maxCount ? flagged.slice(0, widget.maxCount) : flagged;
+  const shown =
+    widget.maxCount != null && widget.maxCount !== 0
+      ? flagged.slice(0, widget.maxCount)
+      : flagged;
 
   return (
     <DashboardWidgetFrame
-      title={widget?.label}
+      title={widget.label}
       aside={
-        widget?.caption ||
+        nonEmpty(widget.caption) ??
         `${flagged.length} ${flagged.length === 1 ? "record" : "records"}`
       }
     >
-      {!attention?.rules?.length ? (
+      {attention?.rules.length == null || attention.rules.length === 0 ? (
         <DashboardWidgetMessage>
           Add a rule in this widget's settings.
         </DashboardWidgetMessage>
-      ) : !flagged.length ? (
+      ) : flagged.length === 0 ? (
         <DashboardWidgetMessage>
           Nothing needs attention.
         </DashboardWidgetMessage>
@@ -95,7 +99,7 @@ export function AttentionWidget({
                 <span className="shrink-0 text-xs font-semibold">
                   {late > 0
                     ? `${late} ${late === 1 ? "day" : "days"} late`
-                    : rule.actionLabel || "Open"}
+                    : (nonEmpty(rule.actionLabel) ?? "Open")}
                 </span>
               </button>
             </li>

@@ -28,18 +28,22 @@ export function RecordLookupInput({
   );
   const linkName = useMemo(
     () =>
-      linkFields?.find(
-        (linkField) => linkField?.objId === field?.lookupSettings?.linkFieldId,
+      linkFields.find(
+        (linkField) => linkField.objId === field.lookupSettings?.linkFieldId,
       )?.name,
-    [linkFields, field?.lookupSettings?.linkFieldId],
+    [linkFields, field.lookupSettings?.linkFieldId],
   );
 
   const shown = (
     <div
       id={id}
       role="group"
-      aria-label={field?.name}
-      title={linkName ? `Change the links in ${linkName}` : undefined}
+      aria-label={field.name}
+      title={
+        linkName != null && linkName !== ""
+          ? `Change the links in ${linkName}`
+          : undefined
+      }
       className={cn(
         RECORD_INPUT_GROW_CLASS,
         "flex min-w-0 flex-1 flex-wrap items-center gap-1 border px-2 py-1",
@@ -47,13 +51,13 @@ export function RecordLookupInput({
       )}
       style={onPreview ? undefined : style}
     >
-      {linked.length ? (
+      {linked.length > 0 ? (
         linked.map((record) => (
           <LinkedRecordChip key={record.id} label={record.label} />
         ))
       ) : (
         <span className="text-sm text-muted-foreground">
-          {linkName
+          {linkName != null && linkName !== ""
             ? `Nothing linked in ${linkName} yet.`
             : "Its link field isn't available."}
         </span>
@@ -71,7 +75,7 @@ export function RecordLookupInput({
         aria-label="Preview linked records"
         aria-pressed={previewActive}
         title="Preview linked records"
-        disabled={!linked.length}
+        disabled={linked.length === 0}
         className={cn(
           RECORD_INPUT_CLASS,
           "w-10 shrink-0",

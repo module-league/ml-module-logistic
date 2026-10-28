@@ -36,7 +36,9 @@ export function ModulePageFooter({
         {pinnedCount > 0 && (
           <span className="ml-2 tabular-nums">· {pinnedCount} pinned</span>
         )}
-        {range && <span className="ml-2 tabular-nums">· Showing {range}</span>}
+        {range != null && range !== "" && (
+          <span className="ml-2 tabular-nums">· Showing {range}</span>
+        )}
         {selectedCount > 0 && (
           <span className="ml-2 flex items-center gap-1.5 text-primary">
             ·
