@@ -43,13 +43,14 @@ namespace LogisticApi.Models
         public bool IsVerified(DateTime now) => status == Verified && (expiresAt is null || expiresAt > now);
     }
 
-    /// <summary>Something that happened to a document: a file added, a verify or a reject. File entries keep every version.</summary>
+    /// <summary>Something that happened to a document: a file added or removed, a verify or a reject. File entries keep every version.</summary>
     public class DocumentActivity : MLEntityBase
     {
         public const string Uploaded = "uploaded";
         public const string Verified = "verified";
         public const string Rejected = "rejected";
-        public static readonly string[] Kinds = [Uploaded, Verified, Rejected];
+        public const string Removed = "removed";
+        public static readonly string[] Kinds = [Uploaded, Verified, Rejected, Removed];
 
         public Guid documentId { get; set; }
         /// <summary>Kept so a shipment's used files are found without joining its documents.</summary>

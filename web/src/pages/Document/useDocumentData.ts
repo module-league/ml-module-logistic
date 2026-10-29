@@ -33,6 +33,10 @@ export interface DocumentApi extends DispatchRecordsApi {
     objId: string,
     body: { versionNo: number; reason: string },
   ) => Promise<IShipmentChecklist>;
+  removeDocument: (
+    objId: string,
+    body: { versionNo: number },
+  ) => Promise<IShipmentChecklist>;
   getDocumentActivity: (objId: string) => Promise<IDocumentActivity[]>;
   reviewDocument: (body: {
     shipmentId: string;
@@ -94,12 +98,17 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
     () => queryClient.invalidateQueries({ queryKey: documentKeys.all }),
     [queryClient],
   );
+  const shipmentSidebarId = records.sources?.shipmentSidebarId ?? "";
   const { mutateAsync: change, isPending: isChanging } = useMutation({
     mutationFn: (run: () => Promise<IShipmentChecklist>) => run(),
     onSuccess: (checklist) => {
       putChecklist(checklist);
       void queryClient.invalidateQueries({
         queryKey: [...documentKeys.all, "activity"],
+      });
+      // The API keeps the shipment's attachment field in step with its documents, so the record changed too
+      void queryClient.invalidateQueries({
+        queryKey: recordKeys.list(shipmentSidebarId),
       });
     },
     onError: reload,
@@ -110,6 +119,7 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
     generateDocument,
     verifyDocument,
     rejectDocument,
+    removeDocument,
     uploadAttachment,
   } = api;
   const onFile = useCallback(
@@ -149,9 +159,17 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
       ),
     [change, rejectDocument],
   );
+  const onRemove = useCallback(
+    (document: IShipmentDocument) =>
+      change(() =>
+        removeDocument(document.objId ?? "", {
+          versionNo: document.versionNo,
+        }),
+      ),
+    [change, removeDocument],
+  );
 
   const settings = settingsQuery.data;
-  const shipmentSidebarId = records.sources?.shipmentSidebarId ?? "";
   const { mutateAsync: drop, isPending: isDropping } = useMutation({
     mutationFn: async ({
       shipmentId,
@@ -238,6 +256,7 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
       onGenerate,
       onVerify,
       onReject,
+      onRemove,
       onDrop,
       onSaveSettings,
       onReview: api.reviewDocument,
@@ -262,6 +281,7 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
       onGenerate,
       onVerify,
       onReject,
+      onRemove,
       onDrop,
       onSaveSettings,
       api.reviewDocument,

@@ -57,6 +57,13 @@ namespace LogisticApi.MVVM
         public int? versionNo { get; set; }
     }
 
+    /// <summary>Takes the current file off a document, which goes back to missing; send the versionNo last read.</summary>
+    public class DocumentRemoveRequest
+    {
+        [Required]
+        public int? versionNo { get; set; }
+    }
+
     /// <summary>Has the AI read one of the shipment's files and check it against the shipment record. Nothing is saved.</summary>
     public class DocumentReviewRequest
     {

@@ -86,6 +86,18 @@ export async function rejectDocument(
   return data;
 }
 
+/** Takes the current file off; the document goes back to missing and the file leaves the shipment's attachment field. */
+export async function removeDocument(
+  objId: string,
+  body: { versionNo: number },
+) {
+  const { data } = await apiClient.put<IShipmentChecklist>(
+    path(objId, "remove"),
+    body,
+  );
+  return data;
+}
+
 /** Has the AI read one of the shipment's files and check it against the shipment; nothing is saved. Takes 5–30 s. */
 export async function reviewDocument(body: {
   shipmentId: string;

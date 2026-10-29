@@ -67,7 +67,7 @@ declare global {
   type IDocumentActivity = {
     objId: string;
     documentId: string;
-    kind: "uploaded" | "verified" | "rejected";
+    kind: "uploaded" | "verified" | "rejected" | "removed";
     /** All zeros until sign-in is wired up. */
     actorId?: string;
     file?: IAttachment;

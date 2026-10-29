@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LogisticApi.Context;
 using LogisticApi.Models;
 using LogisticApi.MVVM;
@@ -25,6 +26,7 @@ namespace LogisticApi.Services
         /// <summary>The refId of files uploaded straight onto a document instead of into the shipment's attachment field.</summary>
         public const string RefId = "documents";
 
+        private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
         private readonly DispatchOptions sources = dispatchOptions.Value;
         private DocumentOptions Config => checklists.Config;
 
@@ -139,6 +141,27 @@ namespace LogisticApi.Services
                 return (DocumentActivity.Rejected, $"Rejected version {document.version}: {reason}");
             }, ct);
 
+        /// <summary>
+        /// Takes the current file off the document, which goes back to missing, and out of the shipment's attachment field. The file
+        /// itself stays in the document's history.
+        /// </summary>
+        public Task<ShipmentChecklistResponse> RemoveAsync(Guid objId, DocumentRemoveRequest request, CancellationToken ct) =>
+            ChangeAsync(objId, request.versionNo!.Value, async document =>
+            {
+                if (document.currentAttachmentId is not { } attachmentId)
+                    throw ApiProblemException.BadRequest("There's no file to remove.");
+                var fileName = await db.Attachments.Where(a => a.ObjId == attachmentId).Select(a => a.fileName).FirstOrDefaultAsync(ct);
+                await SyncRecordFileAsync(document.shipmentId, added: null, removed: attachmentId, document.docType, ct);
+                document.currentAttachmentId = null;
+                document.status = ShipmentDocument.Missing;
+                document.source = null;
+                document.verifiedBy = null;
+                document.verifiedAt = null;
+                document.rejectReason = null;
+                document.expiresAt = null;
+                return (DocumentActivity.Removed, $"Removed version {document.version}: {fileName ?? "file"}");
+            }, ct);
+
         public async Task<DocumentSettingsResponse> GetSettingsAsync(CancellationToken ct)
         {
             var roles = await checklists.RolesAsync(ct);
@@ -220,6 +243,7 @@ namespace LogisticApi.Services
                 document = new ShipmentDocument { ObjId = Guid.CreateVersion7(), shipmentId = shipmentId, docType = docType, dispatchId = DispatchFor(checklist, docType) };
                 db.ShipmentDocuments.Add(document);
             }
+            await SyncRecordFileAsync(shipmentId, attachment.ObjId, document.currentAttachmentId, docType, ct);
             document.version += 1;
             document.currentAttachmentId = attachment.ObjId;
             document.status = ShipmentDocument.Uploaded;
@@ -241,13 +265,16 @@ namespace LogisticApi.Services
         }
 
         /// <summary>Loads it, checks the version, applies the change and logs it.</summary>
-        private async Task<ShipmentChecklistResponse> ChangeAsync(Guid objId, int versionNo, Func<ShipmentDocument, (string kind, string body)> apply, CancellationToken ct)
+        private Task<ShipmentChecklistResponse> ChangeAsync(Guid objId, int versionNo, Func<ShipmentDocument, (string kind, string body)> apply, CancellationToken ct) =>
+            ChangeAsync(objId, versionNo, document => Task.FromResult(apply(document)), ct);
+
+        private async Task<ShipmentChecklistResponse> ChangeAsync(Guid objId, int versionNo, Func<ShipmentDocument, Task<(string kind, string body)>> apply, CancellationToken ct)
         {
             var document = await db.ShipmentDocuments.FirstOrDefaultAsync(d => d.ObjId == objId, ct)
                 ?? throw ApiProblemException.NotFound("Document not found.");
             if (document.VersionNo != versionNo) throw Stale();
             db.Entry(document).Property(d => d.VersionNo).OriginalValue = versionNo;
-            var (kind, body) = apply(document);
+            var (kind, body) = await apply(document);
             Log(document, kind, body);
             try
             {
@@ -259,6 +286,53 @@ namespace LogisticApi.Services
             }
             await engine.EvaluateAsync(ct);
             return await ResponseAsync(document.shipmentId, ct);
+        }
+
+        /// <summary>
+        /// Keeps the shipment record's attachment field (lg_logistic) in step with its documents, saved with the document change: a new
+        /// version takes the replaced file's place, a removed file leaves. Only files uploaded for the shipment or its documents go in;
+        /// checkpoint photos stay with their checkpoint. Nothing changes until an attachment field is picked in the document rules.
+        /// </summary>
+        private async Task SyncRecordFileAsync(Guid shipmentId, Guid? added, Guid? removed, string docType, CancellationToken ct)
+        {
+            var roles = await checklists.RolesAsync(ct);
+            if (roles.AttachmentFieldId is not { } fieldId) return;
+            var record = await db.SidebarRecords.FirstOrDefaultAsync(r => r.ObjId == shipmentId && r.sidebarId == sources.ShipmentSidebarId, ct);
+            if (record is null) return;
+
+            var values = string.IsNullOrWhiteSpace(record.Metadata) ? [] : JsonSerializer.Deserialize<List<SidebarRecordValue>>(record.Metadata, Json) ?? [];
+            var entry = values.FirstOrDefault(v => v.fieldId == fieldId);
+            var files = string.IsNullOrWhiteSpace(entry?.value) ? [] : JsonSerializer.Deserialize<List<AttachmentResponse>>(entry.value, Json) ?? [];
+            var place = removed is { } removedId ? files.FindIndex(f => f.id == removedId) : -1;
+            if (place >= 0) files.RemoveAt(place);
+
+            var attachment = added is { } addedId && files.All(f => f.id != addedId)
+                ? await db.Attachments.FirstOrDefaultAsync(a => a.ObjId == addedId, ct)
+                : null;
+            if (attachment is not null && (attachment.refId == RefId || attachment.refId == sources.ShipmentSidebarId))
+            {
+                // A record save only keeps files uploaded for its own table
+                attachment.refId = sources.ShipmentSidebarId;
+                // Labelled with the field's option named like the document type, e.g. "Commercial invoice", when it has one
+                var title = Config.Type(docType)?.Title;
+                var label = title is null
+                    ? null
+                    : (await db.SidebarFieldOptions.AsNoTracking().Where(o => o.fieldObjId == fieldId).ToListAsync(ct))
+                        .FirstOrDefault(o => string.Equals(o.value, title, StringComparison.OrdinalIgnoreCase))?.ObjId;
+                files.Insert(place >= 0 ? place : files.Count, AttachmentResponse.From(attachment, label));
+            }
+            else if (place < 0)
+            {
+                return;
+            }
+
+            if (entry is null)
+            {
+                entry = new SidebarRecordValue { fieldId = fieldId, type = "attachment" };
+                values.Add(entry);
+            }
+            entry.value = files.Count == 0 ? null : JsonSerializer.Serialize(files, Json);
+            record.Metadata = JsonSerializer.Serialize(values, Json);
         }
 
         private void Log(ShipmentDocument document, string kind, string body, Guid? attachmentId = null) =>

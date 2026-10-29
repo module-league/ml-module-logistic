@@ -4,6 +4,7 @@ import {
   FileText,
   History,
   MoreHorizontal,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -31,6 +32,7 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { attempt } from "@/lib/toastHelper";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { AttachmentChip } from "@/components/custom/AttachmentChip";
+import { ConfirmDeleteDialog } from "@/components/custom/ConfirmDeleteDialog";
 import { AttachmentPreviewDialog } from "@/components/custom/AttachmentPreviewDialog";
 import { useAttachmentPreview } from "@/hooks/useAttachmentPreview";
 import {
@@ -186,9 +188,10 @@ function DocumentGroup({
 /** One paper: its tile, why it's needed and its file, its status, and what can be done with it now. */
 function DocumentItem(props: ItemProps) {
   const { document, shipmentId, data, onPreview } = props;
-  const { members, isSaving, onUpload, onGenerate } = data;
+  const { members, isSaving, onUpload, onGenerate, onRemove } = data;
   const inputRef = useRef<HTMLInputElement>(null);
   const [rejecting, setRejecting] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [history, setHistory] = useState(false);
   const isOther = document.docType === "other";
   const hasFile = !!document.file;
@@ -323,6 +326,30 @@ function DocumentItem(props: ItemProps) {
             Upload
           </Button>
         )}
+        {hasFile && document.status !== "rejected" && (
+          <Button
+            variant="outline"
+            size="sm"
+            startIcon={<Upload size={14} />}
+            disabled={isSaving}
+            title="Upload a new file in place of this one"
+            onClick={() => inputRef.current?.click()}
+          >
+            Replace
+          </Button>
+        )}
+        {hasFile && (
+          <Button
+            variant="outline"
+            size="sm"
+            startIcon={<Trash2 size={14} />}
+            disabled={isSaving}
+            title="Take the file off; the document goes back to missing"
+            onClick={() => setRemoving(true)}
+          >
+            Remove
+          </Button>
+        )}
         {document.version > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -336,12 +363,6 @@ function DocumentItem(props: ItemProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {hasFile && (
-                <DropdownMenuItem onSelect={() => inputRef.current?.click()}>
-                  <Upload />
-                  Upload corrected version
-                </DropdownMenuItem>
-              )}
               {hasFile && document.canGenerate && (
                 <DropdownMenuItem onSelect={() => void generate()}>
                   <FileText />
@@ -374,6 +395,15 @@ function DocumentItem(props: ItemProps) {
           event.target.value = "";
           if (file) void upload(file);
         }}
+      />
+      <ConfirmDeleteDialog
+        open={removing}
+        onOpenChange={setRemoving}
+        title={`Remove the ${document.title.toLowerCase()} file?`}
+        description={`${document.file?.name ?? "The file"} comes off this document and out of the shipment's attachments. The document goes back to missing; the file stays in its history.`}
+        confirmLabel="Remove file"
+        successMessage={`${document.title} file removed`}
+        onConfirm={() => onRemove(document)}
       />
       <RejectDialog
         open={rejecting}

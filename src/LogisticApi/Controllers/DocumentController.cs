@@ -71,6 +71,15 @@ namespace LogisticApi.Controllers
         public Task<ShipmentChecklistResponse> Verify(Guid objId, [FromBody] DocumentVerifyRequest request, CancellationToken ct) =>
             documents.VerifyAsync(objId, request, ct);
 
+        /// <summary>Takes its current file off; it goes back to missing and the file leaves the shipment's attachment field.</summary>
+        [HttpPut("{objId:guid}/remove")]
+        [ProducesResponseType<ShipmentChecklistResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+        public Task<ShipmentChecklistResponse> Remove(Guid objId, [FromBody] DocumentRemoveRequest request, CancellationToken ct) =>
+            documents.RemoveAsync(objId, request, ct);
+
         [HttpPut("{objId:guid}/reject")]
         [ProducesResponseType<ShipmentChecklistResponse>(StatusCodes.Status200OK)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]

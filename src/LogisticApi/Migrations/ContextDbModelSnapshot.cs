@@ -850,7 +850,7 @@ namespace LogisticApi.Migrations
 
                             t.HasCheckConstraint("ck_lg_document_activity_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
 
-                            t.HasCheckConstraint("ck_lg_document_activity_kind", "[kind] IN ('uploaded', 'verified', 'rejected')");
+                            t.HasCheckConstraint("ck_lg_document_activity_kind", "[kind] IN ('uploaded', 'verified', 'rejected', 'removed')");
 
                             t.HasCheckConstraint("ck_lg_document_activity_upload_file", "[kind] <> 'uploaded' OR [attachment_id] IS NOT NULL");
                         });
