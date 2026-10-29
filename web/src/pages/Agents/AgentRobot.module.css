@@ -1,0 +1,83 @@
+.robot {
+  overflow: visible;
+}
+
+.eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: robot-blink 4s infinite;
+}
+
+/* Working: bobs while its arm does the job, antenna lit */
+.working {
+  animation: robot-bob 1.2s ease-in-out infinite;
+}
+
+.working .arm {
+  transform-box: fill-box;
+  transform-origin: top center;
+  animation: robot-work 0.5s ease-in-out infinite alternate;
+}
+
+.working .light {
+  animation: robot-flash 0.8s ease-in-out infinite;
+}
+
+/* Waiting for a person: antenna blinks to ask for attention */
+.waiting .light {
+  animation: robot-flash 1s steps(2) infinite;
+}
+
+/* Watching for its trigger: eyes look around */
+.watching .eyes {
+  animation: robot-scan 3s ease-in-out infinite;
+}
+
+@keyframes robot-bob {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes robot-work {
+  to {
+    transform: rotate(-35deg);
+  }
+}
+
+@keyframes robot-flash {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes robot-blink {
+  0%,
+  94%,
+  100% {
+    transform: scaleY(1);
+  }
+  97% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes robot-scan {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  30% {
+    transform: translateX(-3px);
+  }
+  70% {
+    transform: translateX(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .robot,
+  .robot * {
+    animation: none !important;
+  }
+}

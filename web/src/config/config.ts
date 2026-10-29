@@ -1,5 +1,12 @@
 import { lazy } from "react";
-import { FileText, Package, Receipt, TriangleAlert, Truck } from "lucide-react";
+import {
+  FileText,
+  Package,
+  Receipt,
+  Sparkles,
+  TriangleAlert,
+  Truck,
+} from "lucide-react";
 import type { IModuleConfig } from "@/module/shell/module.types";
 
 export const moduleConfig: IModuleConfig = {
@@ -109,6 +116,16 @@ export const moduleConfig: IModuleConfig = {
           sidebarIcon: Receipt,
           hidePageSeparator: false,
           page: lazy(() => import("@/pages/Billing/Billing")),
+        },
+        {
+          // Prototype on dummy data; remove or wire up before release
+          sidebarId: "ai-agents",
+          sidebarText: "AI agents",
+          sidebarDesc:
+            "Prototype: the AI agents planned for the module, with a demo run of each.",
+          sidebarIcon: Sparkles,
+          hidePageSeparator: false,
+          page: lazy(() => import("@/pages/Agents/Agents")),
         },
       ],
     },

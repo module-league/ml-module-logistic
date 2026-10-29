@@ -1,0 +1,42 @@
+/* A designer's canvas: a dotted surface that fills the window and scrolls with the board */
+.viewport {
+  background-color: var(--muted);
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--foreground) 16%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 20px 20px;
+  background-attachment: local;
+  cursor: grab;
+}
+
+.panning {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.board {
+  position: relative;
+}
+
+/* Data moving along a connector, from the agent that changed it to the one it wakes */
+.flow {
+  stroke-dasharray: 6 6;
+  animation: canvas-flow 0.9s linear infinite;
+}
+
+@keyframes canvas-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+.paused * {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow {
+    animation: none;
+  }
+}
