@@ -21,10 +21,6 @@ export interface DocumentApi extends DispatchRecordsApi {
     body: IDocumentSettingsInput,
   ) => Promise<IDocumentSettings>;
   fileDocument: (body: IDocumentFile) => Promise<IShipmentChecklist>;
-  generateDocument: (body: {
-    shipmentId: string;
-    docType: string;
-  }) => Promise<IShipmentChecklist>;
   verifyDocument: (
     objId: string,
     body: { versionNo: number; expiresAt?: string },
@@ -116,7 +112,6 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
 
   const {
     fileDocument,
-    generateDocument,
     verifyDocument,
     rejectDocument,
     removeDocument,
@@ -133,11 +128,6 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
         return fileDocument({ shipmentId, docType, attachmentId: uploaded.id });
       }),
     [change, uploadAttachment, fileDocument],
-  );
-  const onGenerate = useCallback(
-    (shipmentId: string, docType: string) =>
-      change(() => generateDocument({ shipmentId, docType })),
-    [change, generateDocument],
   );
   const onVerify = useCallback(
     (document: IShipmentDocument, expiresAt?: Date) =>
@@ -253,7 +243,6 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
       onSelect: setSelectedId,
       onFile,
       onUpload,
-      onGenerate,
       onVerify,
       onReject,
       onRemove,
@@ -278,7 +267,6 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
       selectedId,
       onFile,
       onUpload,
-      onGenerate,
       onVerify,
       onReject,
       onRemove,

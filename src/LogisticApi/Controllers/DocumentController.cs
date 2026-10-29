@@ -50,13 +50,6 @@ namespace LogisticApi.Controllers
         public Task<ShipmentChecklistResponse> FileDocument([FromBody] DocumentFileRequest request, CancellationToken ct) =>
             documents.FileAsync(request, ct);
 
-        /// <summary>Fills a draft from the shipment and its locations; returns the shipment's checklist.</summary>
-        [HttpPost("generate")]
-        [ProducesResponseType<ShipmentChecklistResponse>(StatusCodes.Status200OK)]
-        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-        public Task<ShipmentChecklistResponse> Generate([FromBody] DocumentGenerateRequest request, CancellationToken ct) =>
-            documents.GenerateAsync(request, ct);
-
         /// <summary>Its versions, verifies and rejects, oldest first.</summary>
         [HttpGet("{objId:guid}/activity")]
         [ProducesResponseType<List<DocumentActivityResponse>>(StatusCodes.Status200OK)]

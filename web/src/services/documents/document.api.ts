@@ -51,18 +51,6 @@ export async function fileDocument(body: IDocumentFile) {
   return data;
 }
 
-/** Fills a draft from the shipment and its locations as the document's new version. */
-export async function generateDocument(body: {
-  shipmentId: string;
-  docType: string;
-}) {
-  const { data } = await apiClient.post<IShipmentChecklist>(
-    "/documents/generate",
-    body,
-  );
-  return data;
-}
-
 /** Each verify or reject sends the versionNo last read; a stale one is rejected with 409. */
 export async function verifyDocument(
   objId: string,

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace LogisticApi.Services
 {
-    /// <summary>Records as people read them, for files the API writes such as drafts and invoices: titles and each field's value as text.</summary>
+    /// <summary>Records as people read them, for invoices and document reviews: titles and each field's value as text.</summary>
     public class RecordTextService(ContextDb db, IOptions<ExceptionRuleOptions> ruleOptions)
     {
         /// <summary>The zone dates are written in, the exception rules' TimeZone.</summary>
@@ -14,15 +14,7 @@ namespace LogisticApi.Services
         public TimeZoneInfo Zone => TimeZoneInfo.FindSystemTimeZoneById(ZoneName);
         public DateTime LocalNow => TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, Zone);
 
-        /// <summary>The record's title and each field with a value as text, in field order; links show the linked record's title.</summary>
-        public async Task<(string title, List<(string label, string value)> rows)> TextRowsAsync(
-            string sidebarId, RecordRow? row, CancellationToken ct, Guid? titleFieldId = null)
-        {
-            var (title, fields) = await FieldTextsAsync(sidebarId, row, ct, titleFieldId);
-            return (title, fields.Select(f => (f.field.sidebarName, f.text)).ToList());
-        }
-
-        /// <summary>As TextRowsAsync, with each value's field, for callers that need its type.</summary>
+        /// <summary>The record's title and each field with a value, as text, in field order; links show the linked record's title.</summary>
         public async Task<(string title, List<(SidebarField field, string text)> fields)> FieldTextsAsync(
             string sidebarId, RecordRow? row, CancellationToken ct, Guid? titleFieldId = null)
         {

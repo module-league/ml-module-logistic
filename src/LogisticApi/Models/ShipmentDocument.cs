@@ -15,6 +15,7 @@ namespace LogisticApi.Models
         public static readonly string[] Statuses = [Missing, Uploaded, Verified, Rejected];
 
         public const string Upload = "upload";
+        // Drafts from the retired "Generate from record"; kept so documents and history saved with it stay valid
         public const string Generated = "generated";
         public const string DriverApp = "driver_app";
         public const string Dispatcher = "dispatcher";

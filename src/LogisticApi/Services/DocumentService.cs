@@ -11,16 +11,14 @@ namespace LogisticApi.Services
 {
     /// <summary>
     /// Shipment documents (lg_shipment_document) and their activity (lg_document_activity): the checklist of each shipment, filing
-    /// files as documents (each a new version), generating drafts, and verifying or rejecting them. Every change reruns the exception
+    /// files as documents (each a new version), removing them, and verifying or rejecting them. Every change reruns the exception
     /// rules, so Missing document and POD not verified close themselves once the papers are verified.
     /// </summary>
     public class DocumentService(
         ContextDb db,
         ICurrentUser currentUser,
         DocumentChecklistService checklists,
-        AttachmentService attachments,
         ExceptionRuleEngine engine,
-        RecordTextService texts,
         IOptions<DispatchOptions> dispatchOptions)
     {
         /// <summary>The refId of files uploaded straight onto a document instead of into the shipment's attachment field.</summary>
@@ -46,7 +44,6 @@ namespace LogisticApi.Services
                     when = DocumentChecklistService.WhenText(r, roles),
                     requiredAtStep = r.RequiredAtStep,
                     blocks = r.Blocks,
-                    canGenerate = r.CanGenerate,
                 }).ToList(),
             };
         }
@@ -88,19 +85,6 @@ namespace LogisticApi.Services
                 throw ApiProblemException.BadRequest("Unknown attachment.", "Pick one of the shipment's unclassified files, or upload one for documents.");
             var source = waiting?.Origin == "checkpoint" ? ShipmentDocument.Dispatcher : ShipmentDocument.Upload;
             await AddVersionAsync(checklist, request.docType!, attachment, source, ct);
-            return await ResponseAsync(checklist.Shipment.Id, ct);
-        }
-
-        /// <summary>Fills a PDF draft from the shipment and its origin and destination, and files it as a new version to check and verify.</summary>
-        public async Task<ShipmentChecklistResponse> GenerateAsync(DocumentGenerateRequest request, CancellationToken ct)
-        {
-            var checklist = await ChecklistAsync(request.shipmentId!.Value, ct);
-            var item = checklist.Matching.FirstOrDefault(i => i.Requirement.DocType == request.docType && i.Requirement.CanGenerate)
-                ?? throw ApiProblemException.BadRequest("This document can't be generated for this shipment.", "Upload it instead.");
-            var (shipmentTitle, pdf) = await DraftAsync(checklist, item.Type, ct);
-            var fileName = $"{item.Type.Title.Replace(' ', '-')}-{shipmentTitle}-draft.pdf";
-            var attachment = await attachments.SaveAsync(RefId, fileName, "application/pdf", new MemoryStream(pdf), pdf.Length, ct);
-            await AddVersionAsync(checklist, item.Type.DocType, attachment, ShipmentDocument.Generated, ct);
             return await ResponseAsync(checklist.Shipment.Id, ct);
         }
 
@@ -408,7 +392,6 @@ namespace LogisticApi.Services
                         when = item?.When,
                         requiredAtStep = item?.Requirement.RequiredAtStep,
                         blocks = item?.Requirement.Blocks,
-                        canGenerate = item?.Requirement.CanGenerate ?? false,
                         expires = type?.Expires ?? false,
                         file = document?.currentAttachmentId is { } id ? files.GetValueOrDefault(id) : null,
                         version = document?.version ?? 0,
@@ -451,31 +434,6 @@ namespace LogisticApi.Services
             return wanted.Count == 0
                 ? []
                 : await db.Attachments.AsNoTracking().Where(a => wanted.Contains(a.ObjId)).ToDictionaryAsync(a => a.ObjId, a => AttachmentResponse.From(a), ct);
-        }
-
-        /// <summary>The shipment's title and a PDF of its fields, then its origin's and destination's.</summary>
-        private async Task<(string title, byte[] pdf)> DraftAsync(Checklist checklist, DocumentType type, CancellationToken ct)
-        {
-            var card = await db.DispatchSettings.AsNoTracking().FirstOrDefaultAsync(s => s.shipmentSidebarId == sources.ShipmentSidebarId, ct);
-            var shipment = checklist.Shipment;
-            var originId = checklist.Dispatch?.originId ?? shipment.Link(card?.originFieldId);
-            var destinationId = checklist.Dispatch?.destinationId ?? shipment.Link(card?.destinationFieldId);
-            Guid[] placeIds = [.. new[] { originId, destinationId }.OfType<Guid>()];
-            var places = (await RecordRow.LoadAsync(db, sources.LocationSidebarId, ct, placeIds)).ToDictionary(r => r.Id);
-
-            var (title, shipmentRows) = await texts.TextRowsAsync(sources.ShipmentSidebarId, shipment, ct, card?.titleFieldId);
-            var (_, originRows) = await texts.TextRowsAsync(sources.LocationSidebarId, places.GetValueOrDefault(originId ?? Guid.Empty), ct);
-            var (_, destinationRows) = await texts.TextRowsAsync(sources.LocationSidebarId, places.GetValueOrDefault(destinationId ?? Guid.Empty), ct);
-            var pdf = PdfWriter.Pdf(
-                $"{type.Title} - DRAFT",
-                $"{title} · generated {texts.LocalNow:dd MMM yyyy HH:mm} ({texts.ZoneName})",
-                [
-                    new PdfWriter.Section("Shipment", shipmentRows),
-                    new PdfWriter.Section("Shipper (origin)", originRows),
-                    new PdfWriter.Section("Consignee (destination)", destinationRows),
-                ],
-                "Filled from the shipment record. Check every value against the original before verifying.");
-            return (title, pdf);
         }
 
         private static ApiProblemException Stale() =>

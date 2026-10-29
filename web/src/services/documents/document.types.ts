@@ -21,7 +21,6 @@ declare global {
     requiredAtStep?: IDocumentStep;
     /** The step it gates. */
     blocks?: IDocumentStep;
-    canGenerate: boolean;
     /** Asks for an expiry date when verified. */
     expires: boolean;
     /** The current version's file. */
@@ -91,7 +90,6 @@ declare global {
       when: string;
       requiredAtStep: IDocumentStep;
       blocks?: IDocumentStep;
-      canGenerate: boolean;
     }[];
   };
 

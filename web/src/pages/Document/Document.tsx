@@ -9,7 +9,6 @@ import {
 } from "@/services/dispatches/dispatch.api";
 import {
   fileDocument,
-  generateDocument,
   getDocumentActivity,
   getDocumentRules,
   getDocuments,
@@ -34,7 +33,6 @@ const documentApi: DocumentApi = {
   getDocumentSettings,
   saveDocumentSettings,
   fileDocument,
-  generateDocument,
   verifyDocument,
   rejectDocument,
   removeDocument,

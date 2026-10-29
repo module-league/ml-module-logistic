@@ -26,7 +26,6 @@ import {
   PopoverContent,
   PopoverTrigger,
   Skeleton,
-  toast,
 } from "@moduleleague/ui";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { attempt } from "@/lib/toastHelper";
@@ -188,7 +187,7 @@ function DocumentGroup({
 /** One paper: its tile, why it's needed and its file, its status, and what can be done with it now. */
 function DocumentItem(props: ItemProps) {
   const { document, shipmentId, data, onPreview } = props;
-  const { members, isSaving, onUpload, onGenerate, onRemove } = data;
+  const { members, isSaving, onUpload, onRemove } = data;
   const inputRef = useRef<HTMLInputElement>(null);
   const [rejecting, setRejecting] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -210,16 +209,6 @@ function DocumentItem(props: ItemProps) {
         onUpload(shipmentId, document.docType, file),
       ),
     [onUpload, shipmentId, document.docType],
-  );
-  const generate = useCallback(
-    () =>
-      attempt("Couldn't generate the draft", async () => {
-        await onGenerate(shipmentId, document.docType);
-        toast.success(`${document.title} draft generated`, {
-          description: "Check it against the shipment, then verify it.",
-        });
-      }),
-    [onGenerate, shipmentId, document.docType, document.title],
   );
 
   const detail = [
@@ -305,16 +294,6 @@ function DocumentItem(props: ItemProps) {
           />
         )}
         {canVerify && <VerifyButton {...props} />}
-        {!hasFile && document.canGenerate && (
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={isSaving}
-            onClick={() => void generate()}
-          >
-            Generate from record
-          </Button>
-        )}
         {(!hasFile || document.status === "rejected") && (
           <Button
             variant="outline"
@@ -363,12 +342,6 @@ function DocumentItem(props: ItemProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {hasFile && document.canGenerate && (
-                <DropdownMenuItem onSelect={() => void generate()}>
-                  <FileText />
-                  Generate a new draft
-                </DropdownMenuItem>
-              )}
               {canReject && (
                 <DropdownMenuItem onSelect={() => setRejecting(true)}>
                   <X />

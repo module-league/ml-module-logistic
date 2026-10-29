@@ -125,17 +125,13 @@ function RulesForm({
             <table className="w-full min-w-[40rem] text-left text-xs">
               <thead className="bg-muted/50 text-muted-foreground">
                 <tr>
-                  {[
-                    "Document",
-                    "When",
-                    "On the checklist from",
-                    "Gates",
-                    "Generate",
-                  ].map((heading) => (
-                    <th key={heading} className="px-3 py-2 font-medium">
-                      {heading}
-                    </th>
-                  ))}
+                  {["Document", "When", "On the checklist from", "Gates"].map(
+                    (heading) => (
+                      <th key={heading} className="px-3 py-2 font-medium">
+                        {heading}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -152,9 +148,6 @@ function RulesForm({
                       {requirement.blocks !== undefined
                         ? `Can't reach ${gateName(requirement.blocks)} until verified`
                         : "Nothing"}
-                    </td>
-                    <td className="px-3 py-2">
-                      {requirement.canGenerate ? "Yes" : "No"}
                     </td>
                   </tr>
                 ))}

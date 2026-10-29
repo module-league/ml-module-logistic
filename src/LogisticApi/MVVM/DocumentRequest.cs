@@ -18,16 +18,6 @@ namespace LogisticApi.MVVM
         public Guid? attachmentId { get; set; }
     }
 
-    /// <summary>Fills a draft of a document whose requirement can be generated, from the shipment and its locations.</summary>
-    public class DocumentGenerateRequest
-    {
-        [Required]
-        public Guid? shipmentId { get; set; }
-
-        [Required, MaxLength(40)]
-        public string? docType { get; set; }
-    }
-
     /// <summary>Every verify or reject sends the versionNo last read; a stale one is rejected with 409.</summary>
     public class DocumentVerifyRequest
     {

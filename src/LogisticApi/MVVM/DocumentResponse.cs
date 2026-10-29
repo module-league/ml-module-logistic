@@ -38,7 +38,6 @@ namespace LogisticApi.MVVM
         public string? when { get; set; }
         public string? requiredAtStep { get; set; }
         public string? blocks { get; set; }
-        public bool canGenerate { get; set; }
         /// <summary>Asks for an expiry date when verified.</summary>
         public bool expires { get; set; }
         public AttachmentResponse? file { get; set; }
@@ -111,7 +110,6 @@ namespace LogisticApi.MVVM
         public string when { get; set; } = string.Empty;
         public string requiredAtStep { get; set; } = string.Empty;
         public string? blocks { get; set; }
-        public bool canGenerate { get; set; }
     }
 
     /// <summary>Matches IDocumentSettings; versionNo 0 until first saved. The mode is the exception rules' mode field.</summary>

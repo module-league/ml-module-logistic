@@ -35,8 +35,6 @@ namespace LogisticApi.Models
         public string RequiredAtStep { get; set; } = DocumentSteps.Booked;
         /// <summary>The step it gates: the shipment can't reach it until the document is verified. Null gates nothing.</summary>
         public string? Blocks { get; set; }
-        /// <summary>Offers "Generate from record", filling a draft from the shipment and its locations.</summary>
-        public bool CanGenerate { get; set; }
     }
 
     /// <summary>The steps a shipment goes through: booked, then its dispatch's Flow, then billed.</summary>
