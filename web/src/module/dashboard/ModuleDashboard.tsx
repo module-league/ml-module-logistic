@@ -13,6 +13,7 @@ import {
 } from "@moduleleague/ui";
 import { errorParser } from "@/hooks/useErrorParser";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
+import { PageHeader } from "@/components/ml/pageHeader";
 import { RecordLookupContext } from "@/components/custom/RecordLookup.context";
 import { useCurrentNavItem } from "@/module/shell/navItem.context";
 import { useWorkspaceContext } from "@/module/workspace/workspace.context";
@@ -249,50 +250,45 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
               />
             ) : (
               <>
-                <header className="bg-white flex shrink-0 flex-col gap-3 border-b p-4 xl:flex-row xl:items-center xl:justify-between">
-                  <div className="min-w-0">
-                    <h1 className="truncate text-2xl font-semibold tracking-tight">
-                      {title}
-                    </h1>
-                    {description !== "" && (
-                      <p className="mt-1 truncate text-sm text-muted-foreground">
-                        {description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {rangeField && (
-                      <div
-                        title={`Filters the widgets that follow it by ${rangeSource?.sidebarText} · ${rangeField.name}`}
-                      >
-                        <DashboardSegmented
-                          label="Date range"
-                          value={activeRange}
-                          options={DATE_RANGES}
-                          onChange={setRange}
-                        />
-                      </div>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      startIcon={<SlidersHorizontal size={14} />}
-                      onClick={() => onCustomize()}
-                    >
-                      Customize
-                    </Button>
-                    {newSource && (
+                <PageHeader
+                  title={title}
+                  description={description}
+                  className="bg-background"
+                  actions={
+                    <>
+                      {rangeField && (
+                        <div
+                          title={`Filters the widgets that follow it by ${rangeSource?.sidebarText} · ${rangeField.name}`}
+                        >
+                          <DashboardSegmented
+                            label="Date range"
+                            value={activeRange}
+                            options={DATE_RANGES}
+                            onChange={setRange}
+                          />
+                        </div>
+                      )}
                       <Button
+                        variant="outline"
                         size="xs"
-                        startIcon={<Plus size={14} />}
-                        onClick={() => setNewRecordOpen(true)}
-                      >
-                        {nonEmpty(layout.newRecordLabel) ??
-                          `New ${singular(newSource.sidebarText)}`}
-                      </Button>
-                    )}
-                  </div>
-                </header>
+                        aria-label="Customize overview"
+                        title="Customize overview"
+                        startIcon={<SlidersHorizontal size={14} />}
+                        onClick={() => onCustomize()}
+                      />
+                      {newSource && (
+                        <Button
+                          size="xs"
+                          startIcon={<Plus size={14} />}
+                          onClick={() => setNewRecordOpen(true)}
+                        >
+                          {nonEmpty(layout.newRecordLabel) ??
+                            `New ${singular(newSource.sidebarText)}`}
+                        </Button>
+                      )}
+                    </>
+                  }
+                />
                 <main className="min-h-0 flex-1 overflow-y-auto p-4">
                   {layout.widgets?.length > 0 ? (
                     <div className="grid grid-cols-12 gap-4">

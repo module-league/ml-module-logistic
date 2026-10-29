@@ -1,11 +1,12 @@
 import { HouseCogIcon, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { PageHeaderSettings } from "./pageHeaderSettings";
 import type { PageHeaderProps } from "./pageHeader.types";
 
 /**
- * Standard header at the top of every module page.
+ * Standard header at the top of every module page: the title on the left, every page action in one group on the right.
  * @example
  * <PageHeader title="Job Orders" actions={<Button>New</Button>} />
  */
@@ -17,40 +18,51 @@ export function PageHeader({
   headerClassName,
   actionClassName,
   hidePageSeparator = false,
-  people,
   onInvitePeople,
   onOpenForms,
 }: PageHeaderProps) {
+  const hasPageActions = !!onOpenForms || !!onInvitePeople;
+
   return (
     <div
       className={cn(
-        "flex items-start justify-between gap-4 p-4 flex-col",
+        "flex h-page-header shrink-0 items-center gap-4 px-4",
         !hidePageSeparator && "border-b",
         className,
       )}
     >
+      <div className={cn("flex min-w-0 flex-1 flex-col", headerClassName)}>
+        <h1 className="truncate text-xl font-semibold tracking-tight">
+          {title}
+        </h1>
+        {description && (
+          <p className="truncate text-sm text-muted-foreground">
+            {description}
+          </p>
+        )}
+      </div>
+
+      {/* The header keeps one height, so on a narrow page the title truncates rather than the actions wrapping */}
       <div
         className={cn(
-          "flex flex-row items-center justify-between gap-2 w-full",
-          headerClassName,
+          "ml-auto flex shrink-0 items-center gap-2",
+          actionClassName,
         )}
       >
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex flex-row gap-4 items-center">
-            <h1 className="text-2xl font-semibold tracking-tight truncate">
-              {title}
-            </h1>
-
-            <PageHeaderSettings title={title} />
-          </div>
-
-          {description && (
-            <p className="mt-1 text-sm text-muted-foreground truncate">
-              {description}
-            </p>
-          )}
-        </div>
-
+        {actions}
+        {!!actions && hasPageActions && (
+          <Separator orientation="vertical" className="h-5" />
+        )}
+        {onInvitePeople && (
+          <Button
+            variant="outline"
+            size="xs"
+            startIcon={<UserPlus size={13} />}
+            onClick={onInvitePeople}
+          >
+            Invite
+          </Button>
+        )}
         {onOpenForms && (
           <Button
             variant="secondary"
@@ -61,23 +73,8 @@ export function PageHeader({
             Create {title} Form
           </Button>
         )}
-        {(people?.length || onInvitePeople) && (
-          <div className="flex shrink-0 items-center gap-3">
-            {onInvitePeople && (
-              <Button variant="outline" size="xs" onClick={onInvitePeople}>
-                <UserPlus size={13} />
-                Invite
-              </Button>
-            )}
-          </div>
-        )}
+        <PageHeaderSettings title={title} />
       </div>
-
-      {actions && (
-        <div className={cn("flex items-center gap-2 w-full", actionClassName)}>
-          {actions}
-        </div>
-      )}
     </div>
   );
 }

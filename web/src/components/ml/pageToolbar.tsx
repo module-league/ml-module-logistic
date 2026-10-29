@@ -78,7 +78,7 @@ export function ModulePageToolbar({
       <div
         ref={measureRef}
         className={cn(
-          "flex min-h-[41px] items-center gap-2 border-b p-4 py-1",
+          "flex min-h-page-toolbar items-center gap-2 border-b p-4 py-1",
           className,
         )}
       >
@@ -108,7 +108,7 @@ export function ModulePageToolbar({
     <div
       ref={measureRef}
       className={cn(
-        "flex min-h-10 items-center gap-2 border-b p-4 py-1",
+        "flex min-h-page-toolbar items-center gap-2 border-b p-4 py-1",
         className,
       )}
     >
@@ -125,7 +125,7 @@ export function ModulePageToolbar({
         />
       ) : null}
       {onSearchChange && (
-        <InputGroup className="ml-auto w-48 min-w-28 shrink bg-background">
+        <InputGroup className="h-7 ml-auto w-48 min-w-28 shrink bg-background">
           <InputGroupAddon>
             <Search />
           </InputGroupAddon>

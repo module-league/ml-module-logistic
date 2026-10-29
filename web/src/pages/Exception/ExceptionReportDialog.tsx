@@ -56,7 +56,7 @@ export function ExceptionReportDialog(props: ExceptionReportDialogProps) {
   const { open, onOpenChange } = props;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-xl">
+      <DialogContent className="flex max-h-dialog flex-col gap-0 p-0 sm:max-w-xl">
         <DialogHeader className="shrink-0 border-b p-4 pr-10 pb-3">
           <DialogTitle>Report exception</DialogTitle>
           <DialogDescription>

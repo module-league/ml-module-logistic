@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useRef, useState } from "react";
 import { Group, Panel, usePanelRef } from "react-resizable-panels";
 import { SidebarInset, SidebarProvider, useIsMobile } from "@moduleleague/ui";
 import { ResizeSeparator } from "@/components/custom/ResizeSeparator";
@@ -12,8 +12,8 @@ const BACKDROP_CLASS = "bg-sidebar bg-(image:--module-backdrop) bg-fixed";
 export function ModuleLayout({ config }: { config: IModuleConfig }) {
   const isMobile = useIsMobile();
   const sidebarPanel = usePanelRef();
+  const sidebarHost = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(true);
-  const [sidebarWidth, setSidebarWidth] = useState<number>();
 
   // Phones get the sidebar as a slide-over sheet, so there is nothing to resize
   if (isMobile) {
@@ -34,11 +34,6 @@ export function ModuleLayout({ config }: { config: IModuleConfig }) {
         else sidebarPanel.current?.collapse();
       }}
       className={BACKDROP_CLASS}
-      style={
-        sidebarWidth != null && sidebarWidth !== 0
-          ? ({ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties)
-          : undefined
-      }
     >
       <Group
         orientation="horizontal"
@@ -57,19 +52,25 @@ export function ModuleLayout({ config }: { config: IModuleConfig }) {
           groupResizeBehavior="preserve-pixel-size"
           onResize={(size) => {
             const collapsed = sidebarPanel.current?.isCollapsed() ?? false;
-            setOpen(!collapsed);
-            if (!collapsed) setSidebarWidth(size.inPixels);
+            if (collapsed === open) setOpen(!collapsed);
+            // Runs on every pointer move while dragging, so the width goes straight to CSS instead of
+            // through state, which would re-render the whole workspace each frame
+            if (!collapsed)
+              sidebarHost.current?.style.setProperty(
+                "--sidebar-width",
+                `${size.inPixels}px`,
+              );
           }}
         >
-          <ModuleSidebar
-            config={config}
-            className="transition-none group-data-[side=left]:border-r-0"
-          />
+          {/* Only the sidebar reads --sidebar-width, so it is set here rather than on the provider */}
+          <div ref={sidebarHost} className="contents">
+            <ModuleSidebar
+              config={config}
+              className="transition-none group-data-[side=left]:border-r-0"
+            />
+          </div>
         </Panel>
-        <ResizeSeparator
-          orientation="horizontal"
-          className="z-20 shadow-sm bg-background bg-sidebar-accent data-[separator=active]:bg-primary data-[separator=hover]:bg-primary"
-        />
+        <ResizeSeparator orientation="horizontal" className="z-20" />
         <Panel id="content">
           <ModuleMain config={config} />
         </Panel>

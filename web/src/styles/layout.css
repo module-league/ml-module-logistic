@@ -1,0 +1,9 @@
+/* Shared sizes of the page chrome, so every page and dialog lines up. Each --spacing-* token becomes h-*, min-h-*, max-h-* … utilities. */
+@theme {
+  /* The page header: a text-xl title over a text-sm description. */
+  --spacing-page-header: 4rem;
+  /* The page toolbar: a 32px control, py-1 and the 1px bottom border, so it keeps one height with or without a selection. */
+  --spacing-page-toolbar: 2.5625rem;
+  /* The tallest a dialog grows before its body scrolls. */
+  --spacing-dialog: 90dvh;
+}

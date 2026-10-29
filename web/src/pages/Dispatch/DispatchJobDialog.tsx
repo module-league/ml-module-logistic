@@ -83,7 +83,7 @@ type DispatchJobDialogProps = {
 export function DispatchJobDialog({ data, shipments }: DispatchJobDialogProps) {
   return (
     <Dialog open={data.dialog.open} onOpenChange={data.onDialogOpenChange}>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-2xl">
+      <DialogContent className="flex max-h-dialog flex-col gap-0 p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 border-b p-4 pr-10 pb-3">
           <DialogTitle>Dispatch job</DialogTitle>
           <DialogDescription>

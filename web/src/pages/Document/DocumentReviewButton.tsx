@@ -62,7 +62,7 @@ export function DocumentReviewButton({
         {isPending ? "Checking…" : review ? "View AI check" : "Check with AI"}
       </Button>
       <Dialog open={isOpen && !!review} onOpenChange={setIsOpen}>
-        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
+        <DialogContent className="max-h-dialog overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle className="truncate pr-6">
               AI check · {file.name}

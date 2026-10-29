@@ -1,14 +1,15 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
-  EyeOff,
   FileText,
   ImagePlus,
   ListPlus,
   Plus,
+  RotateCcwClock,
   Settings2,
   SquarePen,
   Trash2,
+  Trash2Icon,
   X,
 } from "lucide-react";
 import {
@@ -35,6 +36,7 @@ import {
 import { attachmentUrl } from "@/services/attachments/attachment.api";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { ConfirmDeleteDialog } from "@/components/custom/ConfirmDeleteDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SortableHandle, SortableList } from "@/components/custom/SortableList";
 import { useSortableRow } from "@/hooks/useSortableRow";
 import { errorParser } from "@/hooks/useErrorParser";
@@ -48,7 +50,8 @@ import type {
 import { FieldTypeIcon } from "@/components/custom/fieldTypeIcon";
 import { nonEmpty } from "@/lib/stringHelper";
 /**
- * The forms of a sidebar: the list on the left, the picked form's title, flags and fields on the right.
+ * The forms of a sidebar: a card per form on the left, the picked form's title and fields on the right.
+ * Each opening starts on the default form.
  * @example
  * <ModuleFormDialog open={open} onOpenChange={setOpen} title="Dispatch" fields={fields} forms={forms} {...formHandlers} />
  */
@@ -69,10 +72,15 @@ export function ModuleFormDialog({
   members,
 }: ModuleFormDialogProps) {
   const [selectedId, setSelectedId] = useState<string>();
+  const [wasOpen, setWasOpen] = useState(open);
   const [creating, setCreating] = useState(false);
+  const [defaultingId, setDefaultingId] = useState<string>();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const selected = useMemo(
-    () => forms.find((form) => form.objId === selectedId) ?? forms[0],
+    () =>
+      forms.find((form) => form.objId === selectedId) ??
+      forms.find((form) => form.isDefault) ??
+      forms[0],
     [forms, selectedId],
   );
   const formIds = useMemo(() => forms.map((form) => form.objId), [forms]);
@@ -86,6 +94,11 @@ export function ModuleFormDialog({
       ),
     [fields],
   );
+  // The dialog stays mounted while closed, so the last pick is dropped on opening to land on the default form
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setSelectedId(undefined);
+  }
 
   const startForm = useCallback(async () => {
     const taken = new Set(forms.map((form) => form.formTitle));
@@ -117,6 +130,26 @@ export function ModuleFormDialog({
       ),
     [onReorderForms],
   );
+  // Saved from the form as stored, so unsaved edits in the editor stay a draft
+  const setDefault = useCallback(
+    async (form: ISidebarForm, isDefault: boolean) => {
+      setDefaultingId(form.objId);
+      try {
+        await onUpdateForm(form.objId, {
+          ...toFormDraft(form),
+          isHidden: false,
+          isDefault,
+        });
+      } catch (err: unknown) {
+        toast.error("Couldn't change the default form", {
+          description: errorParser(err)?.message,
+        });
+      } finally {
+        setDefaultingId(undefined);
+      }
+    },
+    [onUpdateForm],
+  );
   const deleteSelected = useCallback(async () => {
     if (!selected) return;
     await onDeleteForm(selected.objId);
@@ -126,7 +159,7 @@ export function ModuleFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex h-[min(680px,90dvh)] flex-col gap-0 p-0 w-full"
+        className="flex h-[min(880px,90dvh)] flex-col gap-0 p-0 w-full"
         overlayClassName="supports-backdrop-filter:backdrop-blur-none"
         style={{ maxWidth: "90%" }}
       >
@@ -138,30 +171,35 @@ export function ModuleFormDialog({
         </DialogHeader>
         <QueryWrapper isLoading={isLoading} error={error} onRetry={onRetry}>
           <div className="flex min-h-0 flex-1">
-            <aside className="flex w-60 shrink-0 flex-col gap-2 border-r bg-muted/30 p-3">
+            <aside className="flex w-60 shrink-0 flex-col gap-2 border-r bg-muted/30 overflow-auto">
               <Button
                 variant="outline"
                 size="xs"
                 disabled={creating}
                 startIcon={<Plus size={13} />}
                 onClick={() => void startForm()}
+                className="m-3 mb-0"
               >
                 {creating ? "Starting…" : "New form"}
               </Button>
               <nav
                 aria-label="Forms"
-                className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto"
+                className="flex min-h-0 flex-1 flex-col items-center gap-3 p-3 overflow-auto"
               >
                 <SortableList
                   ids={formIds}
                   onReorder={(ids) => void reorder(ids)}
                 >
                   {forms.map((form) => (
-                    <FormListItem
+                    <FormCard
                       key={form.objId}
                       form={form}
-                      selected={form.objId === selected?.objId}
+                      isSelected={form.objId === selected?.objId}
+                      isSavingDefault={form.objId === defaultingId}
                       onSelect={setSelectedId}
+                      onDefaultChange={(isDefault) =>
+                        void setDefault(form, isDefault)
+                      }
                     />
                   ))}
                 </SortableList>
@@ -214,53 +252,104 @@ export function ModuleFormDialog({
   );
 }
 
-/** One form in the list: dragged by its grip, picked by a click. */
-function FormListItem({
+/** How many of a form's fields its card sketches; the card has no room for more. */
+const CARD_FIELD_ROWS = 3;
+
+/** One form as a small sketch of itself: picked by a click, dragged by its grip, made the default by its switch. */
+function FormCard({
   form,
-  selected,
+  isSelected,
+  isSavingDefault,
   onSelect,
+  onDefaultChange,
 }: {
   form: ISidebarForm;
-  selected: boolean;
+  isSelected: boolean;
+  isSavingDefault: boolean;
   onSelect: (objId: string) => void;
+  onDefaultChange: (isDefault: boolean) => void;
 }) {
   const { ref, style, isDragging, handle } = useSortableRow(form.objId);
+  const coverImageId = nonEmpty(form.coverImageId);
+  const logoId = nonEmpty(form.logoId);
+  const sketchedFields = form.fields?.slice(0, CARD_FIELD_ROWS) ?? [];
 
   return (
     <div
       ref={ref}
       style={style}
       className={cn(
-        "group/form flex items-center gap-1 rounded-md pr-2 text-sm hover:bg-primary-10",
-        selected && "bg-primary-10 font-medium text-primary",
-        isDragging && "relative z-10 bg-background shadow-md",
+        "group/form flex h-72 w-full shrink-0 flex-col overflow-hidden rounded-lg border bg-background shadow-xs transition-colors hover:border-primary/40",
+        isSelected && "border-primary ring-2 ring-primary/20",
+        isDragging && "relative z-10 shadow-md",
       )}
     >
-      <SortableHandle
-        handle={handle}
-        label={form.formTitle}
-        className="opacity-0 group-hover/form:opacity-100 focus-visible:opacity-100"
-      />
       <button
         type="button"
-        aria-current={selected || undefined}
+        aria-current={isSelected || undefined}
+        aria-label={`Open ${form.formTitle}`}
         onClick={() => onSelect(form.objId)}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 py-1.5 text-left"
+        className="flex min-h-0 flex-1 cursor-pointer flex-col text-left"
       >
-        <FileText className="size-3.5 shrink-0" />
-        <span className="truncate">{form.formTitle}</span>
+        {coverImageId !== undefined ? (
+          <img
+            src={attachmentUrl(coverImageId)}
+            alt=""
+            className="h-12 w-full shrink-0 object-cover"
+          />
+        ) : (
+          <div className="h-12 w-full shrink-0 bg-linear-to-br from-primary-10 to-primary/25" />
+        )}
+        <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pb-3">
+          {logoId !== undefined ? (
+            <img
+              src={attachmentUrl(logoId)}
+              alt=""
+              className="-mt-4 size-8 rounded-md border-2 border-background object-cover"
+            />
+          ) : (
+            <Skeleton className="-mt-4 size-8 animate-none border-2 border-background" />
+          )}
+          <span className="truncate text-xs font-semibold">
+            {form.formTitle}
+          </span>
+          <Skeleton className="h-1.5 w-3/4 animate-none" />
+          {sketchedFields.map((item) => (
+            <div key={item.fieldId} className="flex flex-col gap-1">
+              <Skeleton className="h-1.5 w-1/2 animate-none" />
+              <Skeleton className="h-4 w-full animate-none rounded-sm" />
+            </div>
+          ))}
+          {sketchedFields.length === 0 && (
+            <span className="rounded-sm border border-dashed py-2 text-center text-xs text-muted-foreground">
+              No fields yet
+            </span>
+          )}
+          <div className="mt-auto flex justify-between">
+            <Skeleton className="h-3 w-8 animate-none" />
+            <Skeleton className="h-3 w-10 animate-none bg-primary/30" />
+          </div>
+        </div>
       </button>
-      {form.isDefault && (
-        <span className="shrink-0 rounded bg-primary px-1.5 py-0.5 text-[0.65rem] font-medium text-primary-foreground">
-          Default
-        </span>
-      )}
-      {form.isHidden && (
-        <EyeOff
-          aria-label="Hidden"
-          className="size-3.5 shrink-0 text-muted-foreground"
+      <div className="flex shrink-0 items-center gap-1 border-t px-2 py-1.5 text-xs">
+        <SortableHandle
+          handle={handle}
+          label={form.formTitle}
+          className="opacity-0 group-hover/form:opacity-100 focus-visible:opacity-100"
         />
-      )}
+        <label
+          className="flex flex-1 cursor-pointer items-center justify-end gap-2"
+          title="The sidebar's main form; only one form is."
+        >
+          Default form
+          <Switch
+            size="sm"
+            checked={form.isDefault}
+            disabled={isSavingDefault}
+            onCheckedChange={onDefaultChange}
+          />
+        </label>
+      </div>
     </div>
   );
 }
@@ -325,7 +414,7 @@ function FormEditor({
   members,
   onDelete,
 }: ModuleFormEditorProps) {
-  const saved = useMemo(() => toFormInput(form), [form]);
+  const saved = useMemo(() => toFormDraft(form), [form]);
   const [draft, setDraft] = useState(saved);
   const [saving, setSaving] = useState(false);
   const dirty = useMemo(
@@ -354,7 +443,7 @@ function FormEditor({
   );
 
   const change = useCallback(
-    (patch: Partial<ISidebarFormInput>) =>
+    (patch: Partial<FormDraft>) =>
       setDraft((current) => ({ ...current, ...patch })),
     [],
   );
@@ -398,11 +487,14 @@ function FormEditor({
   const save = useCallback(async () => {
     setSaving(true);
     try {
+      // The default is set from the form's card, so the stored flag is sent back as it is
       const updated = await onUpdateForm(form.objId, {
         ...draft,
         fields: shownFields,
+        isHidden: false,
+        isDefault: form.isDefault === true,
       });
-      setDraft(toFormInput(updated));
+      setDraft(toFormDraft(updated));
       toast.success("Form saved");
     } catch (err: unknown) {
       toast.error("Couldn't save form", {
@@ -411,45 +503,10 @@ function FormEditor({
     } finally {
       setSaving(false);
     }
-  }, [form.objId, draft, shownFields, onUpdateForm]);
+  }, [form.objId, form.isDefault, draft, shownFields, onUpdateForm]);
 
   return (
     <>
-      <div className="flex shrink-0 items-center justify-end gap-5 border-b px-5 py-2 text-sm">
-        <label
-          className="flex cursor-pointer items-center gap-2"
-          title={
-            draft.isHidden
-              ? "A hidden form can't be the default."
-              : "The sidebar's main form; only one form is."
-          }
-        >
-          <Switch
-            size="sm"
-            checked={draft.isDefault}
-            disabled={draft.isHidden}
-            onCheckedChange={(isDefault) => change({ isDefault })}
-          />
-          Default form
-        </label>
-        <label
-          className="flex cursor-pointer items-center gap-2"
-          title="Kept, but not offered to people."
-        >
-          <Switch
-            size="sm"
-            checked={draft.isHidden}
-            onCheckedChange={(isHidden) =>
-              change({
-                isHidden,
-                isDefault: isHidden ? false : draft.isDefault,
-              })
-            }
-          />
-          Hidden
-        </label>
-      </div>
-
       <div className="min-h-0 flex-1 overflow-y-auto bg-muted/40 px-6 py-8">
         <article className="mx-auto max-w-4xl overflow-hidden rounded-xl border bg-background shadow-sm">
           <FormImage
@@ -586,7 +643,13 @@ function FormEditor({
         >
           Delete form
         </Button>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {dirty && (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <RotateCcwClock className="size-3.5" />
+              Unsaved changes
+            </span>
+          )}
           <Button
             variant="outline"
             size="xs"
@@ -644,21 +707,61 @@ function FormImage({
     [name, onUpload, onChange],
   );
   const pick = () => fileInput.current?.click();
-  const actions = (
-    <div className="absolute top-2 right-2 flex gap-1 opacity-0 transition-opacity group-hover/image:opacity-100 group-focus-within/image:opacity-100">
+  const hasImage = imageId != null && imageId !== "";
+  const fileInputElement = (
+    <input
+      ref={fileInput}
+      type="file"
+      accept="image/*"
+      hidden
+      onChange={(event) => {
+        void upload(event.target.files?.[0]);
+        event.target.value = "";
+      }}
+    />
+  );
+  const image = hasImage ? (
+    <img
+      src={attachmentUrl(imageId)}
+      alt={`Form ${name}`}
+      className="size-full object-cover"
+    />
+  ) : (
+    <button
+      type="button"
+      disabled={uploading || !onUpload}
+      onClick={pick}
+      aria-label={`Add ${name}`}
+      className="flex size-full cursor-pointer items-center justify-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary disabled:cursor-not-allowed"
+    >
+      <ImagePlus className="size-5" />
+      {kind === "cover" && (uploading ? "Uploading…" : "Add cover image")}
+    </button>
+  );
+  // The cover's buttons sit in its corner; the small logo stacks them over a dimmed image so both stay clickable
+  const actions = hasImage && (
+    <div
+      className={cn(
+        "absolute flex gap-1 opacity-0 transition-opacity group-hover/image:opacity-100 group-focus-within/image:opacity-100",
+        kind === "cover"
+          ? "top-2 right-2 flex-col"
+          : "inset-0 flex-col items-center justify-center bg-foreground/40 px-1",
+      )}
+    >
       <Button
         variant="outline"
-        size="xs"
+        size="icon-xs"
         disabled={uploading || !onUpload}
         onClick={pick}
+        className="max-w-full"
       >
-        {uploading ? "Uploading…" : "Change"}
+        {uploading ? "" : <ImagePlus size={13} />}
       </Button>
       <Button
         variant="outline"
         size="icon-xs"
         aria-label={`Remove ${name}`}
-        startIcon={<X size={13} />}
+        startIcon={<Trash2Icon size={13} />}
         onClick={() => onChange(undefined)}
       />
     </div>
@@ -673,63 +776,21 @@ function FormImage({
           : "-mt-10 mb-4 size-20 rounded-xl border-4 border-background bg-muted shadow-sm",
       )}
     >
-      <input
-        ref={fileInput}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(event) => {
-          void upload(event.target.files?.[0]);
-          event.target.value = "";
-        }}
-      />
-      {imageId != null && imageId !== "" ? (
-        <>
-          <img
-            src={attachmentUrl(imageId)}
-            alt={`Form ${name}`}
-            className="size-full object-cover"
-          />
-          {kind === "cover" ? (
-            actions
-          ) : (
-            <button
-              type="button"
-              aria-label="Change logo"
-              onClick={pick}
-              className="absolute inset-0 flex cursor-pointer items-center justify-center bg-foreground/40 text-background opacity-0 transition-opacity group-hover/image:opacity-100 focus-visible:opacity-100"
-            >
-              <ImagePlus className="size-5" />
-            </button>
-          )}
-        </>
-      ) : (
-        <button
-          type="button"
-          disabled={uploading || !onUpload}
-          onClick={pick}
-          aria-label={`Add ${name}`}
-          className={cn(
-            "flex size-full cursor-pointer items-center justify-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary disabled:cursor-not-allowed",
-            kind === "cover" &&
-              "opacity-0 group-hover/image:opacity-100 focus-visible:opacity-100",
-          )}
-        >
-          <ImagePlus className="size-5" />
-          {kind === "cover" && (uploading ? "Uploading…" : "Add cover image")}
-        </button>
-      )}
+      {fileInputElement}
+      {image}
+      {actions}
     </div>
   );
 }
 
-/** What the editor edits: the saved form's title, description, flags and fields. */
-function toFormInput(form?: ISidebarForm): ISidebarFormInput {
+/** What the editor edits; the default flag is the card's, and hidden forms are no longer offered. */
+type FormDraft = Omit<ISidebarFormInput, "isHidden" | "isDefault">;
+
+/** The saved form's title, description, images, labels and fields, as the editor edits them. */
+function toFormDraft(form?: ISidebarForm): FormDraft {
   return {
     formTitle: form?.formTitle ?? "",
     formDescription: form?.formDescription ?? "",
-    isHidden: form?.isHidden === true,
-    isDefault: form?.isDefault === true,
     fields:
       form?.fields?.map((item) => ({
         fieldId: item.fieldId,

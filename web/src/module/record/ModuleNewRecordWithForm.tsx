@@ -64,7 +64,7 @@ export function ModuleNewRecordWithForm({
           "aria-describedby": undefined,
         })}
         overlayClassName="supports-backdrop-filter:backdrop-blur-none"
-        className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
+        className="flex max-h-dialog flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
         showCloseButton={false}
       >
         <div className="flex min-h-64 flex-1 flex-col overflow-y-auto">

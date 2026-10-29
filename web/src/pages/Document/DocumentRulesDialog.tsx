@@ -28,7 +28,7 @@ export function DocumentRulesDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-4xl">
+      <DialogContent className="flex max-h-dialog flex-col gap-0 p-0 sm:max-w-4xl">
         <DialogHeader className="shrink-0 border-b p-4 pr-10 pb-3">
           <DialogTitle>Document rules</DialogTitle>
           <DialogDescription>

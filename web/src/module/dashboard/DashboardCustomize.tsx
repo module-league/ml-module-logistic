@@ -150,7 +150,7 @@ export function DashboardCustomize({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b bg-primary-10 px-4 py-3">
+      <div className="flex h-page-header shrink-0 items-center justify-between gap-3 border-b bg-primary-10 px-4">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-primary">
             Customizing {nonEmpty(layout.title) ?? item.sidebarText} overview

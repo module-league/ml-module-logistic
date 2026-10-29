@@ -54,7 +54,7 @@ type DispatchCardSettingsProps = {
 export function DispatchCardSettings(props: DispatchCardSettingsProps) {
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-3xl">
+      <DialogContent className="flex max-h-dialog flex-col gap-0 p-0 sm:max-w-3xl">
         <DialogHeader className="shrink-0 border-b p-4 pr-10 pb-3">
           <DialogTitle>Customize shipment card</DialogTitle>
           <DialogDescription>

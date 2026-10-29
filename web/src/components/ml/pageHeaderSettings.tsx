@@ -30,7 +30,7 @@ export function PageHeaderSettings(props: PageHeaderSettingsProps) {
           startIcon={<Settings2Icon size={13} />}
         />
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-40" align="start">
+      <DropdownMenuContent className="w-40" align="end">
         <DropdownMenuGroup>
           <DropdownMenuLabel>{title} Settings</DropdownMenuLabel>
           <DropdownMenuItem>Team</DropdownMenuItem>
