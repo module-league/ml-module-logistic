@@ -15,6 +15,7 @@ import {
   getDocuments,
   getDocumentSettings,
   rejectDocument,
+  reviewDocument,
   saveDocumentSettings,
   verifyDocument,
 } from "@/services/documents/document.api";
@@ -36,6 +37,7 @@ const documentApi: DocumentApi = {
   verifyDocument,
   rejectDocument,
   getDocumentActivity,
+  reviewDocument,
   uploadAttachment,
   updateRecord,
 };

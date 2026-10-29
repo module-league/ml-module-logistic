@@ -86,6 +86,18 @@ export async function rejectDocument(
   return data;
 }
 
+/** Has the AI read one of the shipment's files and check it against the shipment; nothing is saved. Takes 5–30 s. */
+export async function reviewDocument(body: {
+  shipmentId: string;
+  attachmentId: string;
+}) {
+  const { data } = await apiClient.post<IDocumentReview>(
+    "/documents/review",
+    body,
+  );
+  return data;
+}
+
 /** Its versions, verifies and rejects, oldest first. */
 export async function getDocumentActivity(objId: string) {
   const { data } = await apiClient.get<IDocumentActivity[]>(

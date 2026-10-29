@@ -16,7 +16,13 @@ import { AttachmentPreviewDialog } from "@/components/custom/AttachmentPreviewDi
 import { useAttachmentPreview } from "@/hooks/useAttachmentPreview";
 import { formatFileSize } from "@/lib/attachmentHelper";
 import { tableFields } from "@/module/dashboard/moduleDashboard.utils";
-import { checkSize, typeTitle, type DocumentRow } from "./document.utils";
+import {
+  canReview,
+  checkSize,
+  typeTitle,
+  type DocumentRow,
+} from "./document.utils";
+import { DocumentReviewButton } from "./DocumentReviewButton";
 import type { DocumentData } from "./useDocumentData";
 
 /** The selected shipment's unclassified files beside a drop zone that adds more to its attachment field. */
@@ -60,7 +66,7 @@ function UnclassifiedFiles({
   fieldName?: string;
 }) {
   const { checklist, shipment } = row;
-  const { rules, isSaving, onFile } = data;
+  const { rules, isSaving, onFile, onReview } = data;
   const { openPreview, dialogProps } = useAttachmentPreview();
   const files = useMemo(
     () => checklist.unclassified?.map((entry) => entry.file) ?? [],
@@ -139,6 +145,13 @@ function UnclassifiedFiles({
                 </span>
               </span>
               <span className="ml-auto flex shrink-0 items-center gap-1.5">
+                {canReview(entry.file) && (
+                  <DocumentReviewButton
+                    shipmentId={shipment.id}
+                    file={entry.file}
+                    onReview={onReview}
+                  />
+                )}
                 {entry.suggestedDocType != null &&
                   entry.suggestedDocType !== "" && (
                     <Button

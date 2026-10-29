@@ -122,4 +122,49 @@ namespace LogisticApi.MVVM
         public Guid? attachmentFieldId { get; set; }
         public int versionNo { get; set; }
     }
+
+    /// <summary>What the AI read on a file and how it compares with the shipment record; a suggestion for a person to act on.</summary>
+    public class DocumentReviewResponse
+    {
+        public Guid shipmentId { get; set; }
+        public Guid attachmentId { get; set; }
+        public string fileName { get; set; } = string.Empty;
+        /// <summary>A document type's docType, or "other".</summary>
+        public string docType { get; set; } = string.Empty;
+        public string docTypeTitle { get; set; } = string.Empty;
+        /// <summary>0–100, how sure the AI is of docType.</summary>
+        public int confidence { get; set; }
+        /// <summary>looks_right, check (something differs) or needs_person (the AI isn't sure what it is).</summary>
+        public string verdict { get; set; } = string.Empty;
+        public string verdictText { get; set; } = string.Empty;
+        /// <summary>One sentence from the AI on what the document is.</summary>
+        public string summary { get; set; } = string.Empty;
+        /// <summary>Signed or stamped; null when the AI can't tell.</summary>
+        public bool? signed { get; set; }
+        /// <summary>An expiry date printed on it, as written.</summary>
+        public string? expiresOn { get; set; }
+        /// <summary>Each value the document states: the shipment's fields first, then ones the record doesn't have.</summary>
+        public List<DocumentReviewCheckResponse> checks { get; set; } = [];
+        public DocumentReviewUsageResponse usage { get; set; } = new();
+    }
+
+    public class DocumentReviewCheckResponse
+    {
+        public string field { get; set; } = string.Empty;
+        public string documentValue { get; set; } = string.Empty;
+        /// <summary>Null for a value the record has no field for.</summary>
+        public string? recordValue { get; set; }
+        /// <summary>match, mismatch, or not_on_record.</summary>
+        public string status { get; set; } = string.Empty;
+        /// <summary>Where on the document it was read, e.g. "Page 2 · totals row".</summary>
+        public string source { get; set; } = string.Empty;
+    }
+
+    /// <summary>Tokens the review used, for working out what each document costs.</summary>
+    public class DocumentReviewUsageResponse
+    {
+        public string model { get; set; } = string.Empty;
+        public long inputTokens { get; set; }
+        public long outputTokens { get; set; }
+    }
 }

@@ -125,6 +125,12 @@ export const typeTitle = (
       docType ??
       "");
 
+const REVIEWABLE_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png"]);
+
+/** Whether the AI check can read the file: PDFs and JPG or PNG images, as DocumentReviewService takes. */
+export const canReview = (file?: IAttachment): boolean =>
+  REVIEWABLE_EXTENSIONS.has(file?.fileExtension?.toLowerCase() ?? "");
+
 /** Uploads stop here when the file is over the API's limit, before sending it. */
 export function checkSize(file: File) {
   if (file.size <= ATTACHMENT_MAX_BYTES) return true;

@@ -40,7 +40,9 @@ import {
 import { actorName } from "@/services/user/current.user";
 import { CHIP_CLASS } from "../Exception/ExceptionList";
 import { labelOf, stamp } from "../Exception/exception.utils";
+import { DocumentReviewButton } from "./DocumentReviewButton";
 import {
+  canReview,
   checkSize,
   DOCUMENT_STATUSES,
   gateName,
@@ -291,6 +293,13 @@ function DocumentItem(props: ItemProps) {
           >
             {status}
           </span>
+        )}
+        {document.file && canReview(document.file) && (
+          <DocumentReviewButton
+            shipmentId={shipmentId}
+            file={document.file}
+            onReview={data.onReview}
+          />
         )}
         {canVerify && <VerifyButton {...props} />}
         {!hasFile && document.canGenerate && (

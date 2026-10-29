@@ -111,4 +111,38 @@ declare global {
     docType: string;
     attachmentId: string;
   };
+
+  type IDocumentReviewVerdict = "looks_right" | "check" | "needs_person";
+  type IDocumentReviewStatus = "match" | "mismatch" | "not_on_record";
+
+  /** One value the AI read on the file, next to the shipment's. Matches DocumentReviewCheckResponse. */
+  type IDocumentReviewCheck = {
+    field: string;
+    documentValue: string;
+    /** Left out for a value the record has no field for. */
+    recordValue?: string;
+    status: IDocumentReviewStatus;
+    /** Where on the file it was read, e.g. "Page 2 · totals row". */
+    source: string;
+  };
+
+  /** The AI's read of one file checked against the shipment; a suggestion, nothing is saved. Matches DocumentReviewResponse. */
+  type IDocumentReview = {
+    shipmentId: string;
+    attachmentId: string;
+    fileName: string;
+    /** A document type's docType, or "other". */
+    docType: string;
+    docTypeTitle: string;
+    /** 0–100. */
+    confidence: number;
+    verdict: IDocumentReviewVerdict;
+    verdictText: string;
+    summary: string;
+    /** Left out when the AI can't tell. */
+    signed?: boolean;
+    expiresOn?: string;
+    checks: IDocumentReviewCheck[];
+    usage: { model: string; inputTokens: number; outputTokens: number };
+  };
 }

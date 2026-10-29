@@ -56,4 +56,14 @@ namespace LogisticApi.MVVM
         [Required]
         public int? versionNo { get; set; }
     }
+
+    /// <summary>Has the AI read one of the shipment's files and check it against the shipment record. Nothing is saved.</summary>
+    public class DocumentReviewRequest
+    {
+        [Required]
+        public Guid? shipmentId { get; set; }
+
+        [Required]
+        public Guid? attachmentId { get; set; }
+    }
 }

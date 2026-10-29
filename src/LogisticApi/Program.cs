@@ -7,6 +7,9 @@ using ModuleLeague.Core.Interceptors;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Secrets such as the Anthropic API key, kept out of git by the appsettings.*.local.json rule in .gitignore
+builder.Configuration.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.local.json", optional: true, reloadOnChange: true);
+
 // Connection string: same key in every environment, value differs per appsettings file
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
@@ -49,6 +52,11 @@ builder.Services.Configure<DocumentOptions>(builder.Configuration.GetSection(Doc
 builder.Services.AddScoped<DocumentChecklistService>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<RecordTextService>();
+
+// AI document review: Claude reads an uploaded file, the API compares it with the shipment (key: "Anthropic:ApiKey")
+builder.Services.Configure<DocumentReviewOptions>(builder.Configuration.GetSection(DocumentReviewOptions.SectionName));
+builder.Services.AddSingleton<IDocumentReader, ClaudeDocumentReader>();
+builder.Services.AddScoped<DocumentReviewService>();
 
 // Billing: rate cards, charge types and tax from the "Billing" workflow config
 builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection(BillingOptions.SectionName));

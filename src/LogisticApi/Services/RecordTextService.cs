@@ -18,6 +18,14 @@ namespace LogisticApi.Services
         public async Task<(string title, List<(string label, string value)> rows)> TextRowsAsync(
             string sidebarId, RecordRow? row, CancellationToken ct, Guid? titleFieldId = null)
         {
+            var (title, fields) = await FieldTextsAsync(sidebarId, row, ct, titleFieldId);
+            return (title, fields.Select(f => (f.field.sidebarName, f.text)).ToList());
+        }
+
+        /// <summary>As TextRowsAsync, with each value's field, for callers that need its type.</summary>
+        public async Task<(string title, List<(SidebarField field, string text)> fields)> FieldTextsAsync(
+            string sidebarId, RecordRow? row, CancellationToken ct, Guid? titleFieldId = null)
+        {
             if (row is null) return ("", []);
             var fields = await FieldsAsync(sidebarId, ct);
             var fieldIds = fields.Select(f => f.ObjId).ToList();
@@ -48,12 +56,12 @@ namespace LogisticApi.Services
                     _ => raw,
                 };
             }
-            var rows = fields
-                .Select(f => (label: f.sidebarName, value: Text(f)))
-                .Where(r => !string.IsNullOrWhiteSpace(r.value))
-                .Select(r => (r.label, r.value!))
+            var texts = fields
+                .Select(f => (field: f, text: Text(f)))
+                .Where(r => !string.IsNullOrWhiteSpace(r.text))
+                .Select(r => (r.field, r.text!))
                 .ToList();
-            return (row.Value(TitleField(fields, titleFieldId)?.ObjId) ?? "", rows);
+            return (row.Value(TitleField(fields, titleFieldId)?.ObjId) ?? "", texts);
         }
 
         /// <summary>Each record's title, by the field the web names it by.</summary>

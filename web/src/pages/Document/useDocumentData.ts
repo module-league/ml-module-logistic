@@ -34,6 +34,10 @@ export interface DocumentApi extends DispatchRecordsApi {
     body: { versionNo: number; reason: string },
   ) => Promise<IShipmentChecklist>;
   getDocumentActivity: (objId: string) => Promise<IDocumentActivity[]>;
+  reviewDocument: (body: {
+    shipmentId: string;
+    attachmentId: string;
+  }) => Promise<IDocumentReview>;
   uploadAttachment: (refId: string, file: File) => Promise<IAttachment>;
   updateRecord: (
     sidebarId: string,
@@ -236,6 +240,7 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
       onReject,
       onDrop,
       onSaveSettings,
+      onReview: api.reviewDocument,
       isSaving: isChanging || isDropping,
     }),
     [
@@ -259,6 +264,7 @@ export function useDocumentData(api: DocumentApi, initialShipmentId?: string) {
       onReject,
       onDrop,
       onSaveSettings,
+      api.reviewDocument,
       isChanging,
       isDropping,
     ],

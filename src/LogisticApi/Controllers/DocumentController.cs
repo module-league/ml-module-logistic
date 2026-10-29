@@ -8,8 +8,21 @@ namespace LogisticApi.Controllers
     [ApiController]
     [Route("api/documents")]
     [Produces("application/json")]
-    public class DocumentController(DocumentService documents) : ControllerBase
+    public class DocumentController(DocumentService documents, DocumentReviewService reviews) : ControllerBase
     {
+        /// <summary>
+        /// Has the AI read one of the shipment's files and check it against the shipment: what it is, each value it states and whether
+        /// it matches. A suggestion only; nothing is saved or verified.
+        /// </summary>
+        [HttpPost("review")]
+        [ProducesResponseType<DocumentReviewResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status502BadGateway)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable)]
+        public Task<DocumentReviewResponse> Review([FromBody] DocumentReviewRequest request, CancellationToken ct) =>
+            reviews.ReviewAsync(request, ct);
+
         /// <summary>Every shipment's checklist and unclassified files.</summary>
         [HttpGet]
         public Task<List<ShipmentChecklistResponse>> GetChecklists(CancellationToken ct) => documents.ListAsync(ct);
