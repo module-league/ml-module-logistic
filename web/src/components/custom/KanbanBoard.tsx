@@ -9,7 +9,7 @@ export interface KanbanColumn<T> {
 }
 
 const COLUMN_CLASS =
-  "flex w-72 shrink-0 flex-col gap-2 rounded-xl bg-muted/60 p-2 xl:w-auto xl:min-w-60 xl:flex-1";
+  "flex w-72 shrink-0 flex-col gap-2 rounded-xl bg-muted/60 p-2 xl:w-auto xl:min-w-60 xl:flex-1 h-full";
 
 /** Columns side by side, each with its label, hint and count over a scrolling list of cards; scrolls sideways when narrow. */
 export function KanbanBoard<T>({
@@ -22,7 +22,7 @@ export function KanbanBoard<T>({
   renderItem: (item: T) => ReactNode;
 }) {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2">
+    <div className="flex gap-3 overflow-x-auto pb-2 h-full">
       {columns.map((column) => (
         <section
           key={column.value}

@@ -1,16 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { CalendarDays, PanelRightOpen, Settings2, Truck } from "lucide-react";
+import { PanelRightOpen, Settings2 } from "lucide-react";
 import { Button } from "@/ui-kit";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
-import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControls";
 import { DispatchBoard, DispatchBoardSkeleton } from "./DispatchBoard";
 import { DispatchCardSettings } from "./DispatchCardSettings";
 import { DispatchDetailDialog } from "./DispatchDetailDialog";
@@ -30,34 +21,8 @@ type DispatchPageProps = {
   detail: DispatchDetailData;
 };
 
-type DispatchView = "board" | "schedule" | "fleet";
-
-const DISPATCH_VIEWS: { value: DispatchView; label: string }[] = [
-  { value: "board", label: "Board" },
-  { value: "schedule", label: "Schedule" },
-  { value: "fleet", label: "Fleet" },
-];
-
-const COMING_SOON_ICONS = { schedule: CalendarDays, fleet: Truck };
-
 export function DispatchPage(props: DispatchPageProps) {
   const { data, detail } = props;
-  // The picked view lives in the URL (?view=…), so it survives a reload and can be linked to
-  const [searchParams, setSearchParams] = useSearchParams();
-  const view =
-    DISPATCH_VIEWS.find((item) => item.value === searchParams.get("view"))
-      ?.value ?? "board";
-  const changeView = useCallback(
-    (next: DispatchView) =>
-      setSearchParams(
-        (params) => {
-          params.set("view", next);
-          return params;
-        },
-        { replace: true },
-      ),
-    [setSearchParams],
-  );
   const [now] = useState(() => new Date());
   const [customizing, setCustomizing] = useState(false);
   const picks =
@@ -115,22 +80,13 @@ export function DispatchPage(props: DispatchPageProps) {
     [board.shipments, detail.dispatchId],
   );
 
-  const ComingSoonIcon = view === "board" ? undefined : COMING_SOON_ICONS[view];
-  const viewLabel = DISPATCH_VIEWS.find((item) => item.value === view)?.label;
-
   return (
-    <div className="flex flex-col gap-4 px-4 pt-1">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <DashboardSegmented
-          label="View"
-          value={view}
-          options={DISPATCH_VIEWS}
-          onChange={changeView}
-        />
+    <div className="flex flex-col gap-4 p-4 pb-0 h-full bg-white">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             startIcon={<Settings2 size={14} />}
             disabled={!data.sources}
             onClick={customize}
@@ -139,7 +95,7 @@ export function DispatchPage(props: DispatchPageProps) {
           </Button>
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             startIcon={<PanelRightOpen size={14} />}
             disabled={!data.sources}
             onClick={() => assign()}
@@ -148,35 +104,21 @@ export function DispatchPage(props: DispatchPageProps) {
           </Button>
         </div>
       </div>
-      {ComingSoonIcon ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <ComingSoonIcon />
-            </EmptyMedia>
-            <EmptyTitle>{viewLabel} is coming soon</EmptyTitle>
-            <EmptyDescription>
-              Use the Board to assign and track dispatches for now.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      ) : (
-        <QueryWrapper
-          isLoading={data.isLoading}
-          error={data.error}
-          onRetry={data.onRetry}
-          renderLoader={<DispatchBoardSkeleton />}
-        >
-          <DispatchBoard
-            columns={columns}
-            configured={!!picks}
-            routeReady={!!board.card.origin && !!board.card.destination}
-            now={now}
-            onCustomize={customize}
-            onOpen={open}
-          />
-        </QueryWrapper>
-      )}
+      <QueryWrapper
+        isLoading={data.isLoading}
+        error={data.error}
+        onRetry={data.onRetry}
+        renderLoader={<DispatchBoardSkeleton />}
+      >
+        <DispatchBoard
+          columns={columns}
+          configured={!!picks}
+          routeReady={!!board.card.origin && !!board.card.destination}
+          now={now}
+          onCustomize={customize}
+          onOpen={open}
+        />
+      </QueryWrapper>
       <DispatchJobDialog data={data} shipments={board.shipments} />
       <DispatchDetailDialog
         shipment={opened}

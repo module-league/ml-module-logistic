@@ -163,13 +163,13 @@ export function DashboardCustomize({
         <div className="flex shrink-0 gap-2">
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             onClick={data.onCancelCustomize}
             disabled={data.saving}
           >
             Cancel
           </Button>
-          <Button size="sm" onClick={() => void save()} disabled={data.saving}>
+          <Button size="xs" onClick={() => void save()} disabled={data.saving}>
             {data.saving && <Spinner className="size-3.5" />}
             {data.saving ? "Saving…" : "Save layout"}
           </Button>

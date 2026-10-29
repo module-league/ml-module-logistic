@@ -249,7 +249,7 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
               />
             ) : (
               <>
-                <header className="flex shrink-0 flex-col gap-3 border-b p-4 xl:flex-row xl:items-center xl:justify-between">
+                <header className="bg-white flex shrink-0 flex-col gap-3 border-b p-4 xl:flex-row xl:items-center xl:justify-between">
                   <div className="min-w-0">
                     <h1 className="truncate text-2xl font-semibold tracking-tight">
                       {title}
@@ -275,7 +275,7 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
                     )}
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="xs"
                       startIcon={<SlidersHorizontal size={14} />}
                       onClick={() => onCustomize()}
                     >
@@ -283,7 +283,7 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
                     </Button>
                     {newSource && (
                       <Button
-                        size="sm"
+                        size="xs"
                         startIcon={<Plus size={14} />}
                         onClick={() => setNewRecordOpen(true)}
                       >
