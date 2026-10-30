@@ -47,8 +47,7 @@ builder.Services.AddScoped<ExceptionRuleEngine>();
 builder.Services.AddScoped<ExceptionCaseService>();
 builder.Services.AddHostedService<ExceptionMonitor>();
 
-// Shipment documents: the checklist from the "Documents" workflow config gates dispatch steps and billing
-builder.Services.Configure<DocumentOptions>(builder.Configuration.GetSection(DocumentOptions.SectionName));
+// Shipment documents: the checklist from the rules saved in lg_document_setting gates dispatch steps and billing
 builder.Services.AddScoped<DocumentChecklistService>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<RecordTextService>();

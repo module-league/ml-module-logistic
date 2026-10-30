@@ -93,6 +93,8 @@ namespace LogisticApi.MVVM
     {
         public List<DocumentTypeResponse> types { get; set; } = [];
         public List<DocumentRequirementResponse> requirements { get; set; } = [];
+        /// <summary>Every step in order (booked, the dispatch flow, billed), for picking when a requirement starts and what it gates.</summary>
+        public List<string> steps { get; set; } = [];
     }
 
     public class DocumentTypeResponse
@@ -107,7 +109,10 @@ namespace LogisticApi.MVVM
     {
         public string key { get; set; } = string.Empty;
         public string docType { get; set; } = string.Empty;
+        /// <summary>The condition as text: "Shipment Mode = Air" or "Always".</summary>
         public string when { get; set; } = string.Empty;
+        /// <summary>The condition to edit: role (mode, incoterm) to the values that need it; empty means always.</summary>
+        public Dictionary<string, List<string>> condition { get; set; } = [];
         public string requiredAtStep { get; set; } = string.Empty;
         public string? blocks { get; set; }
     }

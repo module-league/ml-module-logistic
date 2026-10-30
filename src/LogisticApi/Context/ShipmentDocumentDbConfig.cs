@@ -78,7 +78,13 @@ namespace LogisticApi.Context.Configurations
             b.Property(e => e.shipmentSidebarId).HasColumnName("shipment_sidebar_id").HasMaxLength(100).IsRequired();
             b.Property(e => e.incotermFieldId).HasColumnName("incoterm_field_id");
             b.Property(e => e.attachmentFieldId).HasColumnName("attachment_field_id");
+            b.Property(e => e.rules)
+             .HasColumnName("rules")
+             .HasColumnType("nvarchar(max)")
+             .HasDefaultValue(DocumentRules.EmptyJson)
+             .IsRequired();
 
+            b.ToTable(t => t.HasCheckConstraint(Ck("rules_json"), "ISJSON([rules]) = 1"));
             b.HasIndex(e => e.shipmentSidebarId)
              .HasDatabaseName(Ux("shipment_sidebar_id"))
              .IsUnique()

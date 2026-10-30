@@ -1,14 +1,27 @@
+using System.Text.Json;
+
 namespace LogisticApi.Models
 {
-    /// <summary>The "Documents" appsettings section: the workflow config of the document checklist (v1).</summary>
-    public class DocumentOptions
+    /// <summary>
+    /// The document checklist's types and requirements, kept as JSON in lg_document_setting.rules and edited in the Documents
+    /// page's Rules dialog. Empty until someone adds a type: a shipment then has nothing on its checklist.
+    /// </summary>
+    public class DocumentRules
     {
-        public const string SectionName = "Documents";
+        public const string EmptyJson = """{"types":[],"requirements":[]}""";
+
+        private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
         public List<DocumentType> Types { get; set; } = [];
         public List<DocumentRequirement> Requirements { get; set; } = [];
 
         public DocumentType? Type(string docType) => Types.FirstOrDefault(t => t.DocType == docType);
+
+        /// <summary>The rules a setting row holds; empty for no row or a blank column.</summary>
+        public static DocumentRules Parse(string? json) =>
+            string.IsNullOrWhiteSpace(json) ? new() : JsonSerializer.Deserialize<DocumentRules>(json, Json) ?? new();
+
+        public string ToJson() => JsonSerializer.Serialize(this, Json);
     }
 
     /// <summary>A kind of paper, e.g. an air waybill.</summary>

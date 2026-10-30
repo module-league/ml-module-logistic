@@ -65,7 +65,10 @@ namespace LogisticApi.Models
         public string? body { get; set; }
     }
 
-    /// <summary>Which shipment fields the checklist reads besides the mode (lg_exception_setting), one row per shipment sidebar.</summary>
+    /// <summary>
+    /// The document checklist's setup, one row per shipment sidebar: which shipment fields it reads besides the mode
+    /// (lg_exception_setting), and its document types and requirements.
+    /// </summary>
     public class DocumentSetting : MLEntityBase
     {
         public string shipmentSidebarId { get; set; } = string.Empty;
@@ -73,5 +76,7 @@ namespace LogisticApi.Models
         public Guid? incotermFieldId { get; set; }
         /// <summary>An attachment field whose files wait in the unclassified list.</summary>
         public Guid? attachmentFieldId { get; set; }
+        /// <summary>A DocumentRules as JSON: the document types and when each is required.</summary>
+        public string rules { get; set; } = DocumentRules.EmptyJson;
     }
 }

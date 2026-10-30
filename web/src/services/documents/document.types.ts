@@ -76,21 +76,45 @@ declare global {
     createdAt: string;
   };
 
-  /** The document types and requirements of the API's workflow config ("Documents" in appsettings). */
+  /** A shipment field a requirement's condition reads. */
+  type IDocumentRole = "mode" | "incoterm";
+
+  /** A kind of paper, e.g. an air waybill. */
+  type IDocumentType = {
+    /** Lowercase letters, digits and underscores; never "other". */
+    docType: string;
+    title: string;
+    /** Words in a file's name or label that suggest this type, e.g. "awb". */
+    keywords: string[];
+    /** Asks for an expiry date when verified. */
+    expires: boolean;
+  };
+
+  /** When a shipment needs a document type. */
+  type IDocumentRequirement = {
+    key: string;
+    docType: string;
+    /** The condition as text: "Shipment Mode = Air" or "Always". */
+    when: string;
+    /** The condition to edit: each role's values that need it; none means always. */
+    condition: Partial<Record<IDocumentRole, string[]>>;
+    requiredAtStep: IDocumentStep;
+    /** The step it gates until verified; left out gates nothing. */
+    blocks?: IDocumentStep;
+  };
+
+  /** The document types and requirements saved in the document settings (lg_document_setting.rules). */
   type IDocumentRules = {
-    types: {
-      docType: string;
-      title: string;
-      keywords: string[];
-      expires: boolean;
-    }[];
-    requirements: {
-      key: string;
-      docType: string;
-      when: string;
-      requiredAtStep: IDocumentStep;
-      blocks?: IDocumentStep;
-    }[];
+    types: IDocumentType[];
+    requirements: IDocumentRequirement[];
+    /** Every step in order: booked, the dispatch flow, billed. */
+    steps: IDocumentStep[];
+  };
+
+  /** What a save sends: the types and requirements in full, replacing the saved ones. */
+  type IDocumentRulesInput = {
+    types: IDocumentType[];
+    requirements: Omit<IDocumentRequirement, "when">[];
   };
 
   /** Which shipment fields the checklist reads; the mode is the exception rules' mode field. versionNo 0 until first saved. */
@@ -101,7 +125,10 @@ declare global {
     versionNo: number;
   };
 
-  type IDocumentSettingsInput = Omit<IDocumentSettings, "modeFieldId">;
+  /** Left out, rules keeps the saved types and requirements. */
+  type IDocumentSettingsInput = Omit<IDocumentSettings, "modeFieldId"> & {
+    rules?: IDocumentRulesInput;
+  };
 
   /** Files an unclassified file, or one uploaded with refId "documents", as the shipment's document of docType. */
   type IDocumentFile = {

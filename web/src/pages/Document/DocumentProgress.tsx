@@ -4,6 +4,8 @@ import { DOCUMENT_TONE } from "./document.utils";
 interface DocumentProgressProps {
   verified: number;
   required: number;
+  /** "compact" is a short bar for list cards; "default" stretches to fill its row. */
+  size?: "default" | "compact";
   className?: string;
 }
 
@@ -15,6 +17,7 @@ interface DocumentProgressProps {
 export function DocumentProgress({
   verified,
   required,
+  size = "default",
   className,
 }: DocumentProgressProps) {
   const isDone = required > 0 && verified === required;
@@ -25,15 +28,28 @@ export function DocumentProgress({
       : isDone
         ? "All verified"
         : `${verified} of ${required} verified`;
+  // A list card has no room for the sentence, so it shows the count and keeps the sentence as the tooltip
+  const shown =
+    size === "compact" && required > 0 ? `${verified}/${required}` : label;
 
   return (
-    <span className={cn("flex items-center gap-2", className)}>
+    <span
+      title={size === "compact" ? label : undefined}
+      className={cn(
+        "flex items-center",
+        size === "compact" ? "gap-1.5" : "gap-2",
+        className,
+      )}
+    >
       <span
         role="progressbar"
         aria-label={label}
         aria-valuenow={verified}
         aria-valuemax={required}
-        className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
+        className={cn(
+          "overflow-hidden rounded-full bg-muted",
+          size === "compact" ? "h-1 w-12 shrink-0" : "h-1.5 flex-1",
+        )}
       >
         <span
           className={cn(
@@ -44,7 +60,7 @@ export function DocumentProgress({
         />
       </span>
       <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-        {label}
+        {shown}
       </span>
     </span>
   );

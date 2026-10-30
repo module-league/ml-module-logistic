@@ -9,6 +9,8 @@ export interface RecordMultiSelectInputProps {
   placeholder?: string;
   className?: string;
   style?: CSSProperties;
+  /** Keeps the chips on one line, counting the ones that don't fit as "+N", e.g. in a table row. */
+  singleLine?: boolean;
   onChange?: (value: string) => void;
   onBlur?: () => void;
 }

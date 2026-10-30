@@ -26,7 +26,6 @@ namespace LogisticApi.Services
 
         private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
         private readonly DispatchOptions sources = dispatchOptions.Value;
-        private DocumentOptions Config => checklists.Config;
 
         /// <summary>Every shipment's checklist. Saves a missing document for each requirement the checklist gained since.</summary>
         public Task<List<ShipmentChecklistResponse>> ListAsync(CancellationToken ct) => ResponsesAsync(null, ct);
@@ -36,15 +35,17 @@ namespace LogisticApi.Services
             var roles = await checklists.RolesAsync(ct);
             return new DocumentRulesResponse
             {
-                types = Config.Types.Select(t => new DocumentTypeResponse { docType = t.DocType, title = t.Title, keywords = t.Keywords, expires = t.Expires }).ToList(),
-                requirements = Config.Requirements.Select(r => new DocumentRequirementResponse
+                types = roles.Rules.Types.Select(t => new DocumentTypeResponse { docType = t.DocType, title = t.Title, keywords = t.Keywords, expires = t.Expires }).ToList(),
+                requirements = roles.Rules.Requirements.Select(r => new DocumentRequirementResponse
                 {
                     key = r.Key,
                     docType = r.DocType,
                     when = DocumentChecklistService.WhenText(r, roles),
+                    condition = r.When,
                     requiredAtStep = r.RequiredAtStep,
                     blocks = r.Blocks,
                 }).ToList(),
+                steps = [.. DocumentSteps.All],
             };
         }
 
@@ -74,7 +75,7 @@ namespace LogisticApi.Services
         {
             var attachmentId = request.attachmentId!.Value;
             var checklist = await ChecklistAsync(request.shipmentId!.Value, ct);
-            CheckDocType(request.docType!);
+            CheckDocType(request.docType!, (await checklists.RolesAsync(ct)).Rules);
             var attachment = await db.Attachments.AsNoTracking().FirstOrDefaultAsync(a => a.ObjId == attachmentId, ct)
                 ?? throw ApiProblemException.BadRequest("Unknown attachment.");
             if (await db.DocumentActivities.AnyAsync(a => a.attachmentId == attachmentId, ct))
@@ -170,6 +171,7 @@ namespace LogisticApi.Services
             }
             Check(request.incotermFieldId, "Incoterm", "single_select", "a single select");
             Check(request.attachmentFieldId, "attachments", "attachment", "an attachment");
+            var rules = request.rules is { } sent ? await RulesFromAsync(sent, ct) : null;
 
             var setting = await db.DocumentSettings.FirstOrDefaultAsync(s => s.shipmentSidebarId == sources.ShipmentSidebarId, ct);
             if (setting is null)
@@ -185,6 +187,7 @@ namespace LogisticApi.Services
             }
             setting.incotermFieldId = request.incotermFieldId;
             setting.attachmentFieldId = request.attachmentFieldId;
+            if (rules is not null) setting.rules = rules.ToJson();
             try
             {
                 await db.SaveChangesAsync(ct);
@@ -195,6 +198,72 @@ namespace LogisticApi.Services
             }
             await engine.EvaluateAsync(ct);
             return Settings(await checklists.RolesAsync(ct), setting.VersionNo);
+        }
+
+        /// <summary>
+        /// The sent rules, checked: unique type ids and titles, requirements on known types, real steps, a gate after the step the
+        /// paper is needed from, and only the mode and Incoterm in conditions. A type with papers filed on shipments can't be dropped,
+        /// since they'd lose their title.
+        /// </summary>
+        private async Task<DocumentRules> RulesFromAsync(DocumentRulesRequest sent, CancellationToken ct)
+        {
+            var types = sent.types!.Select(t => new DocumentType
+            {
+                DocType = t.docType!,
+                Title = t.title!.Trim(),
+                Keywords = (t.keywords ?? []).Select(k => k.Trim().ToLowerInvariant()).Where(k => k.Length > 0).Distinct().ToList(),
+                Expires = t.expires,
+            }).ToList();
+            if (types.Any(t => t.Title.Length == 0))
+                throw ApiProblemException.BadRequest("Give every document type a title.");
+            if (types.Any(t => t.DocType == ShipmentDocument.Other))
+                throw ApiProblemException.BadRequest("A document type can't be called other.", $"'{ShipmentDocument.Other}' is kept for papers of no type.");
+            if (types.GroupBy(t => t.DocType).FirstOrDefault(g => g.Count() > 1) is { } sameId)
+                throw ApiProblemException.BadRequest("Two document types share an id.", $"'{sameId.Key}' is used more than once.");
+            if (types.GroupBy(t => t.Title, StringComparer.OrdinalIgnoreCase).FirstOrDefault(g => g.Count() > 1) is { } sameTitle)
+                throw ApiProblemException.BadRequest("Two document types share a title.", $"'{sameTitle.Key}' is used more than once.");
+
+            var requirements = sent.requirements!.Select(r =>
+            {
+                var type = types.FirstOrDefault(t => t.DocType == r.docType)
+                    ?? throw ApiProblemException.BadRequest("A requirement names an unknown document type.", $"'{r.docType}' isn't one of the types sent.");
+                var start = DocumentSteps.IndexOf(r.requiredAtStep!);
+                if (start < 0)
+                    throw ApiProblemException.BadRequest($"Unknown step for {type.Title}.", $"Use one of {string.Join(", ", DocumentSteps.All)}.");
+                if (r.blocks is { } gate)
+                {
+                    var end = DocumentSteps.IndexOf(gate);
+                    if (end < 0)
+                        throw ApiProblemException.BadRequest($"Unknown gated step for {type.Title}.", $"Use one of {string.Join(", ", DocumentSteps.All)}.");
+                    if (end <= start)
+                        throw ApiProblemException.BadRequest($"{type.Title} can only gate a step after it's needed.", $"It's needed from {r.requiredAtStep}, so it can't gate {gate}.");
+                }
+                var when = (r.condition ?? [])
+                    .Select(c => (role: c.Key, values: (c.Value ?? []).Select(v => v.Trim()).Where(v => v.Length > 0).Distinct().ToList()))
+                    .Where(c => c.values.Count > 0)
+                    .ToDictionary(c => c.role, c => c.values);
+                if (when.Keys.Except(DocumentSteps.Roles).FirstOrDefault() is { } role)
+                    throw ApiProblemException.BadRequest("A requirement reads an unknown field.", $"'{role}' isn't one of {string.Join(", ", DocumentSteps.Roles)}.");
+                return new DocumentRequirement { Key = r.key!, DocType = type.DocType, When = when, RequiredAtStep = r.requiredAtStep!, Blocks = r.blocks };
+            }).ToList();
+            if (requirements.GroupBy(r => r.Key).FirstOrDefault(g => g.Count() > 1) is { } sameKey)
+                throw ApiProblemException.BadRequest("Two requirements share a key.", $"'{sameKey.Key}' is used more than once.");
+
+            var saved = (await checklists.RolesAsync(ct)).Rules;
+            var dropped = saved.Types.Select(t => t.DocType).Except(types.Select(t => t.DocType)).ToList();
+            if (dropped.Count > 0)
+            {
+                var filed = await db.ShipmentDocuments
+                    .AsNoTracking()
+                    .Where(d => dropped.Contains(d.docType) && d.status != ShipmentDocument.Missing)
+                    .Select(d => d.docType)
+                    .FirstOrDefaultAsync(ct);
+                if (filed is not null)
+                    throw ApiProblemException.BadRequest(
+                        $"{saved.Type(filed)?.Title ?? filed} has papers filed on shipments.",
+                        "Keep the type, or remove those papers first.");
+            }
+            return new DocumentRules { Types = types, Requirements = requirements };
         }
 
         private static DocumentSettingsResponse Settings(DocumentChecklistService.Roles roles, int versionNo) => new()
@@ -209,10 +278,10 @@ namespace LogisticApi.Services
             (await checklists.BuildAsync(ct, [shipmentId], withFiles: true)).GetValueOrDefault(shipmentId)
             ?? throw ApiProblemException.BadRequest("Unknown shipment.", $"'{shipmentId}' isn't a record of '{sources.ShipmentSidebarId}'.");
 
-        private void CheckDocType(string docType)
+        private static void CheckDocType(string docType, DocumentRules rules)
         {
-            if (docType != ShipmentDocument.Other && Config.Type(docType) is null)
-                throw ApiProblemException.BadRequest("Unknown document type.", $"Use one of {string.Join(", ", Config.Types.Select(t => t.DocType))} or {ShipmentDocument.Other}.");
+            if (docType != ShipmentDocument.Other && rules.Type(docType) is null)
+                throw ApiProblemException.BadRequest("Unknown document type.", $"Use one of {string.Join(", ", rules.Types.Select(t => t.DocType))} or {ShipmentDocument.Other}.");
         }
 
         /// <summary>Makes the file the document's current version and sets it back to Uploaded; the old file stays in its activity.</summary>
@@ -298,7 +367,7 @@ namespace LogisticApi.Services
                 // A record save only keeps files uploaded for its own table
                 attachment.refId = sources.ShipmentSidebarId;
                 // Labelled with the field's option named like the document type, e.g. "Commercial invoice", when it has one
-                var title = Config.Type(docType)?.Title;
+                var title = roles.Rules.Type(docType)?.Title;
                 var label = title is null
                     ? null
                     : (await db.SidebarFieldOptions.AsNoTracking().Where(o => o.fieldObjId == fieldId).ToListAsync(ct))
@@ -372,6 +441,7 @@ namespace LogisticApi.Services
             }
 
             var now = DateTime.UtcNow;
+            var rules = (await checklists.RolesAsync(ct)).Rules;
             var files = await FilesAsync(built.Values.SelectMany(c => c.Documents.Select(d => d.currentAttachmentId)), ct);
             return built.Values.Select(c =>
             {
@@ -380,7 +450,7 @@ namespace LogisticApi.Services
                 var asked = c.Matching.Select(i => i.Type.DocType).ToHashSet();
                 ShipmentDocumentResponse Shape(ShipmentDocument? document, ChecklistItem? item, string docType)
                 {
-                    var type = Config.Type(docType);
+                    var type = rules.Type(docType);
                     return new ShipmentDocumentResponse
                     {
                         objId = document?.ObjId,

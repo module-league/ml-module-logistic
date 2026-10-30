@@ -6,6 +6,7 @@ import {
   type DispatchShipment,
 } from "../Dispatch/dispatchBoard.utils";
 import { nonEmpty } from "@/lib/stringHelper";
+import { selectedOptions, toOptionsValue } from "@/lib/selectHelper";
 
 /** What each status chip says. */
 export const DOCUMENT_STATUSES: { value: IDocumentStatus; label: string }[] = [
@@ -98,6 +99,95 @@ export const buildDocumentRows = (
     return checklist ? [{ shipment, checklist }] : [];
   });
 };
+
+/** "FCA" from "FCA (Free Carrier)": the leading code, as the API compares conditions. */
+const codeOf = (label: string) => /^[A-Za-z0-9]+/.exec(label)?.[0] ?? label;
+
+/** Whether a condition value picks an option, as the API matches: the same text, or the option's leading code, ignoring case. */
+export const conditionPicks = (value: string, option: string) => {
+  const wanted = value.toLowerCase();
+  return (
+    option.toLowerCase() === wanted || codeOf(option).toLowerCase() === wanted
+  );
+};
+
+/** A condition's values as a multi select's value: the ids of the options they pick. Values no option picks drop out. */
+export const conditionOptionIds = (field: ISidebarField, values: string[]) =>
+  toOptionsValue(
+    field.dropDownValues
+      ?.filter((option) =>
+        values.some((value) => conditionPicks(value, option.value)),
+      )
+      .map((option) => option.id) ?? [],
+  );
+
+/** A multi select's value back as a condition's values: the picked options' labels, e.g. "DAP (Delivered at Place)". */
+export const conditionOptionValues = (field: ISidebarField, value: string) =>
+  selectedOptions(field, value).map((option) => option.value);
+
+/** Whether a requirement's condition holds for a shipment's mode and Incoterm; a role with no value can't hold. */
+export function conditionHolds(
+  condition: IDocumentRequirement["condition"],
+  values: Partial<Record<IDocumentRole, string>>,
+) {
+  return Object.entries(condition).every(([role, wanted]) => {
+    if (wanted === undefined || wanted.length === 0) return true;
+    const value = values[role as IDocumentRole];
+    return (
+      value !== undefined &&
+      wanted.some((entry) => conditionPicks(entry, value))
+    );
+  });
+}
+
+/** A new type's id from its title, e.g. "Dangerous goods note" → dangerous_goods_note; never "other" or one already taken. */
+export function typeIdFor(title: string, taken: ReadonlySet<string>) {
+  const base =
+    nonEmpty(
+      title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .slice(0, 36),
+    ) ?? "document";
+  let id = base === "other" ? "other_document" : base;
+  for (let n = 2; taken.has(id); n++) id = `${base}_${n}`;
+  return id;
+}
+
+/** A mode or Incoterm on a shipment card, with the field's option for its colour when there is one. */
+export interface BasisTag {
+  /** "Mode", "Incoterm". */
+  label: string;
+  value: string;
+  option?: IFieldDropDownValue;
+}
+
+/**
+ * The set ones of a shipment's mode and Incoterm as tags, each with its field's option for the colour.
+ * The record stores the option's id, so that's read first; the checklist's text is matched only when the record isn't at hand.
+ */
+export function basisTags(
+  entries: {
+    label: string;
+    /** The checklist's text, e.g. "Air". */
+    value?: string;
+    field?: ISidebarField;
+    /** The shipment record's stored value: the option id. */
+    recordValue?: string | null;
+  }[],
+): BasisTag[] {
+  return entries.flatMap(({ label, value, field, recordValue }) => {
+    const text = nonEmpty(value)?.toLowerCase();
+    const option =
+      selectedOptions(field, recordValue)[0] ??
+      field?.dropDownValues?.find(
+        (entry) => entry.id === value || entry.value.toLowerCase() === text,
+      );
+    const shown = option?.value ?? nonEmpty(value);
+    return shown === undefined ? [] : [{ label, value: shown, option }];
+  });
+}
 
 /** "Air · FCA", leaving out what isn't set. */
 export const basisText = (checklist: IShipmentChecklist) =>

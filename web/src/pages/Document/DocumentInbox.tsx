@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState, type DragEvent } from "react";
-import { Sparkles, Upload } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { Plus, Sparkles } from "lucide-react";
 import {
   Button,
   cn,
@@ -15,17 +15,17 @@ import { AttachmentThumbnail } from "@/components/custom/AttachmentThumbnail";
 import { AttachmentPreviewDialog } from "@/components/custom/AttachmentPreviewDialog";
 import { useAttachmentPreview } from "@/hooks/useAttachmentPreview";
 import { formatFileSize } from "@/lib/attachmentHelper";
+import { nonEmpty } from "@/lib/stringHelper";
 import { tableFields } from "@/module/dashboard/moduleDashboard.utils";
-import {
-  canReview,
-  checkSize,
-  typeTitle,
-  type DocumentRow,
-} from "./document.utils";
-import { DocumentReviewButton } from "./DocumentReviewButton";
+import { checkSize, typeTitle, type DocumentRow } from "./document.utils";
 import type { DocumentData } from "./useDocumentData";
 
-/** The selected shipment's unclassified files beside a drop zone that adds more to its attachment field. */
+const ACCEPT = "application/pdf,image/png,image/jpeg";
+
+/**
+ * Adding papers to the selected shipment: one list of the files still to classify, ending in a row to drop or pick more.
+ * Dropped files land in the shipment's attachment field; choosing what each one is moves it onto the checklist.
+ */
 export function DocumentInbox({
   row,
   data,
@@ -35,7 +35,18 @@ export function DocumentInbox({
   data: DocumentData;
   onOpenRules: () => void;
 }) {
-  const { lookups, sources, documentSettings } = data;
+  const { checklist, shipment } = row;
+  const {
+    lookups,
+    sources,
+    documentSettings,
+    rules,
+    isSaving,
+    onFile,
+    onDrop,
+  } = data;
+  const { openPreview, dialogProps } = useAttachmentPreview();
+  const [dragging, setDragging] = useState(false);
   const fieldName = useMemo(
     () =>
       tableFields(lookups[sources?.shipmentSidebarId ?? ""]).find(
@@ -43,34 +54,14 @@ export function DocumentInbox({
       )?.name,
     [lookups, sources?.shipmentSidebarId, documentSettings?.attachmentFieldId],
   );
-  return (
-    <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-      <UnclassifiedFiles row={row} data={data} fieldName={fieldName} />
-      <DropZone
-        row={row}
-        data={data}
-        fieldName={fieldName}
-        onOpenRules={onOpenRules}
-      />
-    </div>
-  );
-}
-
-function UnclassifiedFiles({
-  row,
-  data,
-  fieldName,
-}: {
-  row: DocumentRow;
-  data: DocumentData;
-  fieldName?: string;
-}) {
-  const { checklist, shipment } = row;
-  const { rules, isSaving, onFile, onReview } = data;
-  const { openPreview, dialogProps } = useAttachmentPreview();
-  const files = useMemo(
-    () => checklist.unclassified?.map((entry) => entry.file) ?? [],
+  const isReady = nonEmpty(fieldName) !== undefined;
+  const unclassified = useMemo(
+    () => checklist.unclassified ?? [],
     [checklist.unclassified],
+  );
+  const files = useMemo(
+    () => unclassified.map((entry) => entry.file),
+    [unclassified],
   );
   const choices = useMemo(
     () => [
@@ -81,6 +72,20 @@ function UnclassifiedFiles({
       { value: "other", label: "Other" },
     ],
     [rules?.types],
+  );
+
+  const add = useCallback(
+    (list?: FileList | null) => {
+      const picked = [...(list ?? [])].filter(checkSize);
+      const [first, ...others] = picked;
+      if (!first) return;
+      void attempt("Couldn't add the files", async () => {
+        await onDrop(shipment.id, picked);
+        const what = others.length > 0 ? `${picked.length} files` : first.name;
+        toast.success(`${what} added. Choose what each one is.`);
+      });
+    },
+    [onDrop, shipment.id],
   );
   const classify = useCallback(
     (file: IAttachment, docType: string) =>
@@ -96,26 +101,43 @@ function UnclassifiedFiles({
   );
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border bg-background p-4">
-      <div className="flex flex-col gap-0.5">
-        <h2 className="text-sm font-semibold">Unclassified attachments</h2>
-        <p className="text-xs text-muted-foreground">
-          From the {fieldName ?? "shipment's attachment"} field and checkpoint
-          logs. Classify them to tick off the checklist.
-        </p>
-      </div>
-      {checklist.unclassified?.length > 0 ? (
-        <ul className="flex flex-col gap-2">
-          {checklist.unclassified?.map((entry, index) => (
+    <section className="flex flex-col gap-2">
+      <h3 className="flex flex-wrap items-baseline gap-x-2 text-sm font-semibold">
+        Add documents
+        <span className="text-xs font-normal text-muted-foreground">
+          Drop files, then choose what each one is to tick off the checklist.
+        </span>
+      </h3>
+      {/* The whole box takes a drop, not only the add row */}
+      <div
+        onDragOver={(event) => {
+          if (!isReady || isSaving) return;
+          event.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(event) => {
+          if (!isReady) return;
+          event.preventDefault();
+          setDragging(false);
+          add(event.dataTransfer.files);
+        }}
+        className={cn(
+          "rounded-xl border bg-muted/40 p-1 transition-colors",
+          dragging && "border-primary bg-primary-10",
+        )}
+      >
+        <ul className="flex flex-col divide-y overflow-hidden rounded-lg bg-background shadow-xs">
+          {unclassified.map((entry, index) => (
             <li
-              key={entry.file?.id ?? ""}
-              className="flex flex-wrap items-center gap-3 rounded-lg border p-2"
+              key={entry.file?.id ?? index}
+              className="flex flex-wrap items-center gap-3 p-3"
             >
               <button
                 type="button"
                 onClick={() => openPreview(files, index)}
-                aria-label={`Preview ${entry.file?.name ?? ""}`}
-                className="flex size-10 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md bg-muted"
+                aria-label={`Preview ${entry.file?.name ?? "file"}`}
+                className="flex size-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border bg-muted/40 transition-colors hover:border-primary"
               >
                 <AttachmentThumbnail
                   attachment={entry.file}
@@ -131,42 +153,33 @@ function UnclassifiedFiles({
                 </span>
                 <span className="truncate text-xs text-muted-foreground">
                   {[
-                    entry.file?.fileExtension?.toUpperCase() ?? "",
+                    nonEmpty(entry.file?.fileExtension?.toUpperCase()),
                     formatFileSize(entry.file?.fileSize ?? 0),
                     entry.origin === "checkpoint"
-                      ? "checkpoint log"
-                      : undefined,
-                    entry.label != null &&
-                      entry.label !== "" &&
+                      ? "from a checkpoint log"
+                      : `from ${fieldName ?? "the shipment's attachments"}`,
+                    nonEmpty(entry.label) !== undefined &&
                       `labelled ${entry.label}`,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
                 </span>
               </span>
-              <span className="ml-auto flex shrink-0 items-center gap-1.5">
-                {canReview(entry.file) && (
-                  <DocumentReviewButton
-                    shipmentId={shipment.id}
-                    file={entry.file}
-                    onReview={onReview}
-                  />
+              <span className="ml-auto flex shrink-0 items-center gap-2">
+                {nonEmpty(entry.suggestedDocType) !== undefined && (
+                  <Button
+                    variant="secondary"
+                    size="xs"
+                    startIcon={<Sparkles size={13} />}
+                    disabled={isSaving}
+                    title="Suggested from its name or label; click to file it as this"
+                    onClick={() =>
+                      void classify(entry.file, entry.suggestedDocType ?? "")
+                    }
+                  >
+                    {typeTitle(rules, entry.suggestedDocType)}
+                  </Button>
                 )}
-                {entry.suggestedDocType != null &&
-                  entry.suggestedDocType !== "" && (
-                    <Button
-                      variant="secondary"
-                      size="xs"
-                      startIcon={<Sparkles size={13} />}
-                      disabled={isSaving}
-                      title="Suggested from its name or label"
-                      onClick={() =>
-                        void classify(entry.file, entry.suggestedDocType ?? "")
-                      }
-                    >
-                      {typeTitle(rules, entry.suggestedDocType)}
-                    </Button>
-                  )}
                 <Select
                   value=""
                   disabled={isSaving}
@@ -176,7 +189,7 @@ function UnclassifiedFiles({
                 >
                   <SelectTrigger
                     className="h-6 w-36 text-xs"
-                    aria-label={`Classify ${entry.file?.name ?? ""}`}
+                    aria-label={`Classify ${entry.file?.name ?? "file"}`}
                   >
                     <SelectValue placeholder="Classify as…" />
                   </SelectTrigger>
@@ -191,100 +204,73 @@ function UnclassifiedFiles({
               </span>
             </li>
           ))}
+          <li>
+            {isReady ? (
+              <label
+                className={cn(
+                  "group/add flex cursor-pointer items-center gap-3 p-3 transition-colors hover:bg-muted/40 focus-within:ring-2 focus-within:ring-ring focus-within:ring-inset",
+                  isSaving && "pointer-events-none opacity-60",
+                )}
+              >
+                <AddTile isActive={dragging} />
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-sm font-medium">Add documents</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {dragging
+                      ? `Drop to add them to ${shipment.title}`
+                      : "Drop files here or click to browse · PDF, JPG or PNG"}
+                  </span>
+                </span>
+                <input
+                  type="file"
+                  multiple
+                  accept={ACCEPT}
+                  className="sr-only"
+                  onChange={(event) => {
+                    add(event.target.files);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
+            ) : (
+              <div className="flex items-center gap-3 p-3">
+                <AddTile isActive={false} />
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Add documents
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Choose the shipment&apos;s attachment field first.{" "}
+                    <button
+                      type="button"
+                      onClick={onOpenRules}
+                      className="cursor-pointer text-primary underline-offset-2 hover:underline"
+                    >
+                      Open rules
+                    </button>
+                  </span>
+                </span>
+              </div>
+            )}
+          </li>
         </ul>
-      ) : (
-        <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-          Nothing to classify.
-        </p>
-      )}
+      </div>
       <AttachmentPreviewDialog {...dialogProps} />
     </section>
   );
 }
 
-/** Drop or pick files; they go into the shipment's attachment field and show up unclassified with a suggested type. */
-function DropZone({
-  row,
-  data,
-  fieldName,
-  onOpenRules,
-}: {
-  row: DocumentRow;
-  data: DocumentData;
-  fieldName?: string;
-  onOpenRules: () => void;
-}) {
-  const { shipment } = row;
-  const { onDrop, isSaving } = data;
-  const [dragging, setDragging] = useState(false);
-  const ready = fieldName != null && fieldName !== "";
-  const add = useCallback(
-    (list?: FileList | null) => {
-      const files = [...(list ?? [])].filter(checkSize);
-      const [first, ...others] = files;
-      if (!first) return;
-      void attempt("Couldn't add the files", async () => {
-        await onDrop(shipment.id, files);
-        const what = others.length > 0 ? `${files.length} files` : first.name;
-        toast.success(`${what} added to ${shipment.title}`);
-      });
-    },
-    [onDrop, shipment.id, shipment.title],
-  );
-  const dragOver = useCallback(
-    (event: DragEvent) => {
-      if (!ready) return;
-      event.preventDefault();
-      setDragging(true);
-    },
-    [ready],
-  );
-
-  if (!ready) {
-    return (
-      <section className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-6 text-center">
-        <Upload className="size-5 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">
-          Pick the shipment&apos;s attachment field to drop files here.
-        </p>
-        <Button variant="outline" size="xs" onClick={onOpenRules}>
-          Open rules
-        </Button>
-      </section>
-    );
-  }
+/** The "+" box at the start of the add row; it lights up while files are dragged over. */
+function AddTile({ isActive }: { isActive: boolean }) {
   return (
-    <label
-      onDragOver={dragOver}
-      onDragLeave={() => setDragging(false)}
-      onDrop={(event) => {
-        event.preventDefault();
-        setDragging(false);
-        add(event.dataTransfer.files);
-      }}
+    <span
+      aria-hidden
       className={cn(
-        "flex min-h-44 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary-10/40 p-6 text-center transition-colors hover:border-primary/60 focus-within:ring-2 focus-within:ring-ring",
-        dragging && "border-primary bg-primary-10",
-        isSaving && "pointer-events-none opacity-60",
+        "flex size-9 shrink-0 items-center justify-center rounded-lg border text-muted-foreground transition-colors group-hover/add:border-primary group-hover/add:text-primary",
+        isActive && "border-primary bg-primary-10 text-primary",
       )}
     >
-      <Upload className="size-5 text-primary" />
-      <span className="text-sm font-semibold text-primary">
-        Drop files for {shipment.title}
-      </span>
-      <span className="text-xs text-muted-foreground">
-        PDF, JPG or PNG. We&apos;ll suggest a document type from the file.
-      </span>
-      <input
-        type="file"
-        multiple
-        accept="application/pdf,image/png,image/jpeg"
-        className="sr-only"
-        onChange={(event) => {
-          add(event.target.files);
-          event.target.value = "";
-        }}
-      />
-    </label>
+      <Plus className="size-4" />
+    </span>
   );
 }

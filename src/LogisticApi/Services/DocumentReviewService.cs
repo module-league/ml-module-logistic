@@ -56,7 +56,8 @@ namespace LogisticApi.Services
                 .Where(f => !UnprintedTypes.Contains(f.field.type))
                 .Select((f, index) => (key: $"f{index + 1}", f.field, f.text))
                 .ToList();
-            var kinds = checklists.Config.Types.Select(t => new DocumentKind(t.DocType, t.Title)).ToList();
+            var rules = (await checklists.RolesAsync(ct)).Rules;
+            var kinds = rules.Types.Select(t => new DocumentKind(t.DocType, t.Title)).ToList();
 
             var reading = await reader.ReadAsync(
                 new DocumentReadInput(content, ContentTypes[attachment.fileExtension], attachment.fileName, kinds, sought.Select(s => new SoughtField(s.key, s.field.sidebarName)).ToList()),
@@ -85,7 +86,7 @@ namespace LogisticApi.Services
                 }))
                 .ToList();
 
-            var title = checklists.Config.Type(reading.DocType)?.Title ?? "document of another kind";
+            var title = rules.Type(reading.DocType)?.Title ?? "document of another kind";
             var (verdict, verdictText) = Verdict(reading, title, checks);
             return new DocumentReviewResponse
             {

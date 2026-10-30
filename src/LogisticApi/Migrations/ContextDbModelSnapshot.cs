@@ -938,6 +938,13 @@ namespace LogisticApi.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("incoterm_field_id");
 
+                    b.Property<string>("rules")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("{\"types\":[],\"requirements\":[]}")
+                        .HasColumnName("rules");
+
                     b.Property<string>("shipmentSidebarId")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -964,6 +971,8 @@ namespace LogisticApi.Migrations
                             t.HasCheckConstraint("ck_lg_document_setting_ds_metadata_json", "ISJSON([ds_metadata]) = 1");
 
                             t.HasCheckConstraint("ck_lg_document_setting_ds_raw_metadata_json", "ISJSON([ds_raw_metadata]) = 1");
+
+                            t.HasCheckConstraint("ck_lg_document_setting_rules_json", "ISJSON([rules]) = 1");
                         });
                 });
 

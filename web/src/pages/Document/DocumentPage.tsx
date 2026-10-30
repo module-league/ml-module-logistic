@@ -10,12 +10,13 @@ import {
 } from "@/components/ui/empty";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { PageHeader } from "@/components/ml/pageHeader";
+import { tableFields } from "@/module/dashboard/moduleDashboard.utils";
 import { buildDispatchBoard } from "../Dispatch/dispatchBoard.utils";
 import { DocumentList } from "./DocumentList";
 import { DocumentChecklist } from "./DocumentChecklist";
 import { DocumentInbox } from "./DocumentInbox";
 import { DocumentRulesDialog } from "./DocumentRulesDialog";
-import { buildDocumentRows } from "./document.utils";
+import { basisTags, buildDocumentRows } from "./document.utils";
 import type { DocumentApi, DocumentData } from "./useDocumentData";
 
 export function DocumentPage({
@@ -53,6 +54,39 @@ export function DocumentPage({
     () => rows.find((row) => row.shipment.id === selectedId) ?? rows[0],
     [rows, selectedId],
   );
+  // Each shipment's mode and Incoterm as its fields' coloured options, read from the record's stored option ids
+  const tagsById = useMemo(() => {
+    const source = lookups[sources?.shipmentSidebarId ?? ""];
+    const fields = tableFields(source);
+    const fieldOf = (id?: string) => fields.find((field) => field.objId === id);
+    const modeField = fieldOf(data.documentSettings?.modeFieldId);
+    const incotermField = fieldOf(data.documentSettings?.incotermFieldId);
+    const recordById = new Map(
+      source?.records?.map((record) => [record.objId, record]),
+    );
+    return new Map(
+      rows.map(({ shipment, checklist }) => {
+        const values = recordById.get(shipment.id)?.values;
+        return [
+          shipment.id,
+          basisTags([
+            {
+              label: "Mode",
+              value: checklist.mode,
+              field: modeField,
+              recordValue: values?.[modeField?.objId ?? ""],
+            },
+            {
+              label: "Incoterm",
+              value: checklist.incoterm,
+              field: incotermField,
+              recordValue: values?.[incotermField?.objId ?? ""],
+            },
+          ]),
+        ];
+      }),
+    );
+  }, [lookups, sources?.shipmentSidebarId, data.documentSettings, rows]);
 
   return (
     <div className="flex flex-col">
@@ -77,10 +111,11 @@ export function DocumentPage({
           renderLoader={<DocumentPageSkeleton />}
         >
           {selected ? (
-            <div className="grid items-start gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
+            <div className="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
               <DocumentList
                 rows={rows}
                 selectedId={selected.shipment.id}
+                tagsById={tagsById}
                 onSelect={onSelect}
               />
               <div
@@ -127,7 +162,7 @@ export function DocumentPage({
 function DocumentPageSkeleton() {
   return (
     <div
-      className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]"
+      className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]"
       aria-busy
       aria-label="Loading documents"
     >

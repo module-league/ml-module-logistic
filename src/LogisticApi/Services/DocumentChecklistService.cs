@@ -49,23 +49,22 @@ namespace LogisticApi.Services
     }
 
     /// <summary>
-    /// Builds each shipment's checklist from the "Documents" workflow config: the requirements whose condition holds for its mode and
-    /// Incoterm, the stage its dispatch reached, its documents and, when asked, the files waiting to be classified.
+    /// Builds each shipment's checklist from the document rules saved in lg_document_setting: the requirements whose condition holds
+    /// for its mode and Incoterm, the stage its dispatch reached, its documents and, when asked, the files waiting to be classified.
     /// </summary>
-    public class DocumentChecklistService(ContextDb db, IOptions<DocumentOptions> options, IOptions<DispatchOptions> dispatchOptions)
+    public class DocumentChecklistService(ContextDb db, IOptions<DispatchOptions> dispatchOptions)
     {
         private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
         private readonly DispatchOptions sources = dispatchOptions.Value;
 
-        public DocumentOptions Config { get; } = options.Value;
-
-        /// <summary>The fields the checklist reads and the labels of their options.</summary>
+        /// <summary>The fields the checklist reads, the labels of their options, and the document types and requirements.</summary>
         public sealed record Roles(
             Guid? ModeFieldId,
             Guid? IncotermFieldId,
             Guid? AttachmentFieldId,
             Dictionary<string, string> Names,
-            Dictionary<Guid, string> Options);
+            Dictionary<Guid, string> Options,
+            DocumentRules Rules);
 
         public async Task<Roles> RolesAsync(CancellationToken ct)
         {
@@ -94,7 +93,8 @@ namespace LogisticApi.Services
                     [DocumentSteps.Mode] = names.GetValueOrDefault(modeFieldId ?? Guid.Empty) ?? "Mode",
                     [DocumentSteps.Incoterm] = names.GetValueOrDefault(setting?.incotermFieldId ?? Guid.Empty) ?? "Incoterm",
                 },
-                labels);
+                labels,
+                DocumentRules.Parse(setting?.rules));
         }
 
         /// <summary>"Shipment Mode = Air", "Incoterm = DAP / DDP" or "Always".</summary>
@@ -131,10 +131,10 @@ namespace LogisticApi.Services
                 var mode = Label(shipment, roles.ModeFieldId, roles);
                 var incoterm = Label(shipment, roles.IncotermFieldId, roles);
                 var held = documents[shipment.Id].ToList();
-                var matching = Config.Requirements
-                    .Where(r => Config.Type(r.DocType) is not null && Matches(r, mode, incoterm))
+                var matching = roles.Rules.Requirements
+                    .Where(r => roles.Rules.Type(r.DocType) is not null && Matches(r, mode, incoterm))
                     .DistinctBy(r => r.DocType)
-                    .Select(r => new ChecklistItem(r, Config.Type(r.DocType)!, WhenText(r, roles), held.FirstOrDefault(d => d.docType == r.DocType)))
+                    .Select(r => new ChecklistItem(r, roles.Rules.Type(r.DocType)!, WhenText(r, roles), held.FirstOrDefault(d => d.docType == r.DocType)))
                     .ToList();
                 return new Checklist
                 {
@@ -151,13 +151,13 @@ namespace LogisticApi.Services
         }
 
         /// <summary>The type whose keywords appear in the file's label or name, e.g. "Packing List" or "AWB-123.pdf".</summary>
-        public string? Suggest(string? label, string fileName)
+        public static string? Suggest(DocumentRules rules, string? label, string fileName)
         {
             var words = Regex.Split($"{label} {Path.GetFileNameWithoutExtension(fileName)}".ToLowerInvariant(), "[^a-z0-9]+")
                 .Where(w => w.Length > 0)
                 .ToList();
             var text = $" {string.Join(' ', words)} ";
-            return Config.Types
+            return rules.Types
                 .FirstOrDefault(t => t.Keywords.Any(k => text.Contains($" {k.ToLowerInvariant()} ")))
                 ?.DocType;
         }
@@ -190,7 +190,7 @@ namespace LogisticApi.Services
                 .Concat(fromLogs)
                 .Where(f => !used.Contains(f.file.id))
                 .DistinctBy(f => f.file.id)
-                .ToLookup(f => f.shipmentId, f => new UnclassifiedFile(f.file, f.origin, f.label, Suggest(f.label, f.file.name)));
+                .ToLookup(f => f.shipmentId, f => new UnclassifiedFile(f.file, f.origin, f.label, Suggest(roles.Rules, f.label, f.file.name)));
         }
 
         /// <summary>Every role in the condition must have one of its values.</summary>
