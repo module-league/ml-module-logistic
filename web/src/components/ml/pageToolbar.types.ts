@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import type { ModuleAddFieldHandler } from "./moduleAddNewField.types";
 
 /** A table column the user can show or hide. */
@@ -29,6 +29,8 @@ export interface PageToolbarProps {
   selectedCount?: number;
   onDeleteSelected?: () => void;
   onCancelSelection?: () => void;
+  /** Shown on the left after Add and Fields, e.g. a page's own filter menu. */
+  filter?: ReactNode;
   search?: string;
   onSearchChange?: (value: string) => void;
   /** @default "Search" */

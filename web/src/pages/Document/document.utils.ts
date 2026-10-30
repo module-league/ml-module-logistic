@@ -215,6 +215,68 @@ export function reasonText(
     : `Needed because ${last}.`;
 }
 
+/** Which shipments the list shows, by how far along their papers are. */
+export type DocumentShow = "all" | "missing" | "to_verify" | "complete";
+
+export const DOCUMENT_SHOW: { value: DocumentShow; label: string }[] = [
+  { value: "all", label: "All shipments" },
+  { value: "missing", label: "Missing papers" },
+  { value: "to_verify", label: "Waiting to be verified" },
+  { value: "complete", label: "All papers verified" },
+];
+
+/** What the Documents page narrows its list by. */
+export interface DocumentFilter {
+  show: DocumentShow;
+  /** None means every stage. */
+  stages: IDocumentStep[];
+  search: string;
+}
+
+export const NO_DOCUMENT_FILTER: DocumentFilter = {
+  show: "all",
+  stages: [],
+  search: "",
+};
+
+/** Whether a shipment's papers are in the state a Show option asks for. */
+export function showsRow(checklist: IShipmentChecklist, show: DocumentShow) {
+  const required = checklist.documents?.filter((entry) => entry.required) ?? [];
+  if (show === "missing")
+    return required.some(
+      (entry) =>
+        entry.status === "missing" ||
+        entry.status === "rejected" ||
+        entry.expired,
+    );
+  if (show === "to_verify")
+    return required.some((entry) => entry.status === "uploaded");
+  if (show === "complete") return checklist.verified >= checklist.required;
+  return true;
+}
+
+/** The rows the filter keeps; search matches the shipment's title, stage, mode or Incoterm, ignoring case. */
+export function filterDocumentRows(
+  rows: DocumentRow[],
+  filter: DocumentFilter,
+  tagsById: Map<string, BasisTag[]>,
+) {
+  const words = filter.search.trim().toLowerCase();
+  return rows.filter(({ shipment, checklist }) => {
+    if (!showsRow(checklist, filter.show)) return false;
+    if (filter.stages.length > 0 && !filter.stages.includes(checklist.stage))
+      return false;
+    if (words === "") return true;
+    return [
+      shipment.title,
+      stepLabel(checklist.stage),
+      checklist.mode,
+      checklist.incoterm,
+      ...(tagsById.get(shipment.id)?.map((tag) => tag.value) ?? []),
+    ].some((text) => text?.toLowerCase().includes(words) === true);
+  });
+}
+
 /** The checklist's documents split into on the checklist now, needed later, and filed besides. */
 export const groupDocuments = (checklist: IShipmentChecklist) => ({
   required: checklist.documents?.filter((entry) => entry.required) ?? [],

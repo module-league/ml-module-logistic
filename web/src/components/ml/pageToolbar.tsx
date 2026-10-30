@@ -56,6 +56,7 @@ export function ModulePageToolbar({
   onColumnOrderChange,
   onAddField,
   onEditField,
+  filter,
   search,
   onSearchChange,
   searchPlaceholder = "Search",
@@ -124,6 +125,7 @@ export function ModulePageToolbar({
           compact={compact}
         />
       ) : null}
+      {filter}
       {onSearchChange && (
         <InputGroup className="h-7 ml-auto w-48 min-w-28 shrink bg-background">
           <InputGroupAddon>

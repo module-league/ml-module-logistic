@@ -9,6 +9,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
+import { PageHeader } from "@/components/ml/pageHeader";
 import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControls";
 import { buildDispatchBoard } from "../Dispatch/dispatchBoard.utils";
 import { BillingList } from "./BillingList";
@@ -124,123 +125,125 @@ export function BillingPage({
   ];
 
   return (
-    <div className="flex flex-col gap-4 px-4 pt-1 pb-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col">
-          <h1 className="text-xl font-semibold">Billing</h1>
-          <p className="text-sm text-muted-foreground">
-            Delivered shipments with verified paperwork land here, priced from
-            the rate card.
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSettingsOpen(true)}
+    <div className="flex flex-col">
+      <PageHeader
+        title="Billing"
+        description="Delivered shipments with verified paperwork land here, priced from the rate card."
+        actions={
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => setSettingsOpen(true)}
+          >
+            Rates & settings
+          </Button>
+        }
+      />
+      <div className="flex flex-col gap-4 p-4">
+        <QueryWrapper
+          isLoading={data.isLoading}
+          error={data.error}
+          onRetry={data.onRetry}
+          renderLoader={<BillingPageSkeleton />}
         >
-          Rates & settings
-        </Button>
-      </header>
-      <QueryWrapper
-        isLoading={data.isLoading}
-        error={data.error}
-        onRetry={data.onRetry}
-        renderLoader={<BillingPageSkeleton />}
-      >
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {cards.map((card) => (
-            <button
-              key={card.label}
-              type="button"
-              onClick={() => open(card.tab)}
-              className={cn(
-                "flex cursor-pointer flex-col gap-1 rounded-xl border bg-background p-4 text-left transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                card.alert === true &&
-                  "border-red-200 bg-red-50 hover:bg-red-50/70 dark:border-red-900/60 dark:bg-red-950/30",
-              )}
-            >
-              <span
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {cards.map((card) => (
+              <button
+                key={card.label}
+                type="button"
+                onClick={() => open(card.tab)}
                 className={cn(
-                  "text-sm text-muted-foreground",
-                  card.alert === true && "text-red-700 dark:text-red-300",
+                  "flex cursor-pointer flex-col gap-1 rounded-xl border bg-background p-4 text-left transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  card.alert === true &&
+                    "border-red-200 bg-red-50 hover:bg-red-50/70 dark:border-red-900/60 dark:bg-red-950/30",
                 )}
               >
-                {card.label}
-              </span>
-              <span
-                className={cn(
-                  "text-2xl font-semibold tabular-nums",
-                  card.alert === true && "text-red-700 dark:text-red-300",
-                )}
-              >
-                {card.amount == null
-                  ? (totals?.draftCount ?? 0)
-                  : money(card.amount, symbol)}
-              </span>
-              <span
-                className={cn(
-                  "text-xs text-muted-foreground",
-                  card.alert === true && "text-red-700/80 dark:text-red-300/80",
-                )}
-              >
-                {card.note}
-              </span>
-            </button>
-          ))}
-        </div>
-        <DashboardSegmented
-          label="Show"
-          value={tab}
-          options={tabs}
-          onChange={(next) => open(next)}
-        />
-        <div className="grid items-start gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
-          <BillingList
-            tab={tab}
-            overview={overview}
-            invoices={invoices}
-            shipments={shipments}
-            selectedId={quote?.shipmentId ?? invoice?.objId}
-            onSelect={setSelectedId}
+                <span
+                  className={cn(
+                    "text-sm text-muted-foreground",
+                    card.alert === true && "text-red-700 dark:text-red-300",
+                  )}
+                >
+                  {card.label}
+                </span>
+                <span
+                  className={cn(
+                    "text-2xl font-semibold tabular-nums",
+                    card.alert === true && "text-red-700 dark:text-red-300",
+                  )}
+                >
+                  {card.amount == null
+                    ? (totals?.draftCount ?? 0)
+                    : money(card.amount, symbol)}
+                </span>
+                <span
+                  className={cn(
+                    "text-xs text-muted-foreground",
+                    card.alert === true &&
+                      "text-red-700/80 dark:text-red-300/80",
+                  )}
+                >
+                  {card.note}
+                </span>
+              </button>
+            ))}
+          </div>
+          <DashboardSegmented
+            label="Show"
+            value={tab}
+            options={tabs}
+            onChange={(next) => open(next)}
           />
-          {quote ? (
-            <BillingQuote
-              key={quote.shipmentId}
-              quote={quote}
-              shipment={shipments.get(quote.shipmentId)}
-              data={data}
-              onCreated={(created) => open("draft", created.objId)}
-              onOpenSettings={() => setSettingsOpen(true)}
+          <div className="grid items-start gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
+            <BillingList
+              tab={tab}
+              overview={overview}
+              invoices={invoices}
+              shipments={shipments}
+              selectedId={quote?.shipmentId ?? invoice?.objId}
+              onSelect={setSelectedId}
             />
-          ) : invoice ? (
-            <BillingInvoice
-              key={invoice.objId}
-              invoice={invoice}
-              shipment={shipments.get(invoice.shipmentId)}
-              data={data}
-              onChanged={(changed) =>
-                open(tabOf(changed.status), changed.objId)
-              }
-            />
-          ) : (
-            <Empty className="rounded-xl border">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <Receipt />
-                </EmptyMedia>
-                <EmptyTitle>
-                  {tab === "ready" ? "Nothing to bill yet" : "No invoices here"}
-                </EmptyTitle>
-                <EmptyDescription>
-                  {tab === "ready"
-                    ? "Shipments show up once they're delivered, the proof of delivery is verified and no weight mismatch is open."
-                    : "Invoices move here as they're created, sent, paid or voided."}
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          )}
-        </div>
-      </QueryWrapper>
+            {quote ? (
+              <BillingQuote
+                key={quote.shipmentId}
+                quote={quote}
+                shipment={shipments.get(quote.shipmentId)}
+                data={data}
+                onCreated={(created) => open("draft", created.objId)}
+                onOpenSettings={() => setSettingsOpen(true)}
+              />
+            ) : invoice ? (
+              <BillingInvoice
+                key={invoice.objId}
+                invoice={invoice}
+                shipment={shipments.get(invoice.shipmentId)}
+                data={data}
+                onChanged={(changed) =>
+                  open(tabOf(changed.status), changed.objId)
+                }
+              />
+            ) : (
+              <Empty className="rounded-xl border">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <Receipt />
+                  </EmptyMedia>
+                  <EmptyTitle>
+                    {tab === "ready"
+                      ? "Nothing to bill yet"
+                      : "No invoices here"}
+                  </EmptyTitle>
+                  <EmptyDescription>
+                    {tab === "ready"
+                      ? "Shipments show up once they're delivered, the proof of delivery is verified and no weight mismatch is open."
+                      : "Invoices move here as they're created, sent, paid or voided."}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
+          </div>
+        </QueryWrapper>
+      </div>
       <BillingSettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}

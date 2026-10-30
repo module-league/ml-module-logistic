@@ -9,6 +9,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
+import { PageHeader } from "@/components/ml/pageHeader";
 import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControls";
 import { useCurrentUser } from "@/services/user/current.user";
 import { buildDispatchBoard } from "../Dispatch/dispatchBoard.utils";
@@ -95,92 +96,91 @@ export function ExceptionPage({
   const activity = useExceptionActivity(getActivity, selected?.exception.objId);
 
   return (
-    <div className="flex flex-col gap-4 px-4 pt-1 pb-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col">
-          <h1 className="text-xl font-semibold">Exceptions</h1>
-          <p className="text-sm text-muted-foreground">
-            Opened by rules when a shipment breaks the plan. Own it, fix it,
-            close it with a reason.
-          </p>
+    <div className="flex flex-col">
+      <PageHeader
+        title="Exceptions"
+        description="Opened by rules when a shipment breaks the plan. Own it, fix it, close it with a reason."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="xs"
+              startIcon={<TriangleAlert size={13} />}
+              disabled={board.shipments.length === 0}
+              onClick={() => setReporting(true)}
+            >
+              Report exception
+            </Button>
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => setRulesOpen(true)}
+            >
+              Rules
+            </Button>
+          </>
+        }
+      />
+      <div className="flex flex-col gap-4 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <DashboardSegmented
+            label="Status"
+            value={tab}
+            options={tabs}
+            onChange={setTab}
+          />
+          <DashboardSegmented
+            label="Filter"
+            value={filter}
+            options={EXCEPTION_FILTERS}
+            onChange={setFilter}
+          />
         </div>
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant="outline"
-            size="sm"
-            startIcon={<TriangleAlert size={14} />}
-            disabled={board.shipments.length === 0}
-            onClick={() => setReporting(true)}
-          >
-            Report exception
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setRulesOpen(true)}
-          >
-            Rules
-          </Button>
-        </div>
-      </header>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <DashboardSegmented
-          label="Status"
-          value={tab}
-          options={tabs}
-          onChange={setTab}
-        />
-        <DashboardSegmented
-          label="Filter"
-          value={filter}
-          options={EXCEPTION_FILTERS}
-          onChange={setFilter}
-        />
-      </div>
-      <QueryWrapper
-        isLoading={data.isLoading}
-        error={data.error}
-        onRetry={data.onRetry}
-        renderLoader={<ExceptionPageSkeleton />}
-      >
-        {visible.length > 0 ? (
-          <div className="grid items-start gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]">
-            <ExceptionList
-              rows={visible}
-              selectedId={selected?.exception.objId}
-              now={now}
-              onSelect={onSelect}
-            />
-            {selected && (
-              <ExceptionDetail
-                key={selected.exception.objId}
-                row={selected}
-                data={data}
-                activity={activity}
+        <QueryWrapper
+          isLoading={data.isLoading}
+          error={data.error}
+          onRetry={data.onRetry}
+          renderLoader={<ExceptionPageSkeleton />}
+        >
+          {visible.length > 0 ? (
+            <div className="grid items-start gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]">
+              <ExceptionList
+                rows={visible}
+                selectedId={selected?.exception.objId}
                 now={now}
-                me={me}
-                onOpenRules={() => setRulesOpen(true)}
+                onSelect={onSelect}
               />
-            )}
-          </div>
-        ) : (
-          <Empty className="rounded-xl border">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <ShieldCheck />
-              </EmptyMedia>
-              <EmptyTitle>
-                {tab === "open" ? "Nothing needs attention" : "Nothing here"}
-              </EmptyTitle>
-              <EmptyDescription>
-                {tab === "open"
-                  ? "Rules check every shipment each minute and open an exception when one breaks the plan."
-                  : "Exceptions show here once they are snoozed or resolved."}
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        )}
-      </QueryWrapper>
+              {selected && (
+                <ExceptionDetail
+                  key={selected.exception.objId}
+                  row={selected}
+                  data={data}
+                  activity={activity}
+                  now={now}
+                  me={me}
+                  onOpenRules={() => setRulesOpen(true)}
+                />
+              )}
+            </div>
+          ) : (
+            <Empty className="rounded-xl border">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <ShieldCheck />
+                </EmptyMedia>
+                <EmptyTitle>
+                  {tab === "open" ? "Nothing needs attention" : "Nothing here"}
+                </EmptyTitle>
+                <EmptyDescription>
+                  {tab === "open"
+                    ? "Rules check every shipment each minute and open an exception when one breaks the plan."
+                    : "Exceptions show here once they are snoozed or resolved."}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          )}
+        </QueryWrapper>
+      </div>
       <ExceptionRulesDialog
         open={rulesOpen}
         onOpenChange={setRulesOpen}

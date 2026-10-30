@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { FileText } from "lucide-react";
-import { Button, Skeleton } from "@/ui-kit";
+import { FileText, SearchX } from "lucide-react";
+import { Button, ModulePageToolbar, Skeleton } from "@/ui-kit";
 import {
   Empty,
   EmptyDescription,
@@ -16,7 +16,13 @@ import { DocumentList } from "./DocumentList";
 import { DocumentChecklist } from "./DocumentChecklist";
 import { DocumentInbox } from "./DocumentInbox";
 import { DocumentRulesDialog } from "./DocumentRulesDialog";
-import { basisTags, buildDocumentRows } from "./document.utils";
+import { DocumentFilterMenu } from "./DocumentFilterMenu";
+import {
+  basisTags,
+  buildDocumentRows,
+  filterDocumentRows,
+  NO_DOCUMENT_FILTER,
+} from "./document.utils";
 import type { DocumentApi, DocumentData } from "./useDocumentData";
 
 export function DocumentPage({
@@ -37,6 +43,7 @@ export function DocumentPage({
     onSelect,
   } = data;
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [filter, setFilter] = useState(NO_DOCUMENT_FILTER);
   const picks =
     settings?.versionNo != null && settings.versionNo !== 0
       ? settings
@@ -49,10 +56,6 @@ export function DocumentPage({
   const rows = useMemo(
     () => buildDocumentRows(board.shipments, checklists),
     [board, checklists],
-  );
-  const selected = useMemo(
-    () => rows.find((row) => row.shipment.id === selectedId) ?? rows[0],
-    [rows, selectedId],
   );
   // Each shipment's mode and Incoterm as its fields' coloured options, read from the record's stored option ids
   const tagsById = useMemo(() => {
@@ -87,6 +90,19 @@ export function DocumentPage({
       }),
     );
   }, [lookups, sources?.shipmentSidebarId, data.documentSettings, rows]);
+  const visible = useMemo(
+    () => filterDocumentRows(rows, filter, tagsById),
+    [rows, filter, tagsById],
+  );
+  // A shipment the filter hides gives way to the first one still shown
+  const selected = useMemo(
+    () => visible.find((row) => row.shipment.id === selectedId) ?? visible[0],
+    [visible, selectedId],
+  );
+  const steps = useMemo<IDocumentStep[]>(
+    () => data.rules?.steps ?? [],
+    [data.rules?.steps],
+  );
 
   return (
     <div className="flex flex-col">
@@ -103,6 +119,21 @@ export function DocumentPage({
           </Button>
         }
       />
+      <ModulePageToolbar
+        filter={
+          <DocumentFilterMenu
+            rows={rows}
+            steps={steps}
+            filter={filter}
+            onChange={setFilter}
+          />
+        }
+        search={filter.search}
+        onSearchChange={(search) =>
+          setFilter((current) => ({ ...current, search }))
+        }
+        searchPlaceholder="Search shipments"
+      />
       <div className="flex flex-col gap-4 p-4">
         <QueryWrapper
           isLoading={data.isLoading}
@@ -113,7 +144,7 @@ export function DocumentPage({
           {selected ? (
             <div className="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
               <DocumentList
-                rows={rows}
+                rows={visible}
                 selectedId={selected.shipment.id}
                 tagsById={tagsById}
                 onSelect={onSelect}
@@ -135,6 +166,26 @@ export function DocumentPage({
                 />
               </div>
             </div>
+          ) : rows.length > 0 ? (
+            <Empty className="rounded-xl border">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <SearchX />
+                </EmptyMedia>
+                <EmptyTitle>No shipments match</EmptyTitle>
+                <EmptyDescription>
+                  Try other words, or clear the filters to see all {rows.length}{" "}
+                  shipments.
+                </EmptyDescription>
+              </EmptyHeader>
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => setFilter(NO_DOCUMENT_FILTER)}
+              >
+                Clear filters
+              </Button>
+            </Empty>
           ) : (
             <Empty className="rounded-xl border">
               <EmptyHeader>
