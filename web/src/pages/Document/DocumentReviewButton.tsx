@@ -46,14 +46,15 @@ export function DocumentReviewButton({
   const busyIcon = isPending ? (
     <Spinner className="size-3.5" />
   ) : (
-    <Sparkles size={14} />
+    <Sparkles size={13} />
   );
 
   return (
     <>
+      {/* Outline, so the paper's own next step (upload, verify) stays the one solid button in its row */}
       <Button
-        size="sm"
-        variant={review ? "outline" : "default"}
+        size="xs"
+        variant="outline"
         startIcon={busyIcon}
         disabled={isPending}
         title="The AI reads the file and compares it with the shipment"
@@ -62,27 +63,29 @@ export function DocumentReviewButton({
         {isPending ? "Checking…" : review ? "View AI check" : "Check with AI"}
       </Button>
       <Dialog open={isOpen && !!review} onOpenChange={setIsOpen}>
-        <DialogContent className="max-h-dialog overflow-y-auto sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="truncate pr-6">
+        {/* Header and footer stay put; only the result between them scrolls */}
+        <DialogContent className="flex max-h-dialog flex-col gap-0 p-0 sm:max-w-5xl md:max-w-5xl">
+          <DialogHeader className="shrink-0 border-b p-4 pr-10 pb-3">
+            <DialogTitle className="truncate">
               AI check · {file.name}
             </DialogTitle>
-            <DialogDescription>
-              Read by AI and compared with the shipment&apos;s record. Verify or
-              reject it yourself.
-            </DialogDescription>
           </DialogHeader>
-          {review && <DocumentReviewResult review={review} />}
-          <DialogFooter>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            {review && <DocumentReviewResult review={review} />}
+          </div>
+          <DialogFooter className="m-0 shrink-0 border-t p-4">
             <Button
               variant="outline"
+              size="xs"
               startIcon={busyIcon}
               disabled={isPending}
               onClick={() => void run()}
             >
               {isPending ? "Checking…" : "Check again"}
             </Button>
-            <Button onClick={() => setIsOpen(false)}>Close</Button>
+            <Button size="xs" onClick={() => setIsOpen(false)}>
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -156,8 +156,8 @@ function UnclassifiedFiles({
                   entry.suggestedDocType !== "" && (
                     <Button
                       variant="secondary"
-                      size="sm"
-                      startIcon={<Sparkles size={14} />}
+                      size="xs"
+                      startIcon={<Sparkles size={13} />}
                       disabled={isSaving}
                       title="Suggested from its name or label"
                       onClick={() =>
@@ -175,7 +175,7 @@ function UnclassifiedFiles({
                   }
                 >
                   <SelectTrigger
-                    className="h-8 w-36"
+                    className="h-6 w-36 text-xs"
                     aria-label={`Classify ${entry.file?.name ?? ""}`}
                   >
                     <SelectValue placeholder="Classify as…" />
@@ -247,7 +247,7 @@ function DropZone({
         <p className="text-sm text-muted-foreground">
           Pick the shipment&apos;s attachment field to drop files here.
         </p>
-        <Button variant="outline" size="sm" onClick={onOpenRules}>
+        <Button variant="outline" size="xs" onClick={onOpenRules}>
           Open rules
         </Button>
       </section>

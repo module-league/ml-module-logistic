@@ -15,21 +15,33 @@ export const DOCUMENT_STATUSES: { value: IDocumentStatus; label: string }[] = [
   { value: "rejected", label: "Rejected" },
 ];
 
-export const STATUS_CLASS: Record<IDocumentStatus, string> = {
-  missing: TONE_CLASS.red,
-  uploaded: TONE_CLASS.amber,
-  verified: TONE_CLASS.green,
-  rejected: TONE_CLASS.red,
-};
+/**
+ * The page's three colours: green is done, orange needs someone (missing, rejected, expired), blue is filed and waiting on a check.
+ * chip: a status chip; card: the tinted frame around a paper that needs attention; strip: the note's text in that frame; bar: a progress fill.
+ */
+export const DOCUMENT_TONE = {
+  green: {
+    chip: TONE_CLASS.green,
+    bar: "bg-emerald-600",
+  },
+  orange: {
+    chip: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
+    card: "border-orange-200 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/30",
+    strip: "text-orange-700 dark:text-orange-300",
+  },
+  blue: {
+    chip: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300",
+    card: "border-blue-200 bg-blue-50 dark:border-blue-900/60 dark:bg-blue-950/30",
+    strip: "text-blue-700 dark:text-blue-300",
+    bar: "bg-blue-600",
+  },
+} as const;
 
-/** The icon tile of each status. */
-export const TILE_CLASS: Record<IDocumentStatus, string> = {
-  missing: "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300",
-  uploaded:
-    "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300",
-  verified:
-    "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300",
-  rejected: "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300",
+export const STATUS_CLASS: Record<IDocumentStatus, string> = {
+  missing: DOCUMENT_TONE.orange.chip,
+  uploaded: DOCUMENT_TONE.blue.chip,
+  verified: DOCUMENT_TONE.green.chip,
+  rejected: DOCUMENT_TONE.orange.chip,
 };
 
 export const SOURCE_LABEL: Record<IDocumentSource, string> = {
@@ -47,19 +59,25 @@ const GATE_NAME: Partial<Record<IDocumentStep, string>> = {
   billed: "billing",
 };
 
-/** "Booked", "Picked up", "Billed". */
-export const stepLabel = (step?: IDocumentStep) =>
+/** "Booked", "Picked up", "Billed"; empty for a step this build doesn't know. */
+export const stepLabel = (step?: IDocumentStep): string =>
   step === undefined
     ? ""
     : step === "booked"
       ? "Booked"
       : step === "billed"
         ? "Billed"
-        : statusLabel(step);
+        : (statusLabel(step) ?? "");
 
 /** "pickup", "billing": the step a document gates, as a noun. */
-export const gateName = (step?: IDocumentStep) =>
-  GATE_NAME[step ?? "booked"] ?? stepLabel(step)?.toLowerCase();
+export const gateName = (step?: IDocumentStep): string =>
+  GATE_NAME[step ?? "booked"] ??
+  nonEmpty(stepLabel(step).toLowerCase()) ??
+  "the next step";
+
+/** A rule's condition as people say it: "Shipment Mode = Air" reads "Shipment Mode is Air"; "Always" stays. */
+export const conditionText = (when?: string) =>
+  when?.replaceAll(" = ", " is ") ?? "";
 
 /** A shipment with its checklist, as the list and the detail show it. */
 export interface DocumentRow {
@@ -86,22 +104,25 @@ export const basisText = (checklist: IShipmentChecklist) =>
   nonEmpty([checklist.mode, checklist.incoterm].filter(Boolean).join(" · ")) ??
   "No mode or Incoterm";
 
-/** "Required because Shipment Mode = Air, Incoterm = FCA, stage = In transit." */
+/** "Needed because Shipment Mode is Air, Incoterm is FCA and the shipment is In transit." */
 export function reasonText(
   checklist: IShipmentChecklist,
   modeName = "Mode",
   incotermName = "Incoterm",
 ) {
+  const stage = nonEmpty(stepLabel(checklist.stage));
   const parts = [
-    checklist.mode != null &&
-      checklist.mode !== "" &&
-      `${modeName} = ${checklist.mode}`,
-    checklist.incoterm != null &&
-      checklist.incoterm !== "" &&
-      `${incotermName} = ${checklist.incoterm}`,
-    `stage = ${stepLabel(checklist.stage)}`,
-  ].filter(Boolean);
-  return `Required because ${parts.join(", ")}.`;
+    nonEmpty(checklist.mode) !== undefined &&
+      `${modeName} is ${checklist.mode}`,
+    nonEmpty(checklist.incoterm) !== undefined &&
+      `${incotermName} is ${checklist.incoterm}`,
+    stage !== undefined && `the shipment is ${stage}`,
+  ].filter((part) => part !== false);
+  const last = parts.pop();
+  if (last === undefined) return "Needed for every shipment.";
+  return parts.length > 0
+    ? `Needed because ${parts.join(", ")} and ${last}.`
+    : `Needed because ${last}.`;
 }
 
 /** The checklist's documents split into on the checklist now, needed later, and filed besides. */

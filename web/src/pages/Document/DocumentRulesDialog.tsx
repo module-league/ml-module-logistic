@@ -13,7 +13,13 @@ import { errorParser } from "@/hooks/useErrorParser";
 import { SettingsField } from "@/module/dashboard/settings/DashboardControls";
 import { tableFields } from "@/module/dashboard/moduleDashboard.utils";
 import { RoleSelect } from "../Exception/ExceptionRulesDialog";
-import { gateName, stepLabel, typeTitle } from "./document.utils";
+import { nonEmpty } from "@/lib/stringHelper";
+import {
+  conditionText,
+  gateName,
+  stepLabel,
+  typeTitle,
+} from "./document.utils";
 import type { DocumentData } from "./useDocumentData";
 
 /** The fields the checklist reads, and the requirements from the API's workflow config. */
@@ -140,9 +146,11 @@ function RulesForm({
                     <td className="px-3 py-2 font-medium">
                       {typeTitle(rules, requirement.docType)}
                     </td>
-                    <td className="px-3 py-2">{requirement.when}</td>
                     <td className="px-3 py-2">
-                      {stepLabel(requirement.requiredAtStep)}
+                      {nonEmpty(conditionText(requirement.when)) ?? "Always"}
+                    </td>
+                    <td className="px-3 py-2">
+                      {nonEmpty(stepLabel(requirement.requiredAtStep)) ?? "—"}
                     </td>
                     <td className="px-3 py-2">
                       {requirement.blocks !== undefined
@@ -164,13 +172,13 @@ function RulesForm({
       <DialogFooter className="m-0 shrink-0 border-t p-4">
         <Button
           variant="outline"
-          size="sm"
+          size="xs"
           disabled={saving}
           onClick={() => onOpenChange(false)}
         >
           Cancel
         </Button>
-        <Button size="sm" isLoading={saving} onClick={() => void save()}>
+        <Button size="xs" isLoading={saving} onClick={() => void save()}>
           Save fields
         </Button>
       </DialogFooter>

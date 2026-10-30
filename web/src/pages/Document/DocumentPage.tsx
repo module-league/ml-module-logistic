@@ -9,6 +9,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
+import { PageHeader } from "@/components/ml/pageHeader";
 import { buildDispatchBoard } from "../Dispatch/dispatchBoard.utils";
 import { DocumentList } from "./DocumentList";
 import { DocumentChecklist } from "./DocumentChecklist";
@@ -54,63 +55,66 @@ export function DocumentPage({
   );
 
   return (
-    <div className="flex flex-col gap-4 px-4 pt-1 pb-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col">
-          <h1 className="text-xl font-semibold">Documents</h1>
-          <p className="text-sm text-muted-foreground">
-            Each shipment gets a checklist built from its mode, Incoterm and
-            stage. Missing papers block the next step.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => setRulesOpen(true)}>
-          Rules
-        </Button>
-      </header>
-      <QueryWrapper
-        isLoading={data.isLoading}
-        error={data.error}
-        onRetry={data.onRetry}
-        renderLoader={<DocumentPageSkeleton />}
-      >
-        {selected ? (
-          <div className="grid items-start gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
-            <DocumentList
-              rows={rows}
-              selectedId={selected.shipment.id}
-              onSelect={onSelect}
-            />
-            <div
-              key={selected.shipment.id}
-              className="flex min-w-0 flex-col gap-4"
-            >
-              <DocumentChecklist
-                row={selected}
-                data={data}
-                getActivity={getActivity}
-                onOpenRules={() => setRulesOpen(true)}
+    <div className="flex flex-col">
+      <PageHeader
+        title="Documents"
+        description="Each shipment gets a checklist built from its mode, Incoterm and stage. Missing papers block the next step."
+        actions={
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => setRulesOpen(true)}
+          >
+            Rules
+          </Button>
+        }
+      />
+      <div className="flex flex-col gap-4 p-4">
+        <QueryWrapper
+          isLoading={data.isLoading}
+          error={data.error}
+          onRetry={data.onRetry}
+          renderLoader={<DocumentPageSkeleton />}
+        >
+          {selected ? (
+            <div className="grid items-start gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
+              <DocumentList
+                rows={rows}
+                selectedId={selected.shipment.id}
+                onSelect={onSelect}
               />
-              <DocumentInbox
-                row={selected}
-                data={data}
-                onOpenRules={() => setRulesOpen(true)}
-              />
+              <div
+                key={selected.shipment.id}
+                className="flex min-w-0 flex-col gap-4"
+              >
+                <DocumentChecklist
+                  row={selected}
+                  data={data}
+                  getActivity={getActivity}
+                  onOpenRules={() => setRulesOpen(true)}
+                />
+                <DocumentInbox
+                  row={selected}
+                  data={data}
+                  onOpenRules={() => setRulesOpen(true)}
+                />
+              </div>
             </div>
-          </div>
-        ) : (
-          <Empty className="rounded-xl border">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <FileText />
-              </EmptyMedia>
-              <EmptyTitle>No shipments yet</EmptyTitle>
-              <EmptyDescription>
-                Each shipment gets a document checklist once it&apos;s booked.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        )}
-      </QueryWrapper>
+          ) : (
+            <Empty className="rounded-xl border">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <FileText />
+                </EmptyMedia>
+                <EmptyTitle>No shipments yet</EmptyTitle>
+                <EmptyDescription>
+                  Each shipment gets a document checklist once it&apos;s booked.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          )}
+        </QueryWrapper>
+      </div>
       <DocumentRulesDialog
         open={rulesOpen}
         onOpenChange={setRulesOpen}
