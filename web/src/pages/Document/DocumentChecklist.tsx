@@ -24,19 +24,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Input,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
   Separator,
   Skeleton,
+  toast,
 } from "@moduleleague/ui";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { attempt } from "@/lib/toastHelper";
 import { nonEmpty } from "@/lib/stringHelper";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { AttachmentChip } from "@/components/custom/AttachmentChip";
 import { AttachmentThumbnail } from "@/components/custom/AttachmentThumbnail";
 import { ConfirmDeleteDialog } from "@/components/custom/ConfirmDeleteDialog";
+import { ConfirmDialog } from "@/components/custom/ConfirmDialog";
 import { AttachmentPreviewDialog } from "@/components/custom/AttachmentPreviewDialog";
 import { useAttachmentPreview } from "@/hooks/useAttachmentPreview";
 import { tableFields } from "@/module/dashboard/moduleDashboard.utils";
@@ -128,7 +126,7 @@ export function DocumentChecklist({
   );
 
   return (
-    <section className="flex flex-col gap-5 rounded-xl border bg-background p-4">
+    <section className="flex flex-col gap-5 rounded-xl border bg-background p-4 sm:min-w-lg">
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex min-w-0 flex-col gap-0.5">
@@ -246,12 +244,18 @@ function DocumentItem(props: ItemProps) {
     : labelOf(DOCUMENT_STATUSES, document.status);
 
   const upload = useCallback(
-    (file: File) =>
-      checkSize(file) &&
-      attempt("Couldn't upload the file", () =>
+    async (file: File) => {
+      if (!checkSize(file)) return;
+      const done = await attempt("Couldn't upload the file", () =>
         onUpload(shipmentId, document.docType, file),
-      ),
-    [onUpload, shipmentId, document.docType],
+      );
+      if (done)
+        toast.success(
+          hasFile ? `${document.title} replaced` : `${document.title} uploaded`,
+          { description: file.name },
+        );
+    },
+    [onUpload, shipmentId, document.docType, document.title, hasFile],
   );
 
   // Every part falls back to plain words, so a missing date, reason or step never shows as a blank or "undefined"
@@ -544,49 +548,35 @@ function DocumentItem(props: ItemProps) {
   );
 }
 
-/** Verifies the current version; papers that expire ask until when they're valid. */
+/** Verifies the current version once confirmed. */
 function VerifyButton({ document, data }: ItemProps) {
   const { onVerify, isSaving } = data;
   const [open, setOpen] = useState(false);
-  const [until, setUntil] = useState<Date>();
-  const verify = useCallback(
-    async (expiresAt?: Date) => {
-      const done = await attempt("Couldn't verify the document", () =>
-        onVerify(document, expiresAt),
-      );
-      if (done) setOpen(false);
-    },
-    [onVerify, document],
-  );
-  const button = (
-    <Button
-      variant="default"
-      size="xs"
-      startIcon={<Check size={13} />}
-      disabled={isSaving}
-      onClick={document.expires ? undefined : () => void verify()}
-    >
-      Verify
-    </Button>
-  );
-  if (!document.expires) return button;
+  const gate =
+    document.blocks !== undefined ? gateName(document.blocks) : undefined;
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{button}</PopoverTrigger>
-      <PopoverContent align="end" className="flex w-72 flex-col gap-3 p-3">
-        <span className="text-sm font-medium">Valid until</span>
-        <DateTimePicker granularity="day" value={until} onChange={setUntil} />
-        <Button
-          size="xs"
-          className="self-end"
-          disabled={!until}
-          isLoading={isSaving}
-          onClick={() => void verify(until)}
-        >
-          Verify
-        </Button>
-      </PopoverContent>
-    </Popover>
+    <>
+      <Button
+        variant="default"
+        size="xs"
+        startIcon={<Check size={13} />}
+        disabled={isSaving}
+        onClick={() => setOpen(true)}
+      >
+        Verify
+      </Button>
+      <ConfirmDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={`Verify the ${document.title.toLowerCase()}?`}
+        description={`${document.file?.name ?? "This file"} counts as the shipment's ${document.title.toLowerCase()}${gate !== undefined ? `, and ${gate} can go ahead` : ""}. Reject it later if it turns out wrong.`}
+        confirmLabel="Verify"
+        confirmIcon={<Check size={13} />}
+        successMessage={`${document.title} verified`}
+        errorMessage="Couldn't verify the document"
+        onConfirm={() => onVerify(document)}
+      />
+    </>
   );
 }
 
