@@ -8,7 +8,7 @@ namespace LogisticApi.Controllers
     [ApiController]
     [Route("api/exceptions")]
     [Produces("application/json")]
-    public class ExceptionController(ExceptionCaseService exceptions) : ControllerBase
+    public class ExceptionController(ExceptionCaseService exceptions, ExceptionCopilotService copilot) : ControllerBase
     {
         /// <summary>Every exception, newest first, resolved ones included.</summary>
         [HttpGet]
@@ -65,6 +65,15 @@ namespace LogisticApi.Controllers
             var created = await exceptions.AddActivityAsync(objId, request, ct);
             return StatusCode(StatusCodes.Status201Created, created);
         }
+
+        /// <summary>The AI sums it up and suggests next steps from its timeline, shipment and dispatch. Nothing is saved; it costs one AI call.</summary>
+        [HttpPost("{objId:guid}/copilot")]
+        [ProducesResponseType<ExceptionCopilotResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status502BadGateway)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable)]
+        public Task<ExceptionCopilotResponse> Suggest(Guid objId, CancellationToken ct) => copilot.SuggestAsync(objId, ct);
 
         [HttpPut("{objId:guid}/owner")]
         [ProducesResponseType<ExceptionChangeResponse>(StatusCodes.Status200OK)]

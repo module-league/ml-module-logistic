@@ -105,7 +105,7 @@ export function DocumentPage({
   );
 
   return (
-    <div className="flex flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <PageHeader
         title="Documents"
         description="Each shipment gets a checklist built from its mode, Incoterm and stage. Missing papers block the next step."
@@ -134,7 +134,8 @@ export function DocumentPage({
         }
         searchPlaceholder="Search shipments"
       />
-      <div className="flex flex-col gap-4 p-4">
+      {/* On a wide page only the checklist column scrolls; stacked on a narrow one, the whole content does */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 lg:overflow-hidden">
         <QueryWrapper
           isLoading={data.isLoading}
           error={data.error}
@@ -142,7 +143,7 @@ export function DocumentPage({
           renderLoader={<DocumentPageSkeleton />}
         >
           {selected ? (
-            <div className="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
+            <div className="grid items-start gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[15rem_minmax(0,1fr)] lg:grid-rows-1">
               <DocumentList
                 rows={visible}
                 selectedId={selected.shipment.id}
@@ -151,7 +152,7 @@ export function DocumentPage({
               />
               <div
                 key={selected.shipment.id}
-                className="flex min-w-0 flex-col gap-4"
+                className="flex min-w-0 flex-col gap-4 lg:h-full lg:overflow-y-auto"
               >
                 <DocumentChecklist
                   row={selected}

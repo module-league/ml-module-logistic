@@ -1,7 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using Anthropic;
-using Anthropic.Exceptions;
 using Anthropic.Models.Messages;
 using LogisticApi.Models;
 using Microsoft.Extensions.Options;
@@ -14,8 +12,7 @@ namespace LogisticApi.Services
     /// </summary>
     public class ClaudeDocumentReader(
         IOptions<DocumentReviewOptions> options,
-        IConfiguration configuration,
-        ILogger<ClaudeDocumentReader> logger) : IDocumentReader
+        ClaudeClient claude) : IDocumentReader
     {
         private const string OtherType = "other";
 
@@ -34,7 +31,6 @@ namespace LogisticApi.Services
 
         private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
         private readonly DocumentReviewOptions config = options.Value;
-        private AnthropicClient? client;
 
         public async Task<DocumentReading> ReadAsync(DocumentReadInput input, CancellationToken ct)
         {
@@ -43,7 +39,7 @@ namespace LogisticApi.Services
                 Model = config.Model,
                 MaxTokens = config.MaxTokens,
                 System = Instructions,
-                OutputConfig = new OutputConfig { Effort = EffortOf(config.Effort), Format = new JsonOutputFormat { Schema = Schema(input) } },
+                OutputConfig = new OutputConfig { Effort = ClaudeClient.EffortOf(config.Effort), Format = new JsonOutputFormat { Schema = Schema(input) } },
                 Messages =
                 [
                     new UserMessageParam
@@ -53,34 +49,7 @@ namespace LogisticApi.Services
                 ],
             };
 
-            Message response;
-            try
-            {
-                response = await Client().Messages.Create(request, ct);
-            }
-            catch (AnthropicRateLimitException)
-            {
-                throw new ApiProblemException(StatusCodes.Status429TooManyRequests, "Too many documents are being reviewed at once.", "Try again in a minute.");
-            }
-            catch (AnthropicApiException error)
-            {
-                logger.LogError(error, "Claude rejected the review of {FileName}", input.FileName);
-                throw new ApiProblemException(StatusCodes.Status502BadGateway, "The document couldn't be reviewed.", "The AI service returned an error; it is logged.");
-            }
-            catch (AnthropicIOException error)
-            {
-                logger.LogError(error, "Couldn't reach Claude to review {FileName}", input.FileName);
-                throw new ApiProblemException(StatusCodes.Status502BadGateway, "The AI service can't be reached.", "Check the server's internet connection and try again.");
-            }
-
-            if (response.StopReason != "end_turn")
-            {
-                logger.LogWarning("Review of {FileName} stopped with {StopReason}", input.FileName, response.StopReason);
-                throw new ApiProblemException(StatusCodes.Status502BadGateway, "The document couldn't be reviewed.",
-                    response.StopReason == "refusal" ? "The AI declined to read this file." : "The answer was cut short; try a smaller file.");
-            }
-
-            var text = string.Concat(response.Content.Select(b => b.Value).OfType<TextBlock>().Select(t => t.Text));
+            var (text, inputTokens, outputTokens) = await claude.SendAsync(request, "The document couldn't be reviewed.", ct);
             var answer = JsonSerializer.Deserialize<Answer>(text, Json)
                 ?? throw new ApiProblemException(StatusCodes.Status502BadGateway, "The document couldn't be reviewed.", "The AI's answer was empty.");
             var keys = input.Fields.Select(f => f.Key).ToHashSet();
@@ -99,17 +68,7 @@ namespace LogisticApi.Services
                 Signed: answer.signature switch { "signed" => true, "unsigned" => false, _ => null },
                 ExpiresOn: string.IsNullOrWhiteSpace(answer.expiresOn) ? null : answer.expiresOn.Trim(),
                 Summary: answer.summary,
-                Usage: new DocumentReadUsage(config.Model, response.Usage.InputTokens, response.Usage.OutputTokens));
-        }
-
-        private AnthropicClient Client()
-        {
-            if (client is not null) return client;
-            var apiKey = configuration["Anthropic:ApiKey"] ?? Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
-            if (string.IsNullOrWhiteSpace(apiKey))
-                throw new ApiProblemException(StatusCodes.Status503ServiceUnavailable, "Document review isn't set up.",
-                    "Add an Anthropic API key as Anthropic:ApiKey in src/LogisticApi/appsettings.Development.local.json (ignored by git).");
-            return client = new AnthropicClient { ApiKey = apiKey };
+                Usage: new DocumentReadUsage(config.Model, inputTokens, outputTokens));
         }
 
         private static ContentBlockParam FileBlock(DocumentReadInput input)
@@ -178,13 +137,6 @@ namespace LogisticApi.Services
                 ["additionalProperties"] = JsonSerializer.SerializeToElement(false),
             };
         }
-
-        private static Effort EffortOf(string effort) => effort.ToLowerInvariant() switch
-        {
-            "low" => Effort.Low,
-            "high" => Effort.High,
-            _ => Effort.Medium,
-        };
 
         private sealed record FoundValue(string key, string value, string source);
 

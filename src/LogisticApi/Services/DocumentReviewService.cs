@@ -102,7 +102,7 @@ namespace LogisticApi.Services
                 signed = reading.Signed,
                 expiresOn = reading.ExpiresOn,
                 checks = checks,
-                usage = new DocumentReviewUsageResponse
+                usage = new AiUsageResponse
                 {
                     model = reading.Usage.Model,
                     inputTokens = reading.Usage.InputTokens,

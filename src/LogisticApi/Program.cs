@@ -52,10 +52,15 @@ builder.Services.AddScoped<DocumentChecklistService>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<RecordTextService>();
 
-// AI document review: Claude reads an uploaded file, the API compares it with the shipment (key: "Anthropic:ApiKey")
+// AI features share one Claude connection (key: "Anthropic:ApiKey")
+builder.Services.AddSingleton<ClaudeClient>();
+// AI document review: Claude reads an uploaded file, the API compares it with the shipment
 builder.Services.Configure<DocumentReviewOptions>(builder.Configuration.GetSection(DocumentReviewOptions.SectionName));
 builder.Services.AddSingleton<IDocumentReader, ClaudeDocumentReader>();
 builder.Services.AddScoped<DocumentReviewService>();
+// AI exception co-pilot: sums up an exception and suggests next steps
+builder.Services.Configure<ExceptionCopilotOptions>(builder.Configuration.GetSection(ExceptionCopilotOptions.SectionName));
+builder.Services.AddScoped<ExceptionCopilotService>();
 
 // Billing: rate cards, charge types and tax from the "Billing" workflow config
 builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection(BillingOptions.SectionName));

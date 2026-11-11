@@ -69,6 +69,14 @@ export async function addExceptionActivity(
   return data;
 }
 
+/** The AI sums it up and suggests next steps. Nothing is saved; each call is a paid AI request. */
+export async function askExceptionCopilot(objId: string) {
+  const { data } = await apiClient.post<IExceptionCopilot>(
+    path(objId, "copilot"),
+  );
+  return data;
+}
+
 /** Each change sends the versionNo last read; a stale one is rejected with 409. */
 export async function assignException(
   objId: string,

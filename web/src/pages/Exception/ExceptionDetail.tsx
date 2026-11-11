@@ -7,6 +7,7 @@ import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControl
 import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
 import { actorName } from "@/services/user/current.user";
 import { CHIP_CLASS } from "./ExceptionList";
+import { ExceptionCopilot } from "./ExceptionCopilot";
 import { ExceptionFixActions } from "./ExceptionFixActions";
 import {
   deadlineText,
@@ -142,6 +143,15 @@ export function ExceptionDetail({
             ))}
           </dl>
         </section>
+      )}
+
+      {open && (
+        <ExceptionCopilot
+          key={exception.objId}
+          exception={exception}
+          onAsk={data.onAskCopilot}
+          onLog={data.onLog}
+        />
       )}
 
       {open && (

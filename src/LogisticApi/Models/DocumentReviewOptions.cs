@@ -2,7 +2,7 @@ namespace LogisticApi.Models
 {
     /// <summary>
     /// The "DocumentReview" appsettings section: the AI that reads uploaded files and checks them against the shipment.
-    /// The API key is not here; it comes from "Anthropic:ApiKey" (user-secrets in development) or ANTHROPIC_API_KEY.
+    /// The API key is not here; it comes from "Anthropic:ApiKey" (appsettings.Development.local.json in development) or ANTHROPIC_API_KEY.
     /// </summary>
     public class DocumentReviewOptions
     {

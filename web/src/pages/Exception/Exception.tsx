@@ -8,6 +8,7 @@ import {
 } from "@/services/dispatches/dispatch.api";
 import {
   addExceptionActivity,
+  askExceptionCopilot,
   assignException,
   createException,
   evaluateExceptions,
@@ -37,6 +38,7 @@ const exceptionApi: ExceptionApi = {
   createException,
   getExceptionActivity,
   addExceptionActivity,
+  askExceptionCopilot,
   assignException,
   snoozeException,
   wakeException,

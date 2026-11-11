@@ -148,7 +148,7 @@ namespace LogisticApi.MVVM
         public string? expiresOn { get; set; }
         /// <summary>Each value the document states: the shipment's fields first, then ones the record doesn't have.</summary>
         public List<DocumentReviewCheckResponse> checks { get; set; } = [];
-        public DocumentReviewUsageResponse usage { get; set; } = new();
+        public AiUsageResponse usage { get; set; } = new();
     }
 
     public class DocumentReviewCheckResponse
@@ -163,8 +163,8 @@ namespace LogisticApi.MVVM
         public string source { get; set; } = string.Empty;
     }
 
-    /// <summary>Tokens the review used, for working out what each document costs.</summary>
-    public class DocumentReviewUsageResponse
+    /// <summary>Tokens one AI call used (a document review, an exception summary), for working out what each costs.</summary>
+    public class AiUsageResponse
     {
         public string model { get; set; } = string.Empty;
         public long inputTokens { get; set; }

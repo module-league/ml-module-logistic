@@ -61,6 +61,29 @@ declare global {
     createdAt: string;
   };
 
+  /** The AI's read of an exception; a suggestion, nothing is saved. Matches ExceptionCopilotResponse. */
+  type IExceptionCopilot = {
+    exceptionId: string;
+    /** What happened, in plain words. */
+    summary: string;
+    /** Left out when the AI can't tell. */
+    cause?: string;
+    /** How sure it is of the cause. */
+    certainty: "low" | "medium" | "high";
+    /** A new expected arrival as local time text, e.g. "31 Oct 2026 14:00". */
+    eta?: string;
+    etaBasis?: string;
+    /** One to three next steps, most useful first. */
+    actions: { title: string; detail: string }[];
+    /** One of the rule's resolve reasons, when it looks ready to close. */
+    resolveWith?: string;
+    /** What the AI needed but the system doesn't have. */
+    unknowns: string[];
+    /** The whole suggestion as one timeline note. */
+    note: string;
+    usage: { model: string; inputTokens: number; outputTokens: number };
+  };
+
   /** An exception after a change and the timeline entry the change posted. */
   type IExceptionChange = {
     exception: IException;

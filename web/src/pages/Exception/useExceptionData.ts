@@ -23,6 +23,7 @@ export interface ExceptionApi extends DispatchRecordsApi {
     objId: string,
     body: { kind: "note" | "action"; body: string },
   ) => Promise<IExceptionActivity>;
+  askExceptionCopilot: (objId: string) => Promise<IExceptionCopilot>;
   assignException: (
     objId: string,
     body: { ownerId?: string; versionNo: number },
@@ -280,6 +281,7 @@ export function useExceptionData(api: ExceptionApi) {
       onWake,
       onResolve,
       onLog,
+      onAskCopilot: api.askExceptionCopilot,
       onPlan,
       onUpdateRecord,
       onSaveSettings,
@@ -306,6 +308,7 @@ export function useExceptionData(api: ExceptionApi) {
       onWake,
       onResolve,
       onLog,
+      api.askExceptionCopilot,
       onPlan,
       onUpdateRecord,
       onSaveSettings,

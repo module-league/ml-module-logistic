@@ -17,7 +17,7 @@ export function DocumentList({
   return (
     <nav
       aria-label="Shipments"
-      className="flex max-h-[75dvh] flex-col overflow-hidden rounded-xl border bg-background"
+      className="flex max-h-[75dvh] flex-col lg:max-h-full overflow-hidden rounded-xl border bg-background"
     >
       <h2 className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
         Shipments · {rows.length}
