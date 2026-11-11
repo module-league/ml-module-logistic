@@ -3,6 +3,9 @@ import { SelectionNode } from "@/components/custom/RecordValueNode";
 import { DocumentProgress } from "./DocumentProgress";
 import type { BasisTag } from "./document.utils";
 
+/** "CPT (Carriage Paid To)" as "CPT", so the tag fits beside the count; the full text stays in its tooltip. */
+const shortTag = (value: string) => value.replace(/\s*\(.*\)\s*$/, "");
+
 interface DocumentShipmentCardProps {
   title: string;
   /** "Booked", "In transit". */
@@ -31,15 +34,22 @@ export function DocumentShipmentCard({
   onClick,
 }: DocumentShipmentCardProps) {
   const className = cn(
-    "flex w-full flex-col gap-1 rounded-lg border border-transparent px-2.5 py-2 text-left transition-colors",
+    "flex w-full flex-col gap-1.5 rounded-md px-2 py-2 text-left transition-colors",
     onClick &&
-      "cursor-pointer hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-    isSelected && "border-primary bg-primary-10 hover:bg-primary-10",
+      "cursor-pointer hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+    isSelected && "bg-primary-10 hover:bg-primary-10",
   );
   const body = (
     <>
       <span className="flex items-baseline justify-between gap-2">
-        <span className="truncate text-sm font-semibold">{title}</span>
+        <span
+          className={cn(
+            "truncate text-sm font-medium",
+            isSelected && "text-primary",
+          )}
+        >
+          {title}
+        </span>
         <span className="shrink-0 text-xs text-muted-foreground">{stage}</span>
       </span>
       <span className="flex items-center justify-between gap-2">
@@ -52,7 +62,7 @@ export function DocumentShipmentCard({
                 title={`${tag.label}: ${tag.value}`}
                 className="max-w-full truncate px-1.5 py-px"
               >
-                {tag.value}
+                {shortTag(tag.value)}
               </SelectionNode>
             ))
           ) : (

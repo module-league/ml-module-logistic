@@ -135,7 +135,7 @@ export function DocumentPage({
         searchPlaceholder="Search shipments"
       />
       {/* On a wide page only the checklist column scrolls; stacked on a narrow one, the whole content does */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 lg:overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:overflow-hidden bg-white">
         <QueryWrapper
           isLoading={data.isLoading}
           error={data.error}
@@ -143,7 +143,7 @@ export function DocumentPage({
           renderLoader={<DocumentPageSkeleton />}
         >
           {selected ? (
-            <div className="grid items-start gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[15rem_minmax(0,1fr)] lg:grid-rows-1">
+            <div className="grid h-full min-h-0 lg:grid-cols-[16rem_minmax(0,1fr)] lg:grid-rows-1">
               <DocumentList
                 rows={visible}
                 selectedId={selected.shipment.id}
@@ -152,9 +152,10 @@ export function DocumentPage({
               />
               <div
                 key={selected.shipment.id}
-                className="flex min-w-0 flex-col gap-4 lg:h-full lg:overflow-y-auto"
+                className="flex h-full min-h-0 min-w-0 flex-col"
               >
                 <DocumentChecklist
+                  className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
                   row={selected}
                   data={data}
                   getActivity={getActivity}
@@ -168,7 +169,7 @@ export function DocumentPage({
               </div>
             </div>
           ) : rows.length > 0 ? (
-            <Empty className="rounded-xl border">
+            <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <SearchX />
@@ -188,7 +189,7 @@ export function DocumentPage({
               </Button>
             </Empty>
           ) : (
-            <Empty className="rounded-xl border">
+            <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <FileText />
@@ -214,21 +215,22 @@ export function DocumentPage({
 function DocumentPageSkeleton() {
   return (
     <div
-      className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]"
+      className="grid h-full lg:grid-cols-[16rem_minmax(0,1fr)]"
       aria-busy
       aria-label="Loading documents"
     >
-      <div className="flex flex-col gap-2 rounded-xl border p-2">
+      <div className="flex flex-col gap-1 p-2 lg:border-r">
         {[0, 1, 2, 3].map((index) => (
-          <Skeleton key={index} className="h-16 rounded-lg" />
+          <Skeleton key={index} className="h-14 rounded-md" />
         ))}
       </div>
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-72 rounded-xl" />
-        <div className="grid gap-4 md:grid-cols-2">
-          <Skeleton className="h-44 rounded-xl" />
-          <Skeleton className="h-44 rounded-xl" />
+      <div className="flex flex-col gap-6 px-6 py-5">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-32" />
         </div>
+        <Skeleton className="h-40 rounded-lg" />
+        <Skeleton className="h-24 rounded-lg" />
       </div>
     </div>
   );

@@ -27,14 +27,11 @@ export const DOCUMENT_TONE = {
   },
   orange: {
     chip: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
-    card: "border-orange-200 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/30",
     strip: "text-orange-700 dark:text-orange-300",
   },
   blue: {
     chip: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300",
-    card: "border-blue-200 bg-blue-50 dark:border-blue-900/60 dark:bg-blue-950/30",
     strip: "text-blue-700 dark:text-blue-300",
-    bar: "bg-blue-600",
   },
 } as const;
 

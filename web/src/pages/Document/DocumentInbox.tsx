@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Plus, Sparkles } from "lucide-react";
 import {
   Button,
@@ -47,6 +47,7 @@ export function DocumentInbox({
   } = data;
   const { openPreview, dialogProps } = useAttachmentPreview();
   const [dragging, setDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const fieldName = useMemo(
     () =>
       tableFields(lookups[sources?.shipmentSidebarId ?? ""]).find(
@@ -101,43 +102,44 @@ export function DocumentInbox({
   );
 
   return (
-    <section className="flex flex-col gap-2">
-      <h3 className="flex flex-wrap items-baseline gap-x-2 text-sm font-semibold">
-        Add documents
-        <span className="text-xs font-normal text-muted-foreground">
-          Drop files, then choose what each one is to tick off the checklist.
-        </span>
-      </h3>
-      {/* The whole box takes a drop, not only the add row */}
-      <div
-        onDragOver={(event) => {
-          if (!isReady || isSaving) return;
-          event.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(event) => {
-          if (!isReady) return;
-          event.preventDefault();
-          setDragging(false);
-          add(event.dataTransfer.files);
-        }}
-        className={cn(
-          "rounded-xl border bg-muted/40 p-1 transition-colors",
-          dragging && "border-primary bg-primary-10",
-        )}
-      >
-        <ul className="flex flex-col divide-y overflow-hidden rounded-lg bg-background shadow-xs">
+    // Pinned under the checklist, and the whole strip takes a drop, not only the add row
+    <section
+      aria-label="Add documents"
+      onDragOver={(event) => {
+        if (!isReady || isSaving) return;
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(event) => {
+        if (!isReady) return;
+        event.preventDefault();
+        setDragging(false);
+        add(event.dataTransfer.files);
+      }}
+      className="flex flex-col gap-2 border-t bg-background px-6 py-3"
+    >
+      {unclassified.length > 0 && (
+        <h3 className="flex flex-wrap items-baseline gap-x-1.5 text-sm font-medium">
+          Choose what each file is
+          <span className="text-muted-foreground tabular-nums">
+            {unclassified.length}
+          </span>
+        </h3>
+      )}
+      {unclassified.length > 0 && (
+        // Three 52px rows, two dividers and the border make 160px, so a fourth file starts the scroll
+        <ul className="flex max-h-40 flex-col divide-y overflow-y-auto rounded-lg border">
           {unclassified.map((entry, index) => (
             <li
               key={entry.file?.id ?? index}
-              className="flex flex-wrap items-center gap-3 p-3"
+              className="flex flex-wrap items-center gap-3 px-3 py-2"
             >
               <button
                 type="button"
                 onClick={() => openPreview(files, index)}
                 aria-label={`Preview ${entry.file?.name ?? "file"}`}
-                className="flex size-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border bg-muted/40 transition-colors hover:border-primary"
+                className="flex size-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border bg-muted/40 transition-colors hover:border-primary"
               >
                 <AttachmentThumbnail
                   attachment={entry.file}
@@ -204,73 +206,62 @@ export function DocumentInbox({
               </span>
             </li>
           ))}
-          <li>
-            {isReady ? (
-              <label
-                className={cn(
-                  "group/add flex cursor-pointer items-center gap-3 p-3 transition-colors hover:bg-muted/40 focus-within:ring-2 focus-within:ring-ring focus-within:ring-inset",
-                  isSaving && "pointer-events-none opacity-60",
-                )}
-              >
-                <AddTile isActive={dragging} />
-                <span className="flex min-w-0 flex-col">
-                  <span className="text-sm font-medium">Add documents</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {dragging
-                      ? `Drop to add them to ${shipment.title}`
-                      : "Drop files here or click to browse · PDF, JPG or PNG"}
-                  </span>
-                </span>
-                <input
-                  type="file"
-                  multiple
-                  accept={ACCEPT}
-                  className="sr-only"
-                  onChange={(event) => {
-                    add(event.target.files);
-                    event.target.value = "";
-                  }}
-                />
-              </label>
-            ) : (
-              <div className="flex items-center gap-3 p-3">
-                <AddTile isActive={false} />
-                <span className="flex min-w-0 flex-col">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Add documents
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Choose the shipment&apos;s attachment field first.{" "}
-                    <button
-                      type="button"
-                      onClick={onOpenRules}
-                      className="cursor-pointer text-primary underline-offset-2 hover:underline"
-                    >
-                      Open rules
-                    </button>
-                  </span>
-                </span>
-              </div>
-            )}
-          </li>
         </ul>
-      </div>
+      )}
+      {isReady ? (
+        // The whole box opens the file picker; the button's click lands here too, so it opens once
+        <div
+          role="presentation"
+          onClick={() => inputRef.current?.click()}
+          className={cn(
+            "flex cursor-pointer items-center gap-3 rounded-lg border border-dashed px-3 py-2.5 transition-colors hover:border-primary hover:bg-primary-10",
+            dragging && "border-primary bg-primary-10",
+            isSaving && "pointer-events-none opacity-60",
+          )}
+        >
+          <span className="flex min-w-0 flex-col">
+            <span className="text-sm font-medium">
+              {dragging
+                ? `Drop to add them to ${shipment.title}`
+                : "Drop files here, or click to browse"}
+            </span>
+            <span className="truncate text-xs text-muted-foreground">
+              PDF, JPG or PNG · then choose what each one is to tick it off
+            </span>
+          </span>
+          <input
+            ref={inputRef}
+            type="file"
+            multiple
+            accept={ACCEPT}
+            hidden
+            onClick={(event) => event.stopPropagation()}
+            onChange={(event) => {
+              add(event.target.files);
+              event.target.value = "";
+            }}
+          />
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 rounded-lg border border-dashed px-3 py-2.5">
+          <span className="flex min-w-0 flex-col">
+            <span className="text-sm font-medium text-muted-foreground">
+              Add documents
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Choose the shipment&apos;s attachment field first.{" "}
+              <button
+                type="button"
+                onClick={onOpenRules}
+                className="cursor-pointer text-primary underline-offset-2 hover:underline"
+              >
+                Open rules
+              </button>
+            </span>
+          </span>
+        </div>
+      )}
       <AttachmentPreviewDialog {...dialogProps} />
     </section>
-  );
-}
-
-/** The "+" box at the start of the add row; it lights up while files are dragged over. */
-function AddTile({ isActive }: { isActive: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-lg border text-muted-foreground transition-colors group-hover/add:border-primary group-hover/add:text-primary",
-        isActive && "border-primary bg-primary-10 text-primary",
-      )}
-    >
-      <Plus className="size-4" />
-    </span>
   );
 }

@@ -24,7 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Input,
-  Separator,
   Skeleton,
   toast,
 } from "@moduleleague/ui";
@@ -91,11 +90,14 @@ export function DocumentChecklist({
   data,
   getActivity,
   onOpenRules,
+  className,
 }: {
   row: DocumentRow;
   data: DocumentData;
   getActivity: DocumentApi["getDocumentActivity"];
   onOpenRules: () => void;
+  /** Sizes the card in its column, e.g. to scroll on its own. */
+  className?: string;
 }) {
   const { shipment, checklist } = row;
   const { lookups, sources, documentSettings } = data;
@@ -125,15 +127,19 @@ export function DocumentChecklist({
     />
   );
 
+  // Only worth flagging while a required paper is still short
+  const isBlocking =
+    checklist.blocks !== undefined && checklist.verified < checklist.required;
+
   return (
-    <section className="flex flex-col gap-5 rounded-xl border bg-background p-4 sm:min-w-lg">
+    <section
+      className={cn("flex flex-col gap-6 px-6 py-5 sm:min-w-lg", className)}
+    >
       <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <h2 className="text-base font-semibold">
-              {shipment.title} checklist
-            </h2>
-            <p className="text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <h2 className="truncate text-xl font-semibold">{shipment.title}</h2>
+            <p className="text-sm text-muted-foreground">
               <span title={reasonText(checklist, names.mode, names.incoterm)}>
                 {basisText(checklist)} · {stepLabel(checklist.stage)}
               </span>
@@ -147,53 +153,48 @@ export function DocumentChecklist({
               </button>
             </p>
           </div>
-          <span
-            className={cn(
-              CHIP_CLASS,
-              "py-0.5",
-              checklist.blocks !== undefined
-                ? DOCUMENT_TONE.orange.chip
-                : DOCUMENT_TONE.green.chip,
-            )}
-          >
-            {checklist.blocks !== undefined
-              ? `Blocks ${gateName(checklist.blocks)}`
-              : "Nothing blocked"}
-          </span>
+          {isBlocking && (
+            <span
+              className={cn(CHIP_CLASS, "py-0.5", DOCUMENT_TONE.orange.chip)}
+            >
+              Blocks {gateName(checklist.blocks)}
+            </span>
+          )}
         </div>
-        <DocumentProgress
-          verified={checklist.verified}
-          required={checklist.required}
-          className="max-w-sm"
-        />
+        {checklist.required > 0 && (
+          <DocumentProgress
+            verified={checklist.verified}
+            required={checklist.required}
+            className="max-w-sm"
+          />
+        )}
       </header>
-      <Separator className="h-0.5" />
-      <DocumentGroup
-        title="Required now"
-        hint="Upload each paper, then verify it."
-      >
+      <DocumentGroup title="Required now" count={groups.required.length}>
         {groups.required.length > 0 ? (
-          <ul className="flex flex-col gap-2">{groups.required.map(item)}</ul>
+          <ul className={LIST_CLASS}>{groups.required.map(item)}</ul>
         ) : (
-          <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-            No papers are required at this stage.
+          <p className="text-sm text-muted-foreground">
+            Nothing is required while it&apos;s{" "}
+            {stepLabel(checklist.stage).toLowerCase()}.
           </p>
         )}
       </DocumentGroup>
       {groups.upcoming.length > 0 && (
         <DocumentGroup
           title="Needed later"
+          count={groups.upcoming.length}
           hint="Not required yet; they can be filed early."
         >
-          <ul className="flex flex-col gap-2">{groups.upcoming.map(item)}</ul>
+          <ul className={LIST_CLASS}>{groups.upcoming.map(item)}</ul>
         </DocumentGroup>
       )}
       {groups.extra.length > 0 && (
         <DocumentGroup
           title="Other filed papers"
+          count={groups.extra.length}
           hint="Filed on this shipment, but not on its checklist."
         >
-          <ul className="flex flex-col gap-2">{groups.extra.map(item)}</ul>
+          <ul className={LIST_CLASS}>{groups.extra.map(item)}</ul>
         </DocumentGroup>
       )}
       <AttachmentPreviewDialog {...dialogProps} />
@@ -201,24 +202,34 @@ export function DocumentChecklist({
   );
 }
 
+/** One border around a group's papers, with a line between each, instead of a card per paper. */
+const LIST_CLASS = "flex flex-col divide-y overflow-hidden rounded-lg border";
+
 function DocumentGroup({
   title,
+  count,
   hint,
   children,
 }: {
   title: string;
-  /** What the group is for, beside its title. */
-  hint: string;
+  count: number;
+  /** What the group is for, under its title; left out when the title says it all. */
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="flex flex-wrap items-baseline gap-x-2 text-sm font-semibold">
-        {title}
-        <span className="text-xs font-normal text-muted-foreground">
-          {hint}
-        </span>
-      </h3>
+      <div className="flex flex-col gap-0.5">
+        <h3 className="flex items-baseline gap-1.5 text-sm font-medium">
+          {title}
+          {count > 0 && (
+            <span className="text-muted-foreground tabular-nums">{count}</span>
+          )}
+        </h3>
+        {hint !== undefined && (
+          <p className="text-xs text-pretty text-muted-foreground">{hint}</p>
+        )}
+      </div>
       {children}
     </div>
   );
@@ -353,161 +364,151 @@ function DocumentItem(props: ItemProps) {
         if (file) void upload(file);
       }}
       className={cn(
-        "rounded-xl border",
-        // With a note, the paper sits as a white card inside a tinted frame and the note runs along the frame's bottom
-        banner ? cn("p-1", BANNER_TONE[banner.tone].card) : "bg-background",
+        "flex flex-wrap items-center gap-3 bg-background px-3 py-2.5 transition-colors",
+        dragging && "bg-primary-10",
       )}
     >
-      <div className="flex flex-col gap-2">
-        <div
+      {/* The paper itself: its file to preview, or the box to drop or pick one */}
+      {document.file && !needsFile ? (
+        <button
+          type="button"
+          onClick={() => document.file && onPreview(document.file)}
+          aria-label={`Preview ${document.file.name}`}
+          title={document.file.name}
+          className="flex size-10 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border bg-muted/40 transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          <AttachmentThumbnail
+            attachment={document.file}
+            className="size-full object-cover"
+          />
+        </button>
+      ) : (
+        <button
+          type="button"
+          disabled={isSaving}
+          onClick={pick}
+          aria-label={`Upload ${document.title}`}
+          title="Drop a file here, or click to pick one"
           className={cn(
-            "flex flex-wrap items-center gap-2 p-3",
-            banner && "rounded-lg bg-background shadow-xs",
+            "flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-dashed text-muted-foreground transition-colors hover:border-primary hover:bg-primary-10 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+            dragging && "border-primary bg-primary-10 text-primary",
           )}
         >
-          {/* The paper itself: its file to preview, or the box to drop or pick one */}
-          {document.file && !needsFile ? (
-            <button
-              type="button"
-              onClick={() => document.file && onPreview(document.file)}
-              aria-label={`Preview ${document.file.name}`}
-              title={document.file.name}
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border bg-muted/40 transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-              <AttachmentThumbnail
-                attachment={document.file}
-                className="size-full object-cover"
-              />
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={pick}
-              aria-label={`Upload ${document.title}`}
-              title="Drop a file here, or click to pick one"
+          <Upload className="size-4" />
+        </button>
+      )}
+      <div className="flex min-w-48 flex-1 basis-48 flex-col gap-0.5">
+        <div className="flex w-fit min-w-0 items-center gap-2">
+          <span
+            title={nonEmpty(fullDetail)}
+            className="truncate text-sm font-medium"
+          >
+            {document.title}
+          </span>
+          {!isOther && (
+            <span
               className={cn(
-                "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed text-muted-foreground transition-colors hover:border-primary hover:bg-primary-10 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
-                dragging && "border-primary bg-primary-10 text-primary",
+                CHIP_CLASS,
+                "shrink-0 py-0.5",
+                document.expired
+                  ? DOCUMENT_TONE.orange.chip
+                  : STATUS_CLASS[document.status],
               )}
             >
-              <Upload className="size-4" />
-            </button>
-          )}
-          <div className="flex min-w-48 flex-1 basis-48 flex-col gap-1">
-            <div className="flex min-w-0 items-center gap-2 w-fit">
-              <span
-                title={nonEmpty(fullDetail)}
-                className="truncate text-sm font-semibold"
-              >
-                {document.title}
-              </span>
-              {!isOther && (
-                <span
-                  className={cn(
-                    CHIP_CLASS,
-                    "shrink-0 py-0.5",
-                    document.expired
-                      ? DOCUMENT_TONE.orange.chip
-                      : STATUS_CLASS[document.status],
-                  )}
-                >
-                  {status}
-                </span>
-              )}
-            </div>
-            {subtitle !== "" && (
-              <p className="min-w-0 truncate text-xs text-muted-foreground">
-                {subtitle}
-              </p>
-            )}
-          </div>
-          {hasMenu && (
-            <div className="ml-auto flex items-center gap-2">
-              {canReplace && (
-                <Button
-                  variant="outline"
-                  size="xs"
-                  startIcon={<Upload size={13} />}
-                  disabled={isSaving}
-                  title="Upload a new file in place of this one"
-                  onClick={pick}
-                >
-                  Replace
-                </Button>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon-xs"
-                    aria-label={`More for ${document.title}`}
-                  >
-                    <MoreHorizontal className="size-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {canReject && (
-                    <DropdownMenuItem onSelect={() => setRejecting(true)}>
-                      <X />
-                      Reject…
-                    </DropdownMenuItem>
-                  )}
-                  {hasHistory && (
-                    <DropdownMenuItem onSelect={() => setHistory(true)}>
-                      <History />
-                      History
-                    </DropdownMenuItem>
-                  )}
-                  {hasFile && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        variant="destructive"
-                        disabled={isSaving}
-                        onSelect={() => setRemoving(true)}
-                      >
-                        <Trash2 />
-                        Remove file
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+              {status}
+            </span>
           )}
         </div>
-      </div>
-
-      {/* The note, with the file's check and verify on the same line; on a narrow card the text wraps and they drop below, kept right */}
-      {banner && (
-        <div
-          className={cn(
-            "flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 pt-2 pb-1.5 text-xs font-medium",
-            BANNER_TONE[banner.tone].strip,
-          )}
-        >
-          <p className="flex min-w-0 flex-1 basis-48 items-start gap-2">
+        {subtitle !== "" && (
+          <p className="min-w-0 truncate text-xs text-muted-foreground">
+            {subtitle}
+          </p>
+        )}
+        {/* Only when someone has to act, or the paper is waiting on a check */}
+        {banner && (
+          <p
+            className={cn(
+              "flex min-w-0 items-start gap-1.5 text-xs font-medium",
+              BANNER_TONE[banner.tone].strip,
+            )}
+          >
             {banner.tone === "action" ? (
               <CircleAlert className="mt-px size-3.5 shrink-0" />
             ) : (
               <Info className="mt-px size-3.5 shrink-0" />
             )}
-            <span className="min-w-0">{banner.text}</span>
+            <span className="min-w-0 text-pretty">{banner.text}</span>
           </p>
+        )}
+      </div>
+      {(hasMenu || canVerify) && (
+        <div className="ml-auto flex items-center gap-2">
           {/* Checking with AI only helps before verifying, so it sits here rather than on every paper */}
-          {canVerify && (
-            <div className="ml-auto flex min-w-0 items-center gap-2">
-              {document.file && canReview(document.file) && (
-                <DocumentReviewButton
-                  shipmentId={shipmentId}
-                  file={document.file}
-                  onReview={data.onReview}
-                />
-              )}
-              <VerifyButton {...props} />
-            </div>
+          {canVerify && document.file && canReview(document.file) && (
+            <DocumentReviewButton
+              shipmentId={shipmentId}
+              file={document.file}
+              onReview={data.onReview}
+            />
           )}
+          {canVerify && <VerifyButton {...props} />}
+          {/* While a file waits on its check, Verify takes the spot and Replace moves into the menu */}
+          {canReplace && !canVerify && (
+            <Button
+              variant="outline"
+              size="xs"
+              startIcon={<Upload size={13} />}
+              disabled={isSaving}
+              title="Upload a new file in place of this one"
+              onClick={pick}
+            >
+              Replace
+            </Button>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon-xs"
+                aria-label={`More for ${document.title}`}
+              >
+                <MoreHorizontal className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {canReplace && canVerify && (
+                <DropdownMenuItem disabled={isSaving} onSelect={pick}>
+                  <Upload />
+                  Replace file
+                </DropdownMenuItem>
+              )}
+              {canReject && (
+                <DropdownMenuItem onSelect={() => setRejecting(true)}>
+                  <X />
+                  Reject…
+                </DropdownMenuItem>
+              )}
+              {hasHistory && (
+                <DropdownMenuItem onSelect={() => setHistory(true)}>
+                  <History />
+                  History
+                </DropdownMenuItem>
+              )}
+              {hasFile && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={isSaving}
+                    onSelect={() => setRemoving(true)}
+                  >
+                    <Trash2 />
+                    Remove file
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
       <input

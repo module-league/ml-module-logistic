@@ -17,12 +17,12 @@ export function DocumentList({
   return (
     <nav
       aria-label="Shipments"
-      className="flex max-h-[75dvh] flex-col lg:max-h-full overflow-hidden rounded-xl border bg-background"
+      className="flex max-h-[75dvh] min-h-0 flex-col lg:max-h-none lg:border-r"
     >
-      <h2 className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
-        Shipments · {rows.length}
+      <h2 className="px-4 pt-3 pb-1 text-xs font-medium text-muted-foreground tabular-nums">
+        {rows.length} {rows.length === 1 ? "shipment" : "shipments"}
       </h2>
-      <ul className="flex flex-col gap-1 overflow-y-auto p-2">
+      <ul className="flex flex-col gap-0.5 overflow-y-auto px-2 pb-2">
         {rows.map(({ shipment, checklist }) => (
           <li key={shipment.id}>
             <DocumentShipmentCard

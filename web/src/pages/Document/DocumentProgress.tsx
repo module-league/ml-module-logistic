@@ -24,10 +24,17 @@ export function DocumentProgress({
   const percent = required !== 0 ? (verified / required) * 100 : 100;
   const label =
     required === 0
-      ? "Nothing required"
+      ? "Nothing due yet"
       : isDone
         ? "All verified"
         : `${verified} of ${required} verified`;
+  // With nothing required a full bar would read as done, so only the words show
+  if (required === 0)
+    return (
+      <span className={cn("text-xs text-muted-foreground", className)}>
+        {label}
+      </span>
+    );
   // A list card has no room for the sentence, so it shows the count and keeps the sentence as the tooltip
   const shown =
     size === "compact" && required > 0 ? `${verified}/${required}` : label;
@@ -54,7 +61,7 @@ export function DocumentProgress({
         <span
           className={cn(
             "block h-full rounded-full transition-[width]",
-            isDone ? DOCUMENT_TONE.green.bar : DOCUMENT_TONE.blue.bar,
+            isDone ? DOCUMENT_TONE.green.bar : "bg-primary",
           )}
           style={{ width: `${percent}%` }}
         />
