@@ -6,6 +6,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { attempt } from "@/lib/toastHelper";
 import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
 import { CHIP_CLASS } from "./ExceptionList";
+import { ExceptionStep } from "./ExceptionStep";
 import type { ExceptionData } from "./useExceptionData";
 
 const CERTAINTY_CLASS: Record<IExceptionCopilot["certainty"], string> = {
@@ -55,28 +56,27 @@ export function ExceptionCopilot({
   );
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-col">
-          <h3 className="text-sm font-semibold">AI co-pilot</h3>
-          {!answer && (
-            <span className="text-xs text-muted-foreground">
-              Reads the timeline, shipment and dispatch, then explains what
-              happened and what to do next.
-            </span>
-          )}
-        </div>
+    // Tinted so it reads as optional help under the two actions
+    <ExceptionStep
+      className="bg-muted/40"
+      title="Not sure what to do?"
+      hint={
+        answer
+          ? undefined
+          : "The AI reads the timeline, shipment and dispatch, then explains what happened and what to try next."
+      }
+      actions={
         <Button
           size="xs"
-          variant={answer ? "outline" : "default"}
+          variant="outline"
           startIcon={busyIcon}
           disabled={isPending}
           onClick={() => void ask()}
         >
           {isPending ? "Thinking…" : answer ? "Ask again" : "Ask AI"}
         </Button>
-      </div>
-
+      }
+    >
       {answer && (
         <div className="flex flex-col gap-3">
           <p className="text-sm">{answer.summary}</p>
@@ -136,7 +136,7 @@ export function ExceptionCopilot({
             >
               Looks ready to resolve as{" "}
               <span className="font-medium">“{answer.resolveWith}”</span>. Pick
-              it under Resolve with a reason.
+              it under Close it.
             </p>
           )}
 
@@ -176,7 +176,7 @@ export function ExceptionCopilot({
           </div>
         </div>
       )}
-    </section>
+    </ExceptionStep>
   );
 }
 

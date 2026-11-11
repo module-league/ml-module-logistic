@@ -110,14 +110,14 @@ export function span(ms: number) {
 export const isOverdue = (exception: IException, now: Date) =>
   exception.status === "open" && new Date(exception.respondBy) < now;
 
-/** "Response overdue", "2 h 10 m left", "Until 14:00" or "Resolved 19 Oct, 18:00". */
+/** "Overdue by 2 d", "2 h 10 m left", "Until 14:00" or "Resolved 19 Oct, 18:00". */
 export function slaText(exception: IException, now: Date) {
   if (exception.status === "snoozed")
     return `Until ${stamp(exception.snoozedUntil)}`;
   if (exception.status === "resolved")
     return `Resolved ${stamp(exception.resolvedAt)}`;
   const left = new Date(exception.respondBy).getTime() - now.getTime();
-  return left < 0 ? "Response overdue" : `${span(left)} left`;
+  return left < 0 ? `Overdue by ${span(left)}` : `${span(left)} left`;
 }
 
 /** "Response overdue by 2 d" or "Respond within 1 h 40 m"; nothing once it isn't open. */
@@ -286,9 +286,15 @@ export function tabRows(
     );
 }
 
-/** "Penang → Port Klang", with ? for a missing end. */
-export const routeText = (shipment?: DispatchShipment) =>
-  `${shipment?.origin?.title ?? "?"} → ${shipment?.destination?.title ?? "?"}`;
+/** "Penang → Port Klang", naming a missing end ("No destination") instead of leaving it blank. */
+export const routeText = (shipment?: DispatchShipment) => {
+  const origin = shipment?.origin?.title;
+  const destination = shipment?.destination?.title;
+  // Spelled out rather than "? → ?", so a missing end reads as what it is
+  if (origin === undefined && destination === undefined)
+    return "No origin or destination";
+  return `${origin ?? "No origin"} → ${destination ?? "No destination"}`;
+};
 
 /** "EXC-1042 · opened 19 Oct, 18:00 · JOB-0121". */
 export const openedLine = (row: ExceptionRow) =>

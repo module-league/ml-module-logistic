@@ -1,9 +1,17 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { Phone } from "lucide-react";
+import { ChevronDown, Phone } from "lucide-react";
 import {
   Button,
+  cn,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -46,7 +54,13 @@ const FIX_LABEL: Record<FixAction, string> = {
 
 type FixProps = { row: ExceptionRow; data: ExceptionData; action: FixAction };
 
-/** The rule's ways to fix it; each is logged on the timeline, and fixes that clear the condition close it. */
+/** True inside the "More fixes" list, where each fix shows as a full-width row instead of a button. */
+const FixAsItemContext = createContext(false);
+
+/**
+ * The rule's ways to fix it: the first as a button, the rest under "More fixes", so the step stays one or two controls.
+ * Each is logged on the timeline, and fixes that clear the condition close it.
+ */
 export function ExceptionFixActions({
   row,
   data,
@@ -54,13 +68,29 @@ export function ExceptionFixActions({
   row: ExceptionRow;
   data: ExceptionData;
 }) {
-  const actions = FIX_ACTIONS[row.exception.ruleKey] ?? MANUAL_FIX_ACTIONS;
+  const [first, ...others] =
+    FIX_ACTIONS[row.exception.ruleKey] ?? MANUAL_FIX_ACTIONS;
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map((action) => (
-        <Fix key={action} row={row} data={data} action={action} />
-      ))}
-    </div>
+    <>
+      {others.length > 0 && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="xs">
+              More fixes
+              <ChevronDown size={13} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="flex w-52 flex-col p-1">
+            <FixAsItemContext.Provider value>
+              {others.map((action) => (
+                <Fix key={action} row={row} data={data} action={action} />
+              ))}
+            </FixAsItemContext.Provider>
+          </PopoverContent>
+        </Popover>
+      )}
+      {first !== undefined && <Fix row={row} data={data} action={first} />}
+    </>
   );
 }
 
@@ -214,10 +244,17 @@ function Fix(props: FixProps) {
 
 function FixButton({
   children,
+  className,
   ...props
 }: React.ComponentProps<typeof Button> & { children: ReactNode }) {
+  const asItem = useContext(FixAsItemContext);
   return (
-    <Button variant="secondary" size="sm" {...props}>
+    <Button
+      variant={asItem ? "ghost" : "outline"}
+      size="xs"
+      className={cn(asItem && "w-full justify-start font-normal", className)}
+      {...props}
+    >
       {children}
     </Button>
   );

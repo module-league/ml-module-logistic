@@ -1,6 +1,22 @@
-import { useMemo, useState } from "react";
-import { ShieldCheck, TriangleAlert } from "lucide-react";
-import { Button, Skeleton } from "@/ui-kit";
+import { useMemo, useState, type ReactNode } from "react";
+import {
+  AlarmClock,
+  CircleAlert,
+  CircleCheck,
+  ListFilter,
+  ShieldCheck,
+  TriangleAlert,
+} from "lucide-react";
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+  Skeleton,
+} from "@/ui-kit";
 import {
   Empty,
   EmptyDescription,
@@ -10,7 +26,7 @@ import {
 } from "@/components/ui/empty";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { PageHeader } from "@/components/ml/pageHeader";
-import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControls";
+import { SegmentedTabs } from "@/components/custom/SegmentedTabs";
 import { useCurrentUser } from "@/services/user/current.user";
 import { buildDispatchBoard } from "../Dispatch/dispatchBoard.utils";
 import { ExceptionList } from "./ExceptionList";
@@ -23,12 +39,19 @@ import {
   EXCEPTION_TABS,
   tabRows,
   type ExceptionFilter,
+  type ExceptionRow,
 } from "./exception.utils";
 import {
   useExceptionActivity,
   type ExceptionApi,
   type ExceptionData,
 } from "./useExceptionData";
+
+const TAB_ICON: Record<IExceptionStatus, ReactNode> = {
+  open: <CircleAlert className="size-3.5" />,
+  snoozed: <AlarmClock className="size-3.5" />,
+  resolved: <CircleCheck className="size-3.5" />,
+};
 
 export function ExceptionPage({
   data,
@@ -80,7 +103,10 @@ export function ExceptionPage({
     () =>
       EXCEPTION_TABS.map((entry) => ({
         value: entry.value,
-        label: `${entry.label} · ${rows.filter((row) => row.exception.status === entry.value).length}`,
+        label: entry.label,
+        icon: TAB_ICON[entry.value],
+        count: rows.filter((row) => row.exception.status === entry.value)
+          .length,
       })),
     [rows],
   );
@@ -96,7 +122,7 @@ export function ExceptionPage({
   const activity = useExceptionActivity(getActivity, selected?.exception.objId);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <PageHeader
         title="Exceptions"
         description="Opened by rules when a shipment breaks the plan. Own it, fix it, close it with a reason."
@@ -121,64 +147,77 @@ export function ExceptionPage({
           </>
         }
       />
-      <div className="flex flex-col gap-4 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <DashboardSegmented
-            label="Status"
-            value={tab}
-            options={tabs}
-            onChange={setTab}
-          />
-          <DashboardSegmented
-            label="Filter"
-            value={filter}
-            options={EXCEPTION_FILTERS}
-            onChange={setFilter}
-          />
-        </div>
+      <div className="flex min-h-page-toolbar flex-wrap items-center gap-2 border-b px-4 py-1">
+        {/* Stretched over the bar's padding, so the tab underline sits on its bottom border */}
+        <SegmentedTabs
+          className="-my-1 -ml-2.5 self-stretch"
+          label="Status"
+          value={tab}
+          options={tabs}
+          onChange={setTab}
+        />
+        <ExceptionFilterMenu
+          rows={rows}
+          tab={tab}
+          meId={me.id}
+          value={filter}
+          onChange={setFilter}
+        />
+      </div>
+      {/* On a wide page the list and the detail scroll on their own; stacked on a narrow one, the whole content does */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:overflow-hidden">
         <QueryWrapper
           isLoading={data.isLoading}
           error={data.error}
           onRetry={data.onRetry}
           renderLoader={<ExceptionPageSkeleton />}
         >
-          {visible.length > 0 ? (
-            <div className="grid items-start gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]">
-              <ExceptionList
-                rows={visible}
-                selectedId={selected?.exception.objId}
-                now={now}
-                onSelect={onSelect}
-              />
-              {selected && (
-                <ExceptionDetail
-                  key={selected.exception.objId}
-                  row={selected}
-                  data={data}
-                  activity={activity}
+          {/* Keyed by tab, so each switch eases the new list in instead of swapping it at once */}
+          <div
+            key={tab}
+            className="h-full min-h-0 animate-in duration-200 ease-in-out fade-in-0 slide-in-from-bottom-1 motion-reduce:animate-none"
+          >
+            {visible.length > 0 ? (
+              <div className="grid h-full min-h-0 lg:grid-cols-[22rem_minmax(0,1fr)] lg:grid-rows-1">
+                <ExceptionList
+                  rows={visible}
+                  selectedId={selected?.exception.objId}
                   now={now}
-                  me={me}
-                  onOpenRules={() => setRulesOpen(true)}
+                  onSelect={onSelect}
                 />
-              )}
-            </div>
-          ) : (
-            <Empty className="rounded-xl border">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <ShieldCheck />
-                </EmptyMedia>
-                <EmptyTitle>
-                  {tab === "open" ? "Nothing needs attention" : "Nothing here"}
-                </EmptyTitle>
-                <EmptyDescription>
-                  {tab === "open"
-                    ? "Rules check every shipment each minute and open an exception when one breaks the plan."
-                    : "Exceptions show here once they are snoozed or resolved."}
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          )}
+                {selected && (
+                  <ExceptionDetail
+                    key={selected.exception.objId}
+                    row={selected}
+                    data={data}
+                    activity={activity}
+                    now={now}
+                    me={me}
+                    onOpenRules={() => setRulesOpen(true)}
+                    className="lg:min-h-0 lg:overflow-y-auto"
+                  />
+                )}
+              </div>
+            ) : (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <ShieldCheck />
+                  </EmptyMedia>
+                  <EmptyTitle>
+                    {tab === "open"
+                      ? "Nothing needs attention"
+                      : "Nothing here"}
+                  </EmptyTitle>
+                  <EmptyDescription>
+                    {tab === "open"
+                      ? "Rules check every shipment each minute and open an exception when one breaks the plan."
+                      : "Exceptions show here once they are snoozed or resolved."}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
+          </div>
         </QueryWrapper>
       </div>
       <ExceptionRulesDialog
@@ -202,16 +241,78 @@ export function ExceptionPage({
 function ExceptionPageSkeleton() {
   return (
     <div
-      className="grid gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]"
+      className="grid h-full lg:grid-cols-[22rem_minmax(0,1fr)]"
       aria-busy
       aria-label="Loading exceptions"
     >
-      <div className="flex flex-col gap-2 rounded-xl border p-2">
+      <div className="flex flex-col gap-1 p-2 lg:border-r">
         {[0, 1, 2, 3].map((index) => (
-          <Skeleton key={index} className="h-20 rounded-lg" />
+          <Skeleton key={index} className="h-16 rounded-md" />
         ))}
       </div>
-      <Skeleton className="h-[32rem] rounded-xl" />
+      <div className="flex flex-col gap-6 px-6 py-5">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-7 w-64" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <Skeleton className="h-40 rounded-lg" />
+        <Skeleton className="h-24 rounded-lg" />
+      </div>
     </div>
+  );
+}
+
+/** Narrows the tab by severity or to mine, counting each option; the button shows what's picked. */
+function ExceptionFilterMenu({
+  rows,
+  tab,
+  meId,
+  value,
+  onChange,
+}: {
+  rows: ExceptionRow[];
+  tab: IExceptionStatus;
+  meId: string;
+  value: ExceptionFilter;
+  onChange: (filter: ExceptionFilter) => void;
+}) {
+  const active = value !== "all";
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant={active ? "secondary" : "outline"}
+          size="xs"
+          startIcon={<ListFilter size={13} />}
+          className="ml-auto"
+        >
+          {active
+            ? EXCEPTION_FILTERS.find((option) => option.value === value)?.label
+            : "Filter"}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel>Show</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={value}
+          onValueChange={(next) => onChange(next as ExceptionFilter)}
+        >
+          {EXCEPTION_FILTERS.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
+              <span className="flex-1">
+                {option.value === "all"
+                  ? "All"
+                  : option.value === "mine"
+                    ? "Owned by me"
+                    : `${option.label} severity`}
+              </span>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {tabRows(rows, tab, option.value, meId).length}
+              </span>
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
