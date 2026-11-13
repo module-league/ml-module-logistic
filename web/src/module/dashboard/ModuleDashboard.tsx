@@ -12,6 +12,7 @@ import {
   toast,
 } from "@moduleleague/ui";
 import { errorParser } from "@/hooks/useErrorParser";
+import { BackgroundWrapper } from "@/components/custom/BackgroundWrapper";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { PageHeader } from "@/components/ml/pageHeader";
 import { RecordLookupContext } from "@/components/custom/RecordLookup.context";
@@ -289,30 +290,32 @@ export function ModuleDashboard({ data }: ModuleDashboardProps) {
                     </>
                   }
                 />
-                <main className="min-h-0 flex-1 overflow-y-auto p-4">
-                  {layout.widgets?.length > 0 ? (
-                    <div className="grid grid-cols-12 gap-4">
-                      {layout.widgets?.map((widget) => (
-                        <div
-                          key={widget.id}
-                          className={
-                            // Saved dashboards may hold a width this build doesn't know
-                            WIDTH_CLASS[widget.width] ?? WIDTH_CLASS.m
-                          }
-                        >
-                          <DashboardWidget widget={widget} />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <ModuleDashboardEmptyState
-                      title={title}
-                      canSuggest={sources.length > 0}
-                      onStartSuggested={startSuggested}
-                      onStartEmpty={startEmpty}
-                    />
-                  )}
-                </main>
+                <BackgroundWrapper className="flex min-h-0 flex-1 flex-col">
+                  <main className="min-h-0 flex-1 overflow-y-auto p-4">
+                    {layout.widgets?.length > 0 ? (
+                      <div className="grid grid-cols-12 gap-4">
+                        {layout.widgets?.map((widget) => (
+                          <div
+                            key={widget.id}
+                            className={
+                              // Saved dashboards may hold a width this build doesn't know
+                              WIDTH_CLASS[widget.width] ?? WIDTH_CLASS.m
+                            }
+                          >
+                            <DashboardWidget widget={widget} />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <ModuleDashboardEmptyState
+                        title={title}
+                        canSuggest={sources.length > 0}
+                        onStartSuggested={startSuggested}
+                        onStartEmpty={startEmpty}
+                      />
+                    )}
+                  </main>
+                </BackgroundWrapper>
               </>
             )}
           </QueryWrapper>

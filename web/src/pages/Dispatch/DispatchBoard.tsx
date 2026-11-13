@@ -1,10 +1,9 @@
-import { Settings2 } from "lucide-react";
+import { ArrowRight, Settings2 } from "lucide-react";
 import { Button, cn } from "@moduleleague/ui";
 import {
   KanbanBoard,
   KanbanBoardSkeleton,
 } from "@/components/custom/KanbanBoard";
-import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
 import {
   cardTime,
   DISPATCH_STAGES,
@@ -40,7 +39,7 @@ export function DispatchBoard({
   return (
     <div className="flex flex-col gap-3 h-full">
       {!configured && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-dashed bg-muted/40 px-3 py-2 text-xs">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border bg-background px-3 py-2 text-xs">
           <span className="font-medium">Set up the shipment card</span>
           <span className="text-muted-foreground">
             Choose the origin, destination and details each card shows.
@@ -71,7 +70,7 @@ export function DispatchBoard({
   );
 }
 
-/** One shipment: its job number and time, details, route, progress, driver and lateness. */
+/** One shipment: its title and time, route, details, then its driver and the step it has reached. */
 export function DispatchShipmentCard({
   shipment,
   showRoute,
@@ -85,95 +84,93 @@ export function DispatchShipmentCard({
   onSelect?: () => void;
 }) {
   const dispatch = shipment.dispatch;
-  const done = stepsDone(dispatch);
   const time = cardTime(dispatch, now);
   const late = lateText(dispatch, now);
-  const summary = [dispatch && shipment.title, ...shipment.details]
-    .filter(Boolean)
-    .join(" · ");
+  const meta = [
+    shipment.badge,
+    ...shipment.details,
+    dispatch && jobNumber(dispatch),
+  ].filter((part) => part != null && part !== "");
+  const step = dispatch ? DISPATCH_STEPS[stepsDone(dispatch) - 1] : undefined;
   const Root = onSelect ? "button" : "div";
 
   return (
     <Root
       {...(onSelect && { type: "button" as const, onClick: onSelect })}
       className={cn(
-        "flex w-full flex-col gap-1.5 rounded-lg border bg-background p-2.5 text-left shadow-xs transition-colors",
+        "flex w-full flex-col gap-1 rounded-lg border bg-background p-3 text-left shadow-xs transition-colors duration-150",
         onSelect &&
-          "cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none",
+          "cursor-pointer hover:border-primary-40 focus-visible:ring-2 focus-visible:ring-primary-30 focus-visible:outline-none",
       )}
     >
       <span className="flex items-baseline justify-between gap-2">
-        <span className="min-w-0 truncate text-sm font-semibold">
-          {dispatch ? jobNumber(dispatch) : shipment.title}
+        <span className="min-w-0 truncate text-sm font-medium">
+          {shipment.title}
         </span>
-        {time !== "" && (
-          <span className="shrink-0 text-xs text-muted-foreground">{time}</span>
+        {late !== "" ? (
+          <span
+            className="shrink-0 text-xs font-medium text-amber-700 tabular-nums dark:text-amber-400"
+            title={time}
+          >
+            {late}
+          </span>
+        ) : (
+          time !== "" && (
+            <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+              {time}
+            </span>
+          )
         )}
       </span>
-      {((shipment.badge != null && shipment.badge !== "") ||
-        summary !== "") && (
-        <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-          {shipment.badge != null && shipment.badge !== "" && (
-            <span className="shrink-0 rounded-md bg-primary px-1.5 font-medium text-primary-foreground">
-              {shipment.badge}
-            </span>
-          )}
-          <span className="truncate">{summary}</span>
-        </span>
-      )}
-      {(showRoute || dispatch) && (
-        <span className="truncate text-xs text-muted-foreground">
-          {shipment.origin?.title ?? "No origin"} →{" "}
-          {shipment.destination?.title ?? "No destination"}
-        </span>
-      )}
-      <span className="flex flex-col gap-1">
-        <span className="flex gap-1" aria-hidden>
-          {DISPATCH_STEPS.map((step, index) => (
-            <span
-              key={step}
-              className={cn(
-                "h-1 flex-1 rounded-full",
-                index < done ? "bg-emerald-600" : "bg-muted",
-              )}
+
+      {(showRoute || !!dispatch) &&
+        (shipment.origin || shipment.destination ? (
+          // One wrapping line, so long place names use the card's width instead of each being cut at half
+          <span className="line-clamp-2 text-xs">
+            {shipment.origin?.title ?? "No origin"}
+            <ArrowRight
+              aria-label="to"
+              className="mx-1 inline size-3 align-[-2px] text-muted-foreground"
             />
-          ))}
+            {shipment.destination?.title ?? "No destination"}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">No route yet</span>
+        ))}
+
+      {meta.length > 0 && (
+        <span className="truncate text-xs text-muted-foreground tabular-nums">
+          {meta.join(" · ")}
         </span>
-        <span className="text-[11px] text-muted-foreground">
-          {done} of {DISPATCH_STEPS.length} · next:{" "}
-          {DISPATCH_STEPS[done] ?? "Done"}
-        </span>
-      </span>
-      <span className="flex min-w-0 items-center gap-2 text-xs">
+      )}
+
+      <span className="mt-1.5 flex min-w-0 items-center gap-2 border-t pt-2 text-xs">
+        {shipment.driver ? (
+          <span
+            aria-hidden
+            className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-10 text-[10px] font-semibold text-primary"
+          >
+            {shipment.driver.initials}
+          </span>
+        ) : (
+          <span
+            aria-hidden
+            className="size-5 shrink-0 rounded-full border border-dashed border-muted-foreground/50"
+          />
+        )}
         <span
-          aria-hidden
           className={cn(
-            "flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white",
-            shipment.driver ? "bg-emerald-700" : "bg-muted-foreground/40",
-          )}
-        >
-          {shipment.driver?.initials ?? "?"}
-        </span>
-        <span
-          className={cn(
-            "truncate",
+            "min-w-0 flex-1 truncate",
             !shipment.driver && "text-muted-foreground",
           )}
         >
           {shipment.driver?.title ??
             (dispatch ? "Unknown driver" : "No driver yet")}
         </span>
+        {step !== undefined && (
+          <span className="shrink-0 text-muted-foreground">{step}</span>
+        )}
       </span>
-      {late !== "" && (
-        <span
-          className={cn(
-            "w-fit rounded-md border px-2 py-0.5 text-[11px] font-medium",
-            TONE_CLASS.amber,
-          )}
-        >
-          {late}
-        </span>
-      )}
     </Root>
   );
 }

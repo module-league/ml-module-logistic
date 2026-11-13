@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
-import { PanelRightOpen, Settings2, Sparkles } from "lucide-react";
-import { Button } from "@/ui-kit";
+import { Plus, Settings2, Sparkles } from "lucide-react";
+import { Button, cn } from "@/ui-kit";
+import { BackgroundWrapper } from "@/components/custom/BackgroundWrapper";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { DispatchBoard, DispatchBoardSkeleton } from "./DispatchBoard";
 import { DispatchCardSettings } from "./DispatchCardSettings";
@@ -10,6 +11,7 @@ import { DispatchPlannerDialog } from "./DispatchPlannerDialog";
 import {
   boardColumns,
   buildDispatchBoard,
+  lateText,
   shipmentDraft,
   type DispatchCardPicks,
   type DispatchShipment,
@@ -47,6 +49,11 @@ export function DispatchPage(props: DispatchPageProps) {
     () => boardColumns(board.shipments, now),
     [board.shipments, now],
   );
+  const unassignedCount =
+    columns.find((column) => column.value === "unassigned")?.items.length ?? 0;
+  const lateCount = columns
+    .flatMap((column) => column.items)
+    .filter((shipment) => lateText(shipment.dispatch, now) !== "").length;
 
   const previewOf = useCallback(
     (draft: DispatchCardPicks) =>
@@ -83,18 +90,30 @@ export function DispatchPage(props: DispatchPageProps) {
   );
 
   return (
-    <div className="flex flex-col gap-4 p-4 pb-0 h-full bg-white">
-      <div className="flex flex-wrap items-center justify-end gap-2">
+    <BackgroundWrapper className="flex h-full flex-col gap-3 p-4 pb-0">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground tabular-nums">
+          {!data.isLoading && (
+            <>
+              <span className="font-medium text-foreground">
+                {unassignedCount}
+              </span>{" "}
+              {unassignedCount === 1 ? "needs" : "need"} a driver ·{" "}
+              <span
+                className={cn(
+                  "font-medium",
+                  lateCount > 0
+                    ? "text-amber-700 dark:text-amber-400"
+                    : "text-foreground",
+                )}
+              >
+                {lateCount}
+              </span>{" "}
+              running late
+            </>
+          )}
+        </p>
         <div className="flex items-center gap-1.5">
-          <Button
-            variant="outline"
-            size="xs"
-            startIcon={<Sparkles size={14} />}
-            disabled={!data.sources}
-            onClick={() => setPlanning(true)}
-          >
-            Plan with AI
-          </Button>
           <Button
             variant="outline"
             size="xs"
@@ -107,11 +126,19 @@ export function DispatchPage(props: DispatchPageProps) {
           <Button
             variant="outline"
             size="xs"
-            startIcon={<PanelRightOpen size={14} />}
+            startIcon={<Sparkles size={14} />}
+            disabled={!data.sources}
+            onClick={() => setPlanning(true)}
+          >
+            Plan with AI
+          </Button>
+          <Button
+            size="xs"
+            startIcon={<Plus size={14} />}
             disabled={!data.sources}
             onClick={() => assign()}
           >
-            Open full assign panel
+            Assign shipment
           </Button>
         </div>
       </div>
@@ -153,6 +180,6 @@ export function DispatchPage(props: DispatchPageProps) {
         now={now}
         onSave={data.onSaveSettings}
       />
-    </div>
+    </BackgroundWrapper>
   );
 }

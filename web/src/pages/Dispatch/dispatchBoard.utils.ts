@@ -22,14 +22,31 @@ export const DISPATCH_STAGES: {
   value: DispatchStage;
   label: string;
   hint: string;
+  empty: string;
 }[] = [
-  { value: "unassigned", label: "Unassigned", hint: "Needs a driver" },
-  { value: "assigned", label: "Assigned", hint: "Waiting for pickup" },
-  { value: "en_route", label: "En route", hint: "Picked up, not delivered" },
+  {
+    value: "unassigned",
+    label: "Unassigned",
+    hint: "Needs a driver",
+    empty: "Every shipment has a driver.",
+  },
+  {
+    value: "assigned",
+    label: "Assigned",
+    hint: "Waiting for pickup",
+    empty: "Nothing waiting for pickup.",
+  },
+  {
+    value: "en_route",
+    label: "En route",
+    hint: "Picked up, not delivered",
+    empty: "Nothing on the road right now.",
+  },
   {
     value: "completed",
     label: "Delivered today",
     hint: "Waiting for POD and billing",
+    empty: "Nothing delivered yet today.",
   },
 ];
 

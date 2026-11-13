@@ -8,6 +8,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { BackgroundWrapper } from "@/components/custom/BackgroundWrapper";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { PageHeader } from "@/components/ml/pageHeader";
 import { DashboardSegmented } from "@/module/dashboard/settings/DashboardControls";
@@ -125,7 +126,7 @@ export function BillingPage({
   ];
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-full flex-col">
       <PageHeader
         title="Billing"
         description="Delivered shipments with verified paperwork land here, priced from the rate card."
@@ -139,7 +140,7 @@ export function BillingPage({
           </Button>
         }
       />
-      <div className="flex flex-col gap-4 p-4">
+      <BackgroundWrapper className="flex flex-1 flex-col gap-4 p-4">
         <QueryWrapper
           isLoading={data.isLoading}
           error={data.error}
@@ -243,7 +244,7 @@ export function BillingPage({
             )}
           </div>
         </QueryWrapper>
-      </div>
+      </BackgroundWrapper>
       <BillingSettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}

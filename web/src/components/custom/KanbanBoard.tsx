@@ -6,10 +6,13 @@ export interface KanbanColumn<T> {
   label: string;
   hint: string;
   items: T[];
+  /** Shown when the column has no items; "Nothing here." when left out. */
+  empty?: string;
 }
 
+// Translucent so a page's backdrop shows through faintly; cards sit on it at full opacity
 const COLUMN_CLASS =
-  "flex w-72 shrink-0 flex-col gap-2 rounded-xl bg-muted/60 p-2 xl:w-auto xl:min-w-60 xl:flex-1 h-full";
+  "flex h-full w-72 shrink-0 flex-col gap-2 rounded-xl bg-background/70 p-2 xl:w-auto xl:min-w-60 xl:flex-1";
 
 /** Columns side by side, each with its label, hint and count over a scrolling list of cards; scrolls sideways when narrow. */
 export function KanbanBoard<T>({
@@ -29,15 +32,15 @@ export function KanbanBoard<T>({
           aria-label={column.label}
           className={COLUMN_CLASS}
         >
-          <header className="flex items-start justify-between gap-2 px-1 pt-1">
-            <div className="flex min-w-0 flex-col">
-              <h2 className="truncate text-sm font-semibold">{column.label}</h2>
-              <span className="truncate text-xs text-muted-foreground">
-                {column.hint}
+          <header className="flex flex-col px-1.5 pt-1 pb-1">
+            <h2 className="flex items-baseline gap-2 text-sm font-semibold">
+              <span className="truncate">{column.label}</span>
+              <span className="text-muted-foreground tabular-nums">
+                {column.items.length}
               </span>
-            </div>
-            <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-xs font-medium">
-              {column.items.length}
+            </h2>
+            <span className="truncate text-xs text-muted-foreground">
+              {column.hint}
             </span>
           </header>
           <div className="-mr-1 flex max-h-[70dvh] flex-col gap-2 overflow-y-auto overscroll-contain pr-1">
@@ -46,8 +49,8 @@ export function KanbanBoard<T>({
                 <div key={getKey(item)}>{renderItem(item)}</div>
               ))
             ) : (
-              <p className="py-6 text-center text-xs text-muted-foreground">
-                Nothing here.
+              <p className="px-2 py-8 text-center text-xs text-pretty text-muted-foreground">
+                {column.empty ?? "Nothing here."}
               </p>
             )}
           </div>
