@@ -63,7 +63,9 @@ export interface ModuleFormulaFormInputProps extends Pick<
 }
 
 export interface ModuleNewRecordProps
-  extends ModuleQueryState, Pick<ModuleRecordFormProps, "onUploadAttachment"> {
+  extends
+    ModuleQueryState,
+    Pick<ModuleRecordFormProps, "onUploadAttachment" | "initialValues"> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** @default "New record" */

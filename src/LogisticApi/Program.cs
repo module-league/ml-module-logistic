@@ -71,6 +71,8 @@ builder.Services.AddScoped<BillingService>();
 // AI billing audit: checks a ready shipment's charges against its POD, exceptions and checkpoints
 builder.Services.Configure<BillingAuditOptions>(builder.Configuration.GetSection(BillingAuditOptions.SectionName));
 builder.Services.AddScoped<BillingAuditService>();
+builder.Services.Configure<BookingIntakeOptions>(builder.Configuration.GetSection(BookingIntakeOptions.SectionName));
+builder.Services.AddScoped<BookingIntakeService>();
 
 // Expected failures (400/404/409) thrown as ApiProblemException become ProblemDetails responses
 builder.Services.AddProblemDetails();

@@ -20,6 +20,7 @@ export function ModuleNewRecord({
   description,
   fields,
   members,
+  initialValues,
   onUploadAttachment,
   isLoading = false,
   error,
@@ -49,6 +50,7 @@ export function ModuleNewRecord({
           <ModuleRecordForm
             fields={fields}
             members={members}
+            initialValues={initialValues}
             onUploadAttachment={onUploadAttachment}
             saving={saving}
             submitLabel="Add record"
