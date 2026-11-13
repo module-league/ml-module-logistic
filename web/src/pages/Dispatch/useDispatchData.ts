@@ -13,6 +13,8 @@ export interface DispatchApi extends DispatchRecordsApi {
     body: IDispatchSettingsInput,
   ) => Promise<IDispatchSettings>;
   createDispatch: (body: IDispatchCreate) => Promise<IDispatch>;
+  /** A paid AI call; nothing is saved. */
+  planDispatchesWithAi: (body: { date: string }) => Promise<IDispatchAiPlan>;
 }
 
 const NO_MEMBERS: IUserInfo[] = [];
@@ -68,6 +70,7 @@ export function useDispatchData(api: DispatchApi) {
       onSaveSettings,
       onCreateDispatch,
       isCreating,
+      onPlanWithAi: api.planDispatchesWithAi,
       dialog,
       onOpenDialog,
       onDialogOpenChange,
@@ -78,6 +81,7 @@ export function useDispatchData(api: DispatchApi) {
       onSaveSettings,
       onCreateDispatch,
       isCreating,
+      api.planDispatchesWithAi,
       dialog,
       onOpenDialog,
       onDialogOpenChange,

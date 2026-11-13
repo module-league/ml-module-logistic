@@ -74,5 +74,15 @@ export interface AgentDefinition {
   readonly tools: readonly string[];
   readonly autonomy: AgentAutonomy;
   readonly guardrails: readonly string[];
+  /** Where it runs in the app; left out while it is only planned. */
+  readonly live?: AgentLive;
   readonly scenario: AgentScenario;
+}
+
+/** The page an agent is used from and the button that starts it. */
+export interface AgentLive {
+  /** An app route, e.g. "/documents". */
+  readonly path: string;
+  readonly page: string;
+  readonly button: string;
 }

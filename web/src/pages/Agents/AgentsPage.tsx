@@ -4,15 +4,15 @@ import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
 import { CHIP_CLASS } from "../Exception/ExceptionList";
 import { AgentCanvas } from "./AgentCanvas";
 import { AgentDetail } from "./AgentDetail";
-import { AGENT_LOOP, AGENTS, PHASES } from "./agents.data";
+import { AGENT_LOOP, AGENTS } from "./agents.data";
 import type { AgentId } from "./agents.types";
 
-/** Prototype of the AI agents planned for the module: how many, what each does, and a dummy run of each. */
+/** The module's AI agents: what each does, where it runs in the app, and an example run of each with dummy data. */
 export function AgentsPage() {
   const [selectedId, setSelectedId] = useState<AgentId>("document_review");
   const selected = AGENTS.find((agent) => agent.id === selectedId) ?? AGENTS[0];
-  const phaseCount = Object.keys(PHASES).length;
-  const firstPhaseCount = AGENTS.filter((agent) => agent.phase === 1).length;
+  const liveCount = AGENTS.filter((agent) => !!agent.live).length;
+  const isAllLive = liveCount === AGENTS.length;
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-1 pb-4">
@@ -20,13 +20,21 @@ export function AgentsPage() {
         <div className="flex flex-col">
           <h1 className="text-xl font-semibold">AI agents</h1>
           <p className="text-sm text-muted-foreground">
-            {AGENTS.length} agents in {phaseCount} phases; phase 1 needs only{" "}
-            {firstPhaseCount}. Each one starts from an event the system already
-            has, and a person approves anything risky.
+            {liveCount} of {AGENTS.length} agents are live. Each starts from a
+            button on the page it helps with, and nothing is saved until a
+            person approves it.
           </p>
         </div>
-        <span className={cn(CHIP_CLASS, "py-0.5", TONE_CLASS.amber)}>
-          Prototype · dummy data, nothing is saved
+        <span
+          className={cn(
+            CHIP_CLASS,
+            "py-0.5",
+            isAllLive ? TONE_CLASS.green : TONE_CLASS.amber,
+          )}
+        >
+          {isAllLive
+            ? "All live"
+            : `${AGENTS.length - liveCount} still planned`}
         </span>
       </header>
 

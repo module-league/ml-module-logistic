@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
-import { cn } from "@moduleleague/ui";
+import { useNavigate } from "react-router-dom";
+import { ArrowUpRight } from "lucide-react";
+import { Button, cn } from "@moduleleague/ui";
+import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
 import { CHIP_CLASS } from "../Exception/ExceptionList";
 import { AgentRunDemo } from "./AgentRunDemo";
 import { AUTONOMY, PHASES } from "./agents.data";
@@ -11,6 +14,7 @@ interface AgentDetailProps {
 
 /** The inspector beside the canvas for the selected agent: its responsibilities, trigger, calls, limits and a demo run. */
 export function AgentDetail({ agent }: AgentDetailProps) {
+  const navigate = useNavigate();
   const Icon = agent.icon;
   const autonomy = AUTONOMY[agent.autonomy];
   return (
@@ -29,14 +33,36 @@ export function AgentDetail({ agent }: AgentDetailProps) {
           </div>
         </div>
         <div className="flex items-center gap-1.5 text-xs">
-          <span className={cn("bg-muted", CHIP_CLASS)}>
-            {PHASES[agent.phase].label}
-          </span>
+          {agent.live ? (
+            <span className={cn(TONE_CLASS.green, CHIP_CLASS)}>Live</span>
+          ) : (
+            <span className={cn("bg-muted", CHIP_CLASS)}>
+              {PHASES[agent.phase].label}
+            </span>
+          )}
           <span className={cn("bg-primary-10 text-primary", CHIP_CLASS)}>
             {autonomy.label}
           </span>
         </div>
       </header>
+
+      {agent.live && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-primary-10 px-3 py-2 text-sm">
+          <span>
+            Use it on the <span className="font-medium">{agent.live.page}</span>{" "}
+            page: click <span className="font-medium">{agent.live.button}</span>
+            .
+          </span>
+          <Button
+            size="xs"
+            variant="outline"
+            startIcon={<ArrowUpRight size={13} />}
+            onClick={() => void navigate(agent.live?.path ?? "/")}
+          >
+            Open {agent.live.page}
+          </Button>
+        </div>
+      )}
 
       <DetailSection title="Responsible for">
         <ol className="flex list-decimal flex-col gap-1 pl-4">

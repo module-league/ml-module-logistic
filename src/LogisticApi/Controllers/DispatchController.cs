@@ -7,7 +7,7 @@ namespace LogisticApi.Controllers
     [ApiController]
     [Route("api/dispatches")]
     [Produces("application/json")]
-    public class DispatchController(DispatchService dispatches) : ControllerBase
+    public class DispatchController(DispatchService dispatches, DispatchPlannerService planner) : ControllerBase
     {
         /// <summary>Newest first.</summary>
         [HttpGet]
@@ -66,5 +66,15 @@ namespace LogisticApi.Controllers
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
         public Task<DispatchResponse> PlanDispatch(Guid objId, [FromBody] DispatchPlanRequest request, CancellationToken ct) =>
             dispatches.PlanAsync(objId, request, ct);
+
+        /// <summary>The AI proposes a driver, vehicle and times for each shipment not yet dispatched, checked line by line. Nothing is saved; it costs one AI call.</summary>
+        [HttpPost("planner")]
+        [ProducesResponseType<DispatchPlannerResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status502BadGateway)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable)]
+        public Task<DispatchPlannerResponse> Plan([FromBody] DispatchPlannerRequest request, CancellationToken ct) =>
+            planner.PlanAsync(request, ct);
     }
 }

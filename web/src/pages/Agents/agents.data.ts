@@ -53,26 +53,29 @@ export const PHASES: Record<
 /** The loop every agent runs, whatever its job. */
 export const AGENT_LOOP = [
   {
-    title: "Trigger",
-    text: "An event already in the system: an upload, a rule, an email, a schedule.",
+    title: "Start",
+    text: "A person clicks the agent's button on the page it helps with.",
   },
   {
     title: "Gather",
-    text: "Reads the shipment, dispatch, documents and timeline through the API.",
+    text: "The API reads the shipment, dispatch, documents and timeline itself.",
   },
   {
     title: "Reason",
-    text: "The model compares, extracts and decides what matters.",
+    text: "The model reads files and text and picks only from lists it is given.",
   },
   {
-    title: "Draft",
-    text: "Findings, a suggested action and any message, with sources.",
+    title: "Check",
+    text: "The API prices, weighs and checks every pick and drops what doesn't fit.",
   },
   {
     title: "Decide",
-    text: "A person approves or rejects, unless the action is low risk.",
+    text: "A person reviews the findings, with sources, and keeps what's right.",
   },
-  { title: "Log", text: "Every step lands on the timeline as “AI assistant”." },
+  {
+    title: "Act",
+    text: "What they keep goes through the normal API, e.g. a dispatch or an invoice.",
+  },
 ] as const;
 
 export const AGENTS: readonly AgentDefinition[] = [
@@ -93,12 +96,11 @@ export const AGENTS: readonly AgentDefinition[] = [
     replaces:
       "Opening every PDF, picking its type and comparing weights, parties and numbers by eye.",
     trigger:
-      "A file is uploaded to a shipment's checklist on the Documents page.",
+      "A person clicks Check with AI on an uploaded paper in a shipment's checklist.",
     tools: [
-      "GET /documents",
-      "GET /sidebars/{shipment}/records/{id}",
+      "POST /documents/review",
       "Model: read the file",
-      "POST /documents/{id}/verify (after approval)",
+      "PUT /documents/{id}/verify (by a person)",
     ],
     autonomy: "suggest",
     guardrails: [
@@ -106,6 +108,7 @@ export const AGENTS: readonly AgentDefinition[] = [
       "Below 80% confidence it only says “needs a person”.",
       "Never verifies or rejects by itself.",
     ],
+    live: { path: "/documents", page: "Documents", button: "Check with AI" },
     scenario: {
       trigger:
         "packing-list-1042.pdf uploaded to SHP-1042 · Shah Alam → Bayan Lepas",
@@ -210,20 +213,19 @@ export const AGENTS: readonly AgentDefinition[] = [
     ],
     replaces:
       "Clicking through the shipment, dispatch, checkpoints and documents to understand one exception.",
-    trigger:
-      "The rule engine opens an exception (every minute, or right after a change).",
+    trigger: "A person clicks Ask AI on an open exception.",
     tools: [
-      "GET /exceptions",
-      "GET /dispatches/{id}/checkpoints",
-      "GET /sidebars/{location}/records",
-      "POST /exceptions/{id}/activity",
+      "POST /exceptions/{id}/copilot",
+      "Model: read the timeline, shipment and dispatch",
+      "POST /exceptions/{id}/activity (Add to timeline)",
     ],
-    autonomy: "auto",
+    autonomy: "suggest",
     guardrails: [
-      "Posts its summary as a timeline note by itself.",
-      "Fixes and customer messages wait for a person.",
-      "Never resolves an exception.",
+      "Its summary goes on the timeline only when a person adds it.",
+      "Says what it couldn't find instead of guessing.",
+      "Never resolves an exception; it only suggests a reason.",
     ],
+    live: { path: "/exeptions", page: "Exceptions", button: "Ask AI" },
     scenario: {
       trigger:
         "EXC-0031 “Delayed” opened by rule for SHP-1038 · Port Klang → Ipoh",
@@ -279,24 +281,27 @@ export const AGENTS: readonly AgentDefinition[] = [
     summary:
       "Turns booking emails and attachments into a draft shipment, matching parties and locations already on file.",
     responsibilities: [
-      "Read booking emails and the POs or spreadsheets attached.",
+      "Read booking emails and the PO or booking form attached (PDF, JPG or PNG).",
       "Match the shipper, consignee and addresses to parties and locations on file.",
       "Fill every shipment field it can source and list the gaps.",
       "Draft a reply asking the customer for what is missing.",
     ],
     replaces: "Retyping bookings from emails and PDFs into a new shipment.",
-    trigger: "An email arrives in the bookings inbox.",
+    trigger:
+      "A person pastes a booking email and attaches its PO under New from booking.",
     tools: [
-      "Model: read email + attachments",
-      "GET /sidebars/{shipment}/fields",
-      "GET /sidebars/{party|location}/records",
-      "POST /sidebars/{shipment}/records (after approval)",
+      "POST /attachments",
+      "POST /bookings/intake",
+      "Model: read email + PO, match locations on file",
+      "POST /sidebars/{shipment}/records (after review)",
     ],
     autonomy: "approve",
     guardrails: [
       "Only fills fields it can source; gaps stay empty and are listed.",
       "New parties or locations are never created silently.",
+      "Options and linked records are only picked from what is on file.",
     ],
+    live: { path: "/shipment", page: "Shipments", button: "New from booking" },
     scenario: {
       trigger:
         "Email from Acme Precision Parts: “Booking — 6 pallets to JB” with PO-7781.pdf",
@@ -355,18 +360,19 @@ export const AGENTS: readonly AgentDefinition[] = [
     replaces:
       "Writing the same status emails by hand for every delay or failed delivery.",
     trigger:
-      "A customer-facing exception opens, or a customer asks for a status.",
+      "A person clicks Draft message under Tell the customer on an exception.",
     tools: [
-      "GET /exceptions",
-      "GET /dispatches/{id}/checkpoints",
-      "Model: write the message",
-      "Send email (after approval)",
+      "POST /exceptions/{id}/customer-update",
+      "Model: write the email and chat message",
+      "POST /exceptions/{id}/activity (Log as sent)",
     ],
-    autonomy: "approve",
+    autonomy: "suggest",
     guardrails: [
       "Only states what the checkpoints and record say.",
-      "Every message is approved before it is sent.",
+      "Never sees internal notes, staff or charges.",
+      "Nothing is sent from the system; a person sends it from their own email or chat.",
     ],
+    live: { path: "/exeptions", page: "Exceptions", button: "Draft message" },
     scenario: {
       trigger:
         "EXC-0034 “Delivery attempt failed — receiver closed” on SHP-1040",
@@ -421,18 +427,20 @@ export const AGENTS: readonly AgentDefinition[] = [
     ],
     replaces:
       "Cross-checking PODs, exceptions and rate cards line by line before billing.",
-    trigger: "A shipment's POD is verified and it moves to “ready to bill”.",
+    trigger:
+      "A person clicks Check with AI on a ready-to-bill shipment's quote.",
     tools: [
-      "GET /billing",
-      "GET /billing/rates",
-      "GET /documents",
-      "GET /exceptions",
+      "POST /billing/audit",
+      "Model: read the POD, quote and timeline",
+      "POST /billing/invoices (with the lines a person keeps)",
     ],
     autonomy: "suggest",
     guardrails: [
       "Never creates or sends an invoice.",
       "Each suggested line names the exception or document it comes from.",
+      "The API prices every line and compares the weights; the model never sets an amount.",
     ],
+    live: { path: "/billing", page: "Billing", button: "Check with AI" },
     scenario: {
       trigger: "SHP-1029 POD verified — ready to bill",
       steps: [
@@ -488,18 +496,19 @@ export const AGENTS: readonly AgentDefinition[] = [
     ],
     replaces:
       "Matching shipments to drivers and vehicles by hand on the Dispatch board.",
-    trigger: "Every morning at 06:00, and when a shipment becomes ready.",
+    trigger:
+      "A person clicks Plan with AI on the Dispatch board and picks a day.",
     tools: [
-      "GET /dispatches",
-      "GET /sidebars/{driver|vehicle}/records",
-      "GET /sidebars/{location}/records",
-      "POST /dispatches/{id}/plan (after approval)",
+      "POST /dispatches/planner",
+      "Model: match loads, routes and hours",
+      "POST /dispatches (each line a person ticks)",
     ],
     autonomy: "approve",
     guardrails: [
-      "Plans only with drivers and vehicles marked available.",
-      "Shows why for each pick; a person approves the whole plan.",
+      "Never offers drivers or vehicles not marked available or with an expired licence, road tax or insurance.",
+      "Busy drivers, overloaded vehicles and past times block a line; a person ticks the lines to create.",
     ],
+    live: { path: "/dispatch", page: "Dispatch", button: "Plan with AI" },
     scenario: {
       trigger: "06:00 — 4 shipments ready for dispatch",
       steps: [

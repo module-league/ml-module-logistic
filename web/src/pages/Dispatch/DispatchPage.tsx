@@ -1,11 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
-import { PanelRightOpen, Settings2 } from "lucide-react";
+import { PanelRightOpen, Settings2, Sparkles } from "lucide-react";
 import { Button } from "@/ui-kit";
 import { QueryWrapper } from "@/components/custom/QueryWrapper";
 import { DispatchBoard, DispatchBoardSkeleton } from "./DispatchBoard";
 import { DispatchCardSettings } from "./DispatchCardSettings";
 import { DispatchDetailDialog } from "./DispatchDetailDialog";
 import { DispatchJobDialog } from "./DispatchJobDialog";
+import { DispatchPlannerDialog } from "./DispatchPlannerDialog";
 import {
   boardColumns,
   buildDispatchBoard,
@@ -25,6 +26,7 @@ export function DispatchPage(props: DispatchPageProps) {
   const { data, detail } = props;
   const [now] = useState(() => new Date());
   const [customizing, setCustomizing] = useState(false);
+  const [planning, setPlanning] = useState(false);
   const picks =
     data.settings?.versionNo != null && data.settings.versionNo !== 0
       ? data.settings
@@ -87,6 +89,15 @@ export function DispatchPage(props: DispatchPageProps) {
           <Button
             variant="outline"
             size="xs"
+            startIcon={<Sparkles size={14} />}
+            disabled={!data.sources}
+            onClick={() => setPlanning(true)}
+          >
+            Plan with AI
+          </Button>
+          <Button
+            variant="outline"
+            size="xs"
             startIcon={<Settings2 size={14} />}
             disabled={!data.sources}
             onClick={customize}
@@ -120,6 +131,11 @@ export function DispatchPage(props: DispatchPageProps) {
         />
       </QueryWrapper>
       <DispatchJobDialog data={data} shipments={board.shipments} />
+      <DispatchPlannerDialog
+        open={planning}
+        onOpenChange={setPlanning}
+        data={data}
+      />
       <DispatchDetailDialog
         shipment={opened}
         detail={detail}

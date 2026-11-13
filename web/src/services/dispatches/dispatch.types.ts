@@ -96,4 +96,44 @@ declare global {
     dispatch: IDispatch;
     checkpoint: ICheckpointLog;
   };
+
+  /** One proposed dispatch; approving it creates the dispatch. Matches DispatchPlanLine; times are UTC. */
+  type IDispatchPlanLine = {
+    shipmentId: string;
+    shipment: string;
+    driverId: string;
+    driver: string;
+    vehicleId: string;
+    vehicle: string;
+    originId: string;
+    origin: string;
+    destinationId: string;
+    destination: string;
+    plannedPickupAt: string;
+    plannedDeliveryAt: string;
+    /** Lines with the same trip share one vehicle. */
+    trip: string;
+    /** In kg; left out when not recorded. */
+    weight?: number;
+    /** The vehicle's capacity in kg; left out when not recorded. */
+    capacity?: number;
+    why: string;
+    /** What stops it from being approved; empty when it can be. */
+    problems: string[];
+    warnings: string[];
+  };
+
+  /** The AI's plan for a day; nothing is saved. Matches DispatchPlannerResponse. */
+  type IDispatchAiPlan = {
+    /** Local yyyy-MM-dd. */
+    date: string;
+    summary: string;
+    lines: IDispatchPlanLine[];
+    unplanned: { shipmentId: string; shipment: string; why: string }[];
+    /** Drivers and vehicles that couldn't be used, and why. */
+    leftOut: { kind: "driver" | "vehicle"; name: string; why: string }[];
+    risks: string[];
+    /** Left out when no AI call was needed, e.g. nothing to plan. */
+    usage?: { model: string; inputTokens: number; outputTokens: number };
+  };
 }

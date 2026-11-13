@@ -46,9 +46,9 @@ export function AgentRunDemo({ scenario }: AgentRunDemoProps) {
     <section className="flex flex-col gap-3 rounded-lg border p-3">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 flex-col">
-          <h3 className="text-sm font-semibold">Demo run</h3>
+          <h3 className="text-sm font-semibold">Example run</h3>
           <p className="text-xs text-muted-foreground">
-            Triggered by: {scenario.trigger}
+            Dummy data · triggered by: {scenario.trigger}
           </p>
         </div>
         <Button

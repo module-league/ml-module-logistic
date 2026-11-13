@@ -1,4 +1,5 @@
 import { cn } from "@moduleleague/ui";
+import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
 import { CHIP_CLASS } from "../Exception/ExceptionList";
 import { AgentRobot } from "./AgentRobot";
 import { AUTONOMY, PHASES } from "./agents.data";
@@ -63,9 +64,15 @@ export function AgentStation({
             <span className={cn(CHIP_CLASS, STATUS_CLASS[activity.status])}>
               {STATUS_LABEL[activity.status]}
             </span>
-            <span className={cn(CHIP_CLASS, "bg-muted")}>
-              {PHASES[agent.phase].label}
-            </span>
+            {agent.live ? (
+              <span className={cn(CHIP_CLASS, TONE_CLASS.green)}>
+                Live on {agent.live.page}
+              </span>
+            ) : (
+              <span className={cn(CHIP_CLASS, "bg-muted")}>
+                {PHASES[agent.phase].label}
+              </span>
+            )}
           </span>
         </div>
       </header>

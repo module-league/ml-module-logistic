@@ -58,3 +58,12 @@ export async function createDispatch(body: IDispatchCreate) {
   const { data } = await apiClient.post<IDispatch>("/dispatches", body);
   return data;
 }
+
+/** The AI proposes a driver, vehicle and times for each shipment not yet dispatched. Nothing is saved; each call is a paid AI request. */
+export async function planDispatchesWithAi(body: { date: string }) {
+  const { data } = await apiClient.post<IDispatchAiPlan>(
+    "/dispatches/planner",
+    body,
+  );
+  return data;
+}

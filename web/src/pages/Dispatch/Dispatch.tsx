@@ -7,6 +7,7 @@ import {
   getDispatchSettings,
   getDispatchSources,
   moveDispatch,
+  planDispatchesWithAi,
   saveDispatchSettings,
 } from "@/services/dispatches/dispatch.api";
 import { uploadAttachment } from "@/services/attachments/attachment.api";
@@ -33,6 +34,7 @@ const dispatchApi: DispatchApi = {
   getDispatchSettings,
   saveDispatchSettings,
   createDispatch,
+  planDispatchesWithAi,
 };
 
 const detailApi: DispatchDetailApi = {

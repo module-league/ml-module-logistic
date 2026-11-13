@@ -73,6 +73,8 @@ builder.Services.Configure<BillingAuditOptions>(builder.Configuration.GetSection
 builder.Services.AddScoped<BillingAuditService>();
 builder.Services.Configure<BookingIntakeOptions>(builder.Configuration.GetSection(BookingIntakeOptions.SectionName));
 builder.Services.AddScoped<BookingIntakeService>();
+builder.Services.Configure<DispatchPlannerOptions>(builder.Configuration.GetSection(DispatchPlannerOptions.SectionName));
+builder.Services.AddScoped<DispatchPlannerService>();
 
 // Expected failures (400/404/409) thrown as ApiProblemException become ProblemDetails responses
 builder.Services.AddProblemDetails();
