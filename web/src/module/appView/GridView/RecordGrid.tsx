@@ -224,7 +224,7 @@ export function RecordGrid<T>({
   );
 
   return (
-    <div className="min-h-0 flex-1 overflow-auto">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <DndContext
         sensors={sensors}
         collisionDetection={sameKindCollision}
@@ -294,19 +294,6 @@ export function RecordGrid<T>({
             </SortableContext>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 && (
-              <TableRow className="hover:bg-transparent">
-                <TableCell
-                  colSpan={
-                    headers.length +
-                    (selectable ? 1 : 0) +
-                    (hasAddField ? 1 : 0)
-                  }
-                >
-                  <RecordGridEmpty {...empty} />
-                </TableCell>
-              </TableRow>
-            )}
             <SortableContext
               items={rowIds}
               strategy={verticalListSortingStrategy}
@@ -427,6 +414,12 @@ export function RecordGrid<T>({
           </TableBody>
         </Table>
       </DndContext>
+      {/* Under the header rather than in a table row, so it fills the grid's height; sticky so a wide table's scroll doesn't carry it off */}
+      {rows.length === 0 && (
+        <div className="sticky left-0 flex min-h-60 flex-1 flex-col">
+          <RecordGridEmpty {...empty} />
+        </div>
+      )}
       {onAddField && (
         <ModuleAddNewFieldDialog
           open={addingField}

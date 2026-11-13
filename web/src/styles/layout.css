@@ -7,3 +7,14 @@
   /* The tallest a dialog grows before its body scrolls. */
   --spacing-dialog: 90dvh;
 }
+
+/* A faint dot grid that fades out toward the edges, for a layer behind an empty state; plain CSS, so no package to keep patched. */
+@utility bg-dots {
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--foreground) 22%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 20px 20px;
+  background-position: center;
+  mask-image: radial-gradient(ellipse at center, black 35%, transparent 75%);
+}
