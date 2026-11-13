@@ -163,7 +163,7 @@ namespace LogisticApi.MVVM
         public string source { get; set; } = string.Empty;
     }
 
-    /// <summary>Tokens one AI call used (a document review, an exception summary, a billing audit), for working out what each costs.</summary>
+    /// <summary>Tokens one AI call used (a document review, an exception summary, a customer update, a billing audit), for working out what each costs.</summary>
     public class AiUsageResponse
     {
         public string model { get; set; } = string.Empty;

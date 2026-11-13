@@ -84,6 +84,27 @@ declare global {
     usage: { model: string; inputTokens: number; outputTokens: number };
   };
 
+  type ICustomerUpdateLanguage = "en" | "ms" | "zh";
+
+  /** A draft message to the customer about an exception; nothing is sent. Matches CustomerUpdateResponse. */
+  type ICustomerUpdate = {
+    exceptionId: string;
+    language: ICustomerUpdateLanguage;
+    /** The shipment's Bill To party; left out when it isn't known. */
+    recipientName?: string;
+    recipientEmail?: string;
+    subject: string;
+    /** The email body. */
+    message: string;
+    /** A few lines for WhatsApp or SMS. */
+    shortMessage: string;
+    /** The redelivery slots the message offers, from the receiver's opening time. */
+    slots: string[];
+    /** What to confirm before sending. */
+    checks: string[];
+    usage: { model: string; inputTokens: number; outputTokens: number };
+  };
+
   /** An exception after a change and the timeline entry the change posted. */
   type IExceptionChange = {
     exception: IException;

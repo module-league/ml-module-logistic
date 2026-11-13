@@ -77,6 +77,18 @@ export async function askExceptionCopilot(objId: string) {
   return data;
 }
 
+/** The AI drafts a message to the customer about it. Nothing is sent; each call is a paid AI request. */
+export async function draftCustomerUpdate(
+  objId: string,
+  body: { language: ICustomerUpdateLanguage },
+) {
+  const { data } = await apiClient.post<ICustomerUpdate>(
+    path(objId, "customer-update"),
+    body,
+  );
+  return data;
+}
+
 /** Each change sends the versionNo last read; a stale one is rejected with 409. */
 export async function assignException(
   objId: string,

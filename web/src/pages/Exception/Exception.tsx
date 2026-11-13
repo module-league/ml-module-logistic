@@ -9,6 +9,7 @@ import {
 import {
   addExceptionActivity,
   askExceptionCopilot,
+  draftCustomerUpdate,
   assignException,
   createException,
   evaluateExceptions,
@@ -39,6 +40,7 @@ const exceptionApi: ExceptionApi = {
   getExceptionActivity,
   addExceptionActivity,
   askExceptionCopilot,
+  draftCustomerUpdate,
   assignException,
   snoozeException,
   wakeException,

@@ -8,7 +8,7 @@ namespace LogisticApi.Controllers
     [ApiController]
     [Route("api/exceptions")]
     [Produces("application/json")]
-    public class ExceptionController(ExceptionCaseService exceptions, ExceptionCopilotService copilot) : ControllerBase
+    public class ExceptionController(ExceptionCaseService exceptions, ExceptionCopilotService copilot, CustomerUpdateService customerUpdates) : ControllerBase
     {
         /// <summary>Every exception, newest first, resolved ones included.</summary>
         [HttpGet]
@@ -74,6 +74,17 @@ namespace LogisticApi.Controllers
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status502BadGateway)]
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable)]
         public Task<ExceptionCopilotResponse> Suggest(Guid objId, CancellationToken ct) => copilot.SuggestAsync(objId, ct);
+
+        /// <summary>The AI drafts a message to the customer about it, from what the customer may know. Nothing is sent; it costs one AI call.</summary>
+        [HttpPost("{objId:guid}/customer-update")]
+        [ProducesResponseType<CustomerUpdateResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status502BadGateway)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable)]
+        public Task<CustomerUpdateResponse> DraftCustomerUpdate(Guid objId, [FromBody] CustomerUpdateRequest request, CancellationToken ct) =>
+            customerUpdates.DraftAsync(objId, request, ct);
 
         [HttpPut("{objId:guid}/owner")]
         [ProducesResponseType<ExceptionChangeResponse>(StatusCodes.Status200OK)]

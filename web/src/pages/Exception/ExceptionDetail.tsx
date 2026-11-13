@@ -39,6 +39,7 @@ import { TONE_CLASS } from "@/module/dashboard/moduleDashboard.utils";
 import { actorName } from "@/services/user/current.user";
 import { CHIP_CLASS } from "./ExceptionList";
 import { ExceptionCopilot } from "./ExceptionCopilot";
+import { ExceptionCustomerUpdate } from "./ExceptionCustomerUpdate";
 import { ExceptionFixActions } from "./ExceptionFixActions";
 import { ExceptionStep } from "./ExceptionStep";
 import {
@@ -218,6 +219,12 @@ export function ExceptionDetail({
               title="Fix the problem"
               hint="Each fix is logged in the activity; one that clears the problem can close it for you."
               actions={<ExceptionFixActions row={row} data={data} />}
+            />
+            <ExceptionCustomerUpdate
+              key={`update-${exception.objId}`}
+              exception={exception}
+              onDraft={data.onDraftCustomerUpdate}
+              onLog={data.onLog}
             />
             <ResolveBar row={row} data={data} now={now} />
             {/* Help comes after the two actions, for when neither is clear */}

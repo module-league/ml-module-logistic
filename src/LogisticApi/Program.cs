@@ -58,9 +58,12 @@ builder.Services.AddSingleton<ClaudeClient>();
 builder.Services.Configure<DocumentReviewOptions>(builder.Configuration.GetSection(DocumentReviewOptions.SectionName));
 builder.Services.AddSingleton<IDocumentReader, ClaudeDocumentReader>();
 builder.Services.AddScoped<DocumentReviewService>();
-// AI exception co-pilot: sums up an exception and suggests next steps
+// AI exception co-pilot and customer updates, both written from what's known about an exception
+builder.Services.AddScoped<ExceptionFactsService>();
 builder.Services.Configure<ExceptionCopilotOptions>(builder.Configuration.GetSection(ExceptionCopilotOptions.SectionName));
 builder.Services.AddScoped<ExceptionCopilotService>();
+builder.Services.Configure<CustomerUpdateOptions>(builder.Configuration.GetSection(CustomerUpdateOptions.SectionName));
+builder.Services.AddScoped<CustomerUpdateService>();
 
 // Billing: rate cards, charge types and tax from the "Billing" workflow config
 builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection(BillingOptions.SectionName));
