@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { FileText, TriangleAlert } from "lucide-react";
+import { FileText, Sparkles, TriangleAlert } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import {
   Button,
   cn,
@@ -11,15 +12,21 @@ import {
   toast,
 } from "@moduleleague/ui";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Spinner } from "@/components/ui/spinner";
 import type { DispatchShipment } from "../Dispatch/dispatchBoard.utils";
 import { attempt } from "@/lib/toastHelper";
 import { hasContent } from "@/lib/nodeHelper";
+import { BillingAuditPanel } from "./BillingAuditPanel";
 import { money, rateCardText, totalsOf } from "./billing.utils";
 import type { BillingData } from "./useBillingData";
 
+/** A line the AI audit suggested and the clerk added, with what the API prices it from. */
+type ExtraLine = { line: IBillingLine; request: IInvoiceExtraLine };
+
 /**
  * A ready shipment as an invoice draft: who's billed, what freight was priced from, and each charge with its basis.
- * Freight always stays; the other lines can be left off. Nothing is saved until Create invoice.
+ * Freight always stays; the other lines can be left off, and the AI check can add lines the quote didn't suggest.
+ * Nothing is saved until Create invoice.
  */
 export function BillingQuote({
   quote,
@@ -34,26 +41,42 @@ export function BillingQuote({
   onCreated: (invoice: IInvoice) => void;
   onOpenSettings: () => void;
 }) {
-  const { overview, isSaving, isPreviewing, onCreate, onPreview } = data;
+  const { overview, isSaving, isPreviewing, onCreate, onPreview, onAudit } =
+    data;
   const symbol = overview?.currencySymbol;
   const [picked, setPicked] = useState(
     () => new Set(quote.lines?.map((line) => line.key) ?? []),
   );
+  const [extras, setExtras] = useState<ExtraLine[]>([]);
   const [partyId, setPartyId] = useState(quote.billToId);
   const lines = useMemo(
-    () =>
-      quote.lines?.filter((line) => line.required || picked.has(line.key)) ??
-      [],
-    [quote.lines, picked],
+    () => [
+      ...(quote.lines?.filter(
+        (line) => line.required || picked.has(line.key),
+      ) ?? []),
+      ...extras
+        .filter((extra) => picked.has(extra.line.key))
+        .map((extra) => extra.line),
+    ],
+    [quote.lines, extras, picked],
+  );
+  const shown = useMemo(
+    () => [...(quote.lines ?? []), ...extras.map((extra) => extra.line)],
+    [quote.lines, extras],
   );
   const totals = useMemo(() => totalsOf(lines), [lines]);
   const body = useMemo<IInvoiceCreate>(
     () => ({
       shipmentId: quote.shipmentId,
       partyId,
-      lineKeys: lines.filter((line) => !line.required).map((line) => line.key),
+      lineKeys: lines
+        .filter((line) => !line.required && !line.key.startsWith("extra:"))
+        .map((line) => line.key),
+      extraLines: extras
+        .filter((extra) => picked.has(extra.line.key))
+        .map((extra) => extra.request),
     }),
-    [quote.shipmentId, partyId, lines],
+    [quote.shipmentId, partyId, lines, extras, picked],
   );
   const toggle = useCallback(
     (key: string) =>
@@ -63,6 +86,48 @@ export function BillingQuote({
         return next;
       }),
     [],
+  );
+  // Each check is a paid call, so the result stays until "Check again"
+  const {
+    mutateAsync: audit,
+    data: auditResult,
+    isPending: isAuditing,
+  } = useMutation({
+    mutationFn: () => onAudit({ shipmentId: quote.shipmentId }),
+  });
+  const runAudit = useCallback(
+    () => attempt("Couldn't check the charges", () => audit()),
+    [audit],
+  );
+  const addFinding = useCallback((finding: IBillingAuditFinding) => {
+    const { line, extraLine } = finding;
+    if (!line || !extraLine) return;
+    setExtras((current) =>
+      current.some((extra) => extra.line.key === line.key)
+        ? current
+        : [...current, { line, request: extraLine }],
+    );
+    setPicked((current) => new Set(current).add(line.key));
+  }, []);
+  const dropLine = useCallback(
+    (key: string) =>
+      setPicked((current) => {
+        const next = new Set(current);
+        next.delete(key);
+        return next;
+      }),
+    [],
+  );
+  const addedKeys = useMemo(
+    () => new Set(extras.map((extra) => extra.line.key)),
+    [extras],
+  );
+  const badges = useMemo(
+    () =>
+      Object.fromEntries(
+        extras.map((extra) => [extra.line.key, "From AI check"]),
+      ),
+    [extras],
   );
   const create = useCallback(
     () =>
@@ -80,11 +145,34 @@ export function BillingQuote({
   return (
     <section className="flex flex-col gap-4 rounded-xl border bg-background p-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-1.5">
           <span className="text-xs text-muted-foreground">Invoice draft</span>
           <h2 className="text-lg font-semibold">
             {shipment?.title ?? "Unknown shipment"}
           </h2>
+          {!blocked && (
+            <Button
+              size="xs"
+              variant="outline"
+              className="w-fit"
+              startIcon={
+                isAuditing ? (
+                  <Spinner className="size-3.5" />
+                ) : (
+                  <Sparkles size={13} />
+                )
+              }
+              disabled={isAuditing}
+              title="The AI reads the proof of delivery and checks the charges against the exceptions and checkpoints"
+              onClick={() => void runAudit()}
+            >
+              {isAuditing
+                ? "Checking…"
+                : auditResult
+                  ? "Check again"
+                  : "Check with AI"}
+            </Button>
+          )}
         </div>
         <div className="flex min-w-56 flex-col items-end gap-1 text-right">
           <span className="text-xs text-muted-foreground">Bill to</span>
@@ -138,11 +226,21 @@ export function BillingQuote({
             weight={quote.weight}
             symbol={symbol}
           />
+          {auditResult && (
+            <BillingAuditPanel
+              audit={auditResult}
+              symbol={symbol}
+              added={addedKeys}
+              onAdd={addFinding}
+              onDrop={dropLine}
+            />
+          )}
           <BillingLines
-            lines={quote.lines}
+            lines={shown}
             symbol={symbol}
             picked={picked}
             onToggle={toggle}
+            badges={badges}
           />
           <BillingTotals
             subtotal={totals.subtotal}
@@ -214,17 +312,22 @@ export function RateBar({
   );
 }
 
-/** The charges with their basis; with picked, each optional line can be ticked off and freight stays ticked. */
+/**
+ * The charges with their basis; with picked, each optional line can be ticked off and freight stays ticked. badges labels lines
+ * by key, e.g. the ones the AI check added.
+ */
 export function BillingLines({
   lines,
   symbol,
   picked,
   onToggle,
+  badges,
 }: {
   lines: IBillingLine[];
   symbol?: string;
   picked?: Set<string>;
   onToggle?: (key: string) => void;
+  badges?: Record<string, string>;
 }) {
   const pickable = !!picked;
   return (
@@ -265,12 +368,13 @@ export function BillingLines({
                 )}
                 <td className="py-2.5 font-medium">
                   {line.description}
-                  {line.sourceExceptionNo != null &&
-                    line.sourceExceptionNo !== "" && (
-                      <span className="ml-2 rounded border border-blue-200 bg-blue-50 px-1 text-[11px] font-normal text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
-                        Suggested
-                      </span>
-                    )}
+                  {(badges?.[line.key] != null ||
+                    (line.sourceExceptionNo != null &&
+                      line.sourceExceptionNo !== "")) && (
+                    <span className="ml-2 rounded border border-blue-200 bg-blue-50 px-1 text-[11px] font-normal text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
+                      {badges?.[line.key] ?? "Suggested"}
+                    </span>
+                  )}
                 </td>
                 <td className="py-2.5 text-xs text-muted-foreground">
                   {line.basis}

@@ -43,6 +43,12 @@ export async function previewInvoice(body: IInvoiceCreate) {
   return data;
 }
 
+/** The AI checks a ready shipment's charges against its POD, exceptions and checkpoints. Nothing is saved; each call is a paid AI request. */
+export async function auditBilling(body: { shipmentId: string }) {
+  const { data } = await apiClient.post<IBillingAudit>("/billing/audit", body);
+  return data;
+}
+
 /** Saves a draft; a shipment already on an invoice that isn't void is rejected with 409. */
 export async function createInvoice(body: IInvoiceCreate) {
   const { data } = await apiClient.post<IInvoice>("/billing/invoices", body);

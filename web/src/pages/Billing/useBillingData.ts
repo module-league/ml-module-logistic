@@ -16,6 +16,7 @@ export interface BillingApi extends DispatchRecordsApi {
     body: IBillingSettingsInput,
   ) => Promise<IBillingSettings>;
   previewInvoice: (body: IInvoiceCreate) => Promise<Blob>;
+  auditBilling: (body: { shipmentId: string }) => Promise<IBillingAudit>;
   createInvoice: (body: IInvoiceCreate) => Promise<IInvoice>;
   sendInvoice: (
     objId: string,
@@ -159,6 +160,7 @@ export function useBillingData(api: BillingApi) {
       onPay,
       onVoid,
       onPreview,
+      onAudit: api.auditBilling,
       onSaveSettings,
       isSaving: isChanging,
       isPreviewing,
@@ -181,6 +183,7 @@ export function useBillingData(api: BillingApi) {
       onPay,
       onVoid,
       onPreview,
+      api.auditBilling,
       onSaveSettings,
       isChanging,
       isPreviewing,

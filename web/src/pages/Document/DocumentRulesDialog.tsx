@@ -259,7 +259,6 @@ function RulesForm({
             requirements={rulesDraft.requirements}
             types={rulesDraft.types}
             steps={steps}
-            modeField={mode}
             incotermField={incoterm}
             onChange={(requirements) =>
               setRulesDraft((current) => ({ ...current, requirements }))

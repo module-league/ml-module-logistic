@@ -6,6 +6,7 @@ import {
   getDispatchSources,
 } from "@/services/dispatches/dispatch.api";
 import {
+  auditBilling,
   createInvoice,
   getBillingOverview,
   getBillingRates,
@@ -30,6 +31,7 @@ const billingApi: BillingApi = {
   getBillingSettings,
   saveBillingSettings,
   previewInvoice,
+  auditBilling,
   createInvoice,
   sendInvoice,
   payInvoice,

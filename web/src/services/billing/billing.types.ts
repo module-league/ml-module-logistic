@@ -133,11 +133,62 @@ declare global {
     taxPercent: number;
   };
 
-  /** Invoices a ready shipment: freight always, plus the picked lines; partyId left out bills the shipment's Bill To. */
+  /** Invoices a ready shipment: freight always, plus the picked lines and any extra ones; partyId left out bills the shipment's Bill To. */
   type IInvoiceCreate = {
     shipmentId: string;
     partyId?: string;
     lineKeys: string[];
+    extraLines?: IInvoiceExtraLine[];
+  };
+
+  /** A charge the quote didn't suggest, priced by the API from its charge type. Matches InvoiceExtraLineRequest. */
+  type IInvoiceExtraLine = {
+    chargeKey: string;
+    /** Hours for a per-hour charge, times for a flat one. */
+    qty: number;
+    note?: string;
+    sourceExceptionId?: string;
+  };
+
+  type IBillingAuditVerdict = "looks_right" | "review";
+  type IBillingAuditKind =
+    "add_charge" | "weight" | "remove_charge" | "check" | "ok";
+
+  /** One thing the AI audit found, with where it comes from. Matches BillingAuditFindingResponse. */
+  type IBillingAuditFinding = {
+    kind: IBillingAuditKind;
+    title: string;
+    detail: string;
+    /** e.g. "POD remarks" or "EXC-0022". */
+    source: string;
+    /** For add_charge: the line to add, priced by the API. */
+    line?: IBillingLine;
+    /** For add_charge: what to send as the extra line. */
+    extraLine?: IInvoiceExtraLine;
+    /** For remove_charge: the quoted line it means. */
+    lineKey?: string;
+  };
+
+  /** The AI's check of a ready shipment's charges; a suggestion, nothing is saved. Matches BillingAuditResponse. */
+  type IBillingAudit = {
+    shipmentId: string;
+    /** The proof of delivery that was read. */
+    fileName: string;
+    verdict: IBillingAuditVerdict;
+    verdictText: string;
+    summary: string;
+    /** What the POD states, as printed; each left out when it doesn't say. */
+    pod: {
+      deliveredAt?: string;
+      receivedBy?: string;
+      signed?: boolean;
+      weight?: string;
+      pieces?: string;
+      remarks?: string;
+    };
+    /** Those that change the invoice first. */
+    findings: IBillingAuditFinding[];
+    usage: { model: string; inputTokens: number; outputTokens: number };
   };
 
   /** Which fields billing reads; weight and mode come from the exception rules, the Incoterm from documents. versionNo 0 until first saved. */

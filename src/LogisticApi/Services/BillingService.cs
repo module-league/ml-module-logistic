@@ -442,10 +442,43 @@ namespace LogisticApi.Services
             return (list.Sum(l => l.amount), Round(list.Sum(l => l.amount * l.taxRate / 100)));
         }
 
-        /// <summary>The unsaved invoice and lines for a ready shipment: priced now, with freight and the picked lines.</summary>
-        private async Task<(Invoice invoice, List<InvoiceLine> lines)> BuildAsync(InvoiceCreateRequest request, CancellationToken ct)
+        /// <summary>The quote of a shipment that can be invoiced now; 400 or 409 says why when it can't.</summary>
+        public async Task<BillingQuoteResponse> ReadyQuoteAsync(Guid shipmentId, CancellationToken ct) => (await ReadyAsync(shipmentId, ct)).quote;
+
+        /// <summary>
+        /// Prices a charge added by hand or from an AI finding: per_hour and flat charges take the qty (hours or times), the rest go by
+        /// the freight and weight as usual. Null for a charge that comes to nothing.
+        /// </summary>
+        public BillingLineResponse? ExtraLine(ChargeType charge, decimal qty, decimal freight, decimal weight, decimal fuelPct, string? note, (Guid id, string no)? source)
         {
-            var shipmentId = request.shipmentId!.Value;
+            var from = string.Concat(source is { } s ? $" · {s.no}" : "", Clean(note) is { } text ? $" · {text}" : "");
+            (decimal qty, decimal unit, decimal amount, string basis)? priced = charge.Basis switch
+            {
+                ChargeType.PercentOfFreight when (fuelPct > 0 ? fuelPct : charge.DefaultAmount) is var pct and > 0 =>
+                    (1, Round(freight * pct / 100), Round(freight * pct / 100), $"{pct:0.##}% of freight{from}"),
+                ChargeType.PerKg => (weight, charge.DefaultAmount, Round(weight * charge.DefaultAmount), $"{weight:0.###} kg × {Money(charge.DefaultAmount)}{from}"),
+                ChargeType.PerHour => (qty, charge.DefaultAmount, Round(qty * charge.DefaultAmount), $"{qty:0.#} h × {Money(charge.DefaultAmount)}{from}"),
+                ChargeType.Flat => (qty, charge.DefaultAmount, Round(qty * charge.DefaultAmount), $"{(qty == 1 ? charge.BasisText ?? "Flat" : $"{qty:0.#} × {Money(charge.DefaultAmount)}")}{from}"),
+                _ => null,
+            };
+            if (priced is not { } p || p.amount <= 0) return null;
+            return new BillingLineResponse
+            {
+                key = $"extra:{charge.Key}:{Guid.CreateVersion7():N}",
+                chargeKey = charge.Key,
+                description = charge.Title,
+                basis = p.basis,
+                qty = p.qty,
+                unitPrice = p.unit,
+                amount = p.amount,
+                taxRate = charge.Taxable ? config.TaxPercent : 0,
+                sourceExceptionId = source?.id,
+                sourceExceptionNo = source?.no,
+            };
+        }
+
+        private async Task<(Checklist checklist, Context context, BillingQuoteResponse quote)> ReadyAsync(Guid shipmentId, CancellationToken ct)
+        {
             var context = await ContextAsync([shipmentId], ct);
             var checklist = context.Checklists.GetValueOrDefault(shipmentId)
                 ?? throw ApiProblemException.BadRequest("Unknown shipment.", $"'{shipmentId}' isn't a record of '{sources.ShipmentSidebarId}'.");
@@ -458,6 +491,14 @@ namespace LogisticApi.Services
             var quote = Quote(checklist, context);
             if (quote.problems.Count > 0)
                 throw ApiProblemException.BadRequest("It can't be priced yet.", string.Join(" ", quote.problems));
+            return (checklist, context, quote);
+        }
+
+        /// <summary>The unsaved invoice and lines for a ready shipment: priced now, with freight, the picked lines and any extra ones.</summary>
+        private async Task<(Invoice invoice, List<InvoiceLine> lines)> BuildAsync(InvoiceCreateRequest request, CancellationToken ct)
+        {
+            var shipmentId = request.shipmentId!.Value;
+            var (_, context, quote) = await ReadyAsync(shipmentId, ct);
 
             var unknown = request.lineKeys.Except(quote.lines.Select(l => l.key)).FirstOrDefault();
             if (unknown is not null)
@@ -468,6 +509,7 @@ namespace LogisticApi.Services
                 ?? throw ApiProblemException.BadRequest("Unknown party.", $"'{partyId}' isn't a record of '{config.PartySidebarId}'.");
 
             var picked = quote.lines.Where(l => l.required || request.lineKeys.Contains(l.key)).ToList();
+            picked.AddRange(ExtraLines(request.extraLines, quote, context.Exceptions[shipmentId]));
             var (subtotal, tax) = Totals(picked);
             var invoice = new Invoice
             {
@@ -504,6 +546,35 @@ namespace LogisticApi.Services
                 sortOrder = i,
             }).ToList();
             return (invoice, lines);
+        }
+
+        /// <summary>Prices the extra lines of a create request; each must be a charge type that isn't already on every invoice.</summary>
+        private List<BillingLineResponse> ExtraLines(List<InvoiceExtraLineRequest> extras, BillingQuoteResponse quote, IEnumerable<ExceptionCase> exceptions)
+        {
+            if (extras.Count == 0) return [];
+            var freight = quote.lines.First(l => l.chargeKey == InvoiceLine.Freight).amount;
+            var weight = quote.weight ?? 0;
+            var fuelPct = quote.rateCard?.fuelPct ?? 0;
+            var byId = exceptions.ToDictionary(e => e.ObjId);
+            List<BillingLineResponse> lines = [];
+            foreach (var extra in extras)
+            {
+                var charge = config.ChargeTypes.FirstOrDefault(c => c.Key == extra.chargeKey)
+                    ?? throw ApiProblemException.BadRequest("Unknown charge.", $"'{extra.chargeKey}' isn't one of the charge types.");
+                if (charge.Automatic)
+                    throw ApiProblemException.BadRequest($"{charge.Title} is already on every invoice.");
+                if (extra.qty is not > 0)
+                    throw ApiProblemException.BadRequest($"{charge.Title} needs a quantity above zero.");
+                (Guid id, string no)? source = null;
+                if (extra.sourceExceptionId is { } exceptionId)
+                {
+                    var exception = byId.GetValueOrDefault(exceptionId)
+                        ?? throw ApiProblemException.BadRequest("Unknown exception.", $"'{exceptionId}' isn't an exception of this shipment.");
+                    source = (exception.ObjId, $"EXC-{exception.DocId:0000}");
+                }
+                if (ExtraLine(charge, extra.qty.Value, freight, weight, fuelPct, extra.note, source) is { } line) lines.Add(line);
+            }
+            return lines;
         }
 
         private async Task<List<InvoiceResponse>> InvoicesAsync(ICollection<Guid>? ids, DateOnly today, CancellationToken ct)
@@ -593,6 +664,8 @@ namespace LogisticApi.Services
         }
 
         private string Money(decimal amount) => $"{config.CurrencySymbol} {amount.ToString("N2", CultureInfo.InvariantCulture)}";
+
+        private static string? Clean(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 
         private static decimal Round(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
 

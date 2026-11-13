@@ -8,7 +8,7 @@ namespace LogisticApi.Controllers
     [ApiController]
     [Route("api/billing")]
     [Produces("application/json")]
-    public class BillingController(BillingService billing) : ControllerBase
+    public class BillingController(BillingService billing, BillingAuditService audits) : ControllerBase
     {
         /// <summary>Ready to bill with prices, held back with reasons, every invoice, the parties and the totals.</summary>
         [HttpGet]
@@ -28,6 +28,16 @@ namespace LogisticApi.Controllers
         [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
         public Task<BillingSettingsResponse> SaveSettings([FromBody] BillingSettingsRequest request, CancellationToken ct) =>
             billing.SaveSettingsAsync(request, ct);
+
+        /// <summary>The AI checks a ready shipment's charges against its proof of delivery, exceptions and checkpoints. Nothing is saved; it costs one AI call.</summary>
+        [HttpPost("audit")]
+        [ProducesResponseType<BillingAuditResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status502BadGateway)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable)]
+        public Task<BillingAuditResponse> Audit([FromBody] BillingAuditRequest request, CancellationToken ct) => audits.AuditAsync(request, ct);
 
         /// <summary>The invoice's PDF without saving it.</summary>
         [HttpPost("preview")]

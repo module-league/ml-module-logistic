@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations;
 namespace LogisticApi.MVVM
 {
     /// <summary>
-    /// Invoices a ready shipment. The API prices it again from the rate card; freight is always on it, and lineKeys picks the
-    /// other quoted lines. partyId left out bills the shipment's Bill To.
+    /// Invoices a ready shipment. The API prices it again from the rate card; freight is always on it, lineKeys picks the
+    /// other quoted lines and extraLines adds charges the quote didn't suggest. partyId left out bills the shipment's Bill To.
     /// </summary>
     public class InvoiceCreateRequest
     {
@@ -14,6 +14,34 @@ namespace LogisticApi.MVVM
         public Guid? partyId { get; set; }
 
         public List<string> lineKeys { get; set; } = [];
+
+        public List<InvoiceExtraLineRequest> extraLines { get; set; } = [];
+    }
+
+    /// <summary>A charge added by hand or from the AI audit, priced by the API from its charge type.</summary>
+    public class InvoiceExtraLineRequest
+    {
+        /// <summary>A charge type that isn't automatic.</summary>
+        [Required]
+        public string? chargeKey { get; set; }
+
+        /// <summary>Hours for a per_hour charge, times for a flat one; ignored by the rest.</summary>
+        [Required]
+        public decimal? qty { get; set; }
+
+        /// <summary>Shown in the line's basis, e.g. where the charge comes from.</summary>
+        [MaxLength(200)]
+        public string? note { get; set; }
+
+        /// <summary>The exception of this shipment it comes from.</summary>
+        public Guid? sourceExceptionId { get; set; }
+    }
+
+    /// <summary>Has the AI check a ready shipment's charges against its proof of delivery, exceptions and checkpoints.</summary>
+    public class BillingAuditRequest
+    {
+        [Required]
+        public Guid? shipmentId { get; set; }
     }
 
     /// <summary>Every change sends the versionNo last read; a stale one is rejected with 409.</summary>

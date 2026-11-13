@@ -33,7 +33,8 @@ namespace LogisticApi.Services
         // Shown as people or ticks on the record, never printed on shipping papers
         private static readonly string[] UnprintedTypes = ["checkbox", "member", "sys_creator_id", "sys_updater_id", "sys_create_time", "sys_update_time"];
 
-        private static readonly Dictionary<string, string> ContentTypes = new()
+        /// <summary>The file types the AI can read, by extension; shared with the billing audit.</summary>
+        internal static readonly Dictionary<string, string> ContentTypes = new()
         {
             ["pdf"] = "application/pdf",
             ["jpg"] = "image/jpeg",

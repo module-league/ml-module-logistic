@@ -25,7 +25,6 @@ interface DocumentRequirementsEditorProps {
   types: IDocumentType[];
   /** Every step in order, as the API gives them. */
   steps: IDocumentStep[];
-  modeField?: ISidebarField;
   incotermField?: ISidebarField;
   onChange: (requirements: RequirementDraft[]) => void;
   onAdd: () => void;
@@ -40,7 +39,6 @@ export function DocumentRequirementsEditor({
   requirements,
   types,
   steps,
-  modeField,
   incotermField,
   onChange,
   onAdd,
@@ -117,14 +115,6 @@ export function DocumentRequirementsEditor({
                 </td>
                 <td className="px-3 py-1.5">
                   <div className="flex flex-col gap-1">
-                    {/* <ConditionInput
-                      label="Mode"
-                      field={modeField}
-                      values={requirement.condition.mode ?? []}
-                      onChange={(values) =>
-                        setCondition(requirement, "mode", values)
-                      }
-                    /> */}
                     <ConditionInput
                       label="Incoterm"
                       field={incotermField}

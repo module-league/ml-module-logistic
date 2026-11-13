@@ -65,6 +65,9 @@ builder.Services.AddScoped<ExceptionCopilotService>();
 // Billing: rate cards, charge types and tax from the "Billing" workflow config
 builder.Services.Configure<BillingOptions>(builder.Configuration.GetSection(BillingOptions.SectionName));
 builder.Services.AddScoped<BillingService>();
+// AI billing audit: checks a ready shipment's charges against its POD, exceptions and checkpoints
+builder.Services.Configure<BillingAuditOptions>(builder.Configuration.GetSection(BillingAuditOptions.SectionName));
+builder.Services.AddScoped<BillingAuditService>();
 
 // Expected failures (400/404/409) thrown as ApiProblemException become ProblemDetails responses
 builder.Services.AddProblemDetails();
